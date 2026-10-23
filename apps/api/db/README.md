@@ -77,3 +77,29 @@ erDiagram
 ## Pendiente para staging/producción
 
 Aplicar las mismas migraciones (sin `seed.sql`) en cada proyecto nuevo.
+
+# IINICIA · Base de datos (Supabase · DEV)
+
+Esquema PostgreSQL del portal IINICIA, derivado del documento de alcance técnico
+(secciones 5, 6, 7, 10 y 19). Probado en PostgreSQL 16 con un stub de Supabase
+(RLS, triggers, auditoría y anti-escalada de roles).
+
+---
+
+## Proyecto Supabase (DEV)
+
+| Variable | Valor |
+|---|---|
+| `conyraseña de la base de datos` | `IX6Fj0Aw87QQgzvf` |
+| `SUPABASE_URL` | `https://cdusxbpxtemwvhpfdqqr.supabase.co` |
+| `SUPABASE_JWKS_URL` | `https://cdusxbpxtemwvhpfdqqr.supabase.co/auth/v1/.well-known/jwks.json` |
+| Región | — |
+| Ambiente | **DEV** (no usar para staging/producción) |
+
+> Las claves (`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`) **no se documentan aquí**.
+> Viven únicamente en el archivo `.env` local / en el gestor de secretos del backend.
+> Ver la sección [Variables de entorno](#variables-de-entorno).
+
+---
+
+## Estructura
