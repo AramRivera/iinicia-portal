@@ -23,3 +23,7 @@ Thumbs.db
 docs/migracion/binarios/
 *.sql.gz
 *.dump
+
+Moodle/
+moodle/
+moodledata/
