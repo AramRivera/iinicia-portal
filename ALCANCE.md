@@ -784,3 +784,4 @@ No bloquear el desarrollo de módulos independientes por falta de credenciales. 
 
 
 
+contraseña de la base de datos: IX6Fj0Aw87QQgzvf
