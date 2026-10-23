@@ -1,26 +1,343 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-elevated: rgba(255, 255, 255, 0.72);
+  --foreground: #1d1d1f;
+  --muted: #6e6e73;
+  --border: rgba(0, 0, 0, 0.08);
+  --accent: #0071e3;
+  --accent-strong: #0077ed;
+  --accent-soft: #eaf2ff;
+  --radius-xl: 28px;
+  --shadow-soft: 0 12px 40px -12px rgba(0, 0, 0, 0.22),
+    0 4px 12px -4px rgba(0, 0, 0, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --surface: #1c1c1e;
+    --surface-elevated: rgba(28, 28, 30, 0.72);
+    --foreground: #f5f5f7;
+    --muted: #a1a1a6;
+    --border: rgba(255, 255, 255, 0.12);
+    --accent: #0a84ff;
+    --accent-strong: #2f9bff;
+    --accent-soft: rgba(10, 132, 255, 0.14);
+    --shadow-soft: 0 12px 40px -12px rgba(0, 0, 0, 0.6),
+      0 4px 12px -4px rgba(0, 0, 0, 0.4);
   }
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+/* Frosted glass surface (Apple-style translucency) */
+.glass {
+  background: var(--surface-elevated);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Very soft diffuse shadow */
+.shadow-apple {
+  box-shadow: var(--shadow-soft);
+}
+
+/* Subtle luminous gradient used in hero */
+.bg-aurora {
+  background:
+    radial-gradient(60% 55% at 50% 0%, rgba(0, 113, 227, 0.18) 0%, transparent 70%),
+    radial-gradient(50% 40% at 85% 20%, rgba(90, 200, 250, 0.14) 0%, transparent 70%),
+    radial-gradient(50% 40% at 15% 30%, rgba(191, 90, 242, 0.10) 0%, transparent 70%);
+}
+
+/* Apple-like dot texture */
+.bg-dot-grid {
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+}
+
+/* Text balance utilities */
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Expandable double underline on hover (menu / footer links) */
+.hover-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-underline::after,
+.hover-underline::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1.5px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent-strong) 60%,
+    color-mix(in srgb, var(--accent) 50%, transparent) 100%
+  );
+  bottom: -4px;
+  left: 0;
+  border-radius: 9999px;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hover-underline::before {
+  top: -4px;
+  transform-origin: left;
+}
+
+.hover-underline:hover::after,
+.hover-underline:hover::before,
+.hover-underline:focus-visible::after,
+.hover-underline:focus-visible::before {
+  transform: scaleX(1);
+}
+
+/* ---------------------------------------------------------------
+   Skewed "glass panel" program cards
+   --------------------------------------------------------------- */
+.program-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320px;
+  margin: 16px 20px;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.program-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50px;
+  width: 50%;
+  height: 100%;
+  border-radius: 12px;
+  transform: skewX(15deg);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.program-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50px;
+  width: 50%;
+  height: 100%;
+  border-radius: 12px;
+  transform: skewX(15deg);
+  filter: blur(30px);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0.55;
+}
+
+.program-card--blue::before,
+.program-card--blue::after {
+  background: linear-gradient(315deg, #0a84ff, #5ac8fa);
+}
+.program-card--violet::before,
+.program-card--violet::after {
+  background: linear-gradient(315deg, #bf5af2, #0a84ff);
+}
+.program-card--cyan::before,
+.program-card--cyan::after {
+  background: linear-gradient(315deg, #64d2ff, #0a84ff);
+}
+
+.program-card:hover::before,
+.program-card:hover::after,
+.program-card:focus-within::before,
+.program-card:focus-within::after {
+  transform: skewX(0deg);
+  left: 20px;
+  width: calc(100% - 90px);
+}
+
+.program-card .card-glow {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.program-card .card-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: top 0.4s ease, left 0.4s ease, opacity 0.4s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  animation: program-glow 2s ease-in-out infinite;
+}
+
+.program-card .card-glow::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: bottom 0.4s ease, right 0.4s ease, opacity 0.4s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  animation: program-glow 2s ease-in-out infinite;
+  animation-delay: -1s;
+}
+
+.program-card:hover .card-glow::before,
+.program-card:focus-within .card-glow::before {
+  top: -24px;
+  left: 24px;
+  opacity: 1;
+}
+
+.program-card:hover .card-glow::after,
+.program-card:focus-within .card-glow::after {
+  bottom: -24px;
+  right: 24px;
+  opacity: 1;
+}
+
+@keyframes program-glow {
+  0%,
+  100% {
+    transform: translateY(4px);
+  }
+  50% {
+    transform: translateX(-4px);
+  }
+}
+
+.program-card .card-content {
+  position: relative;
+  z-index: 1;
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+  color: #fff;
+  transition: padding 0.4s ease;
+}
+
+.program-card:hover .card-content,
+.program-card:focus-within .card-content {
+  padding: 32px 28px;
+}
+
+@media (hover: none) {
+  .program-card::before,
+  .program-card::after {
+    transform: skewX(0deg);
+    left: 20px;
+    width: calc(100% - 90px);
+  }
+  .program-card .card-glow::before {
+    top: -24px;
+    left: 24px;
+    opacity: 1;
+  }
+  .program-card .card-glow::after {
+    bottom: -24px;
+    right: 24px;
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Scroll-reveal text (Apple-style sticky reveal, PER SECTION)
+   `--reveal` goes 0% -> 100% as the section enters -> leaves view.
+   --------------------------------------------------------------- */
+.scroll-reveal-text {
+  --reveal: 100%;
+  background: linear-gradient(
+    -60deg,
+    color-mix(in srgb, var(--foreground) 15%, transparent) 30%,
+    var(--foreground) 60%
+  );
+  background-size: 300% 100%;
+  background-position-x: calc(100% - var(--reveal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* Ensure it looks solid if JS never runs (progressive enhancement). */
+  transition: background-position-x 0.05s linear;
+}
+
+/* On no-JS, show the text fully. */
+.no-js .scroll-reveal-text {
+  background: none;
+  -webkit-text-fill-color: var(--foreground);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-text {
+    background: none;
+    -webkit-text-fill-color: var(--foreground);
+    color: var(--foreground);
+    transition: none;
+  }
 }
