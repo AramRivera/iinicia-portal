@@ -21,6 +21,26 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+## IINICIA API
+
+The API uses the `/api/v1` prefix. The permissions catalog is available at
+`GET /api/v1/permissions`; it accepts `limit` (1–100, default 50), `offset`
+(default 0), and an optional exact `code` filter. Responses contain `data` and
+pagination metadata in `meta`. The shared contract is in `docs/openapi.yaml`.
+
+### Supabase access decision
+
+| Strategy              | Security and operational impact                                                                                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User JWT + RLS        | PostgreSQL evaluates each query as the authenticated user. The `permissions` RLS policy requires `roles.read`; this is the selected strategy for this read endpoint.                           |
+| Privileged server key | Bypasses RLS. NestJS would need to verify the active user and `roles.read` permission itself. Not used by this endpoint.                                                                       |
+| Mixed                 | Can use JWT + RLS for user-scoped reads and a privileged key for operations that require it, with explicit authorization for every privileged operation. This endpoint does not need that key. |
+
+The API verifies the Bearer token with Supabase Auth and passes it through to
+PostgREST so that the database applies RLS. Set `SUPABASE_URL` and
+`SUPABASE_PUBLISHABLE_KEY` in `apps/api/.env`; use `.env.example` as a template.
+Do not use the secret/service-role key for this endpoint.
+
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.

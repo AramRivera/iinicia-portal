@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: IINICIA API
+  version: 1.0.0
+  description: API REST del portal IINICIA.
+servers:
+  - url: http://localhost:3000/api/v1
+paths:
+  /permissions:
+    get:
+      summary: Consultar el catálogo de permisos
+      description: >
+        Requiere un token de acceso válido de Supabase. PostgreSQL aplica RLS
+        y solo permite consultar este catálogo a usuarios con `roles.read`.
+      operationId: listPermissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          description: Número máximo de registros por página (máximo 100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - in: query
+          name: offset
+          description: Número de registros que se omiten.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: code
+          description: Código exacto del permiso.
+          schema:
+            type: string
+            maxLength: 64
+      responses:
+        "200":
+          description: Catálogo consultado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionsResponse"
+        "400":
+          description: Parámetros inválidos o no permitidos.
+        "401":
+          description: Token ausente, inválido o vencido.
+        "503":
+          description: Supabase no está disponible.
+        "500":
+          description: Supabase devolvió una respuesta incompleta.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Permission:
+      type: object
+      required:
+        - id
+        - code
+        - description
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: roles.read
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    PermissionsResponse:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+        meta:
+          type: object
+          required:
+            - total
+            - limit
+            - offset
+            - hasMore
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            hasMore:
+              type: boolean

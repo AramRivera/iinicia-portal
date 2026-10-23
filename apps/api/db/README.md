@@ -90,7 +90,7 @@ Esquema PostgreSQL del portal IINICIA, derivado del documento de alcance técnic
 
 | Variable | Valor |
 |---|---|
-| `conyraseña de la base de datos` | `IX6Fj0Aw87QQgzvf` |
+| `DATABASE_PASSWORD` | Configurar fuera del repositorio mediante el gestor de secretos |
 | `SUPABASE_URL` | `https://cdusxbpxtemwvhpfdqqr.supabase.co` |
 | `SUPABASE_JWKS_URL` | `https://cdusxbpxtemwvhpfdqqr.supabase.co/auth/v1/.well-known/jwks.json` |
 | Región | — |
