@@ -1,4 +1,6 @@
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   ServiceUnavailableException,
@@ -16,6 +18,61 @@ export class SupabaseService {
 
   assertConfiguration(): void {
     this.getConfiguration();
+  }
+
+  async signInWithPassword(email: string, password: string) {
+    try {
+      const { data, error } = await this.createClient().auth.signInWithPassword(
+        {
+          email,
+          password,
+        },
+      );
+
+      if (error?.status === 429) {
+        throw new HttpException(
+          'Demasiados intentos. Intenta más tarde.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      if (error) {
+        if (
+          error.status === 400 ||
+          error.status === 401 ||
+          error.status === 403 ||
+          error.status === 422
+        ) {
+          throw new UnauthorizedException(
+            'No fue posible iniciar sesión con esas credenciales.',
+          );
+        }
+        throw new ServiceUnavailableException(
+          'No fue posible contactar al servicio de autenticación.',
+        );
+      }
+      if (!data.session || !data.user) {
+        throw new ServiceUnavailableException(
+          'El servicio de autenticación devolvió una sesión incompleta.',
+        );
+      }
+
+      return {
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        token_type: data.session.token_type,
+        expires_in: data.session.expires_in,
+        expires_at: data.session.expires_at,
+        user: { id: data.user.id, email: data.user.email },
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error(
+        'Falló la comunicación con Supabase Auth durante el inicio de sesión.',
+      );
+      throw new ServiceUnavailableException(
+        'No fue posible contactar al servicio de autenticación.',
+      );
+    }
   }
 
   async getAuthenticatedUser(accessToken: string): Promise<User> {
@@ -58,7 +115,7 @@ export class SupabaseService {
     return this.createClient(accessToken);
   }
 
-  private createClient(accessToken: string): SupabaseClient<Database> {
+  private createClient(accessToken?: string): SupabaseClient<Database> {
     const { url, publishableKey } = this.getConfiguration();
 
     return createClient<Database>(url, publishableKey, {
@@ -68,7 +125,7 @@ export class SupabaseService {
         persistSession: false,
       },
       global: {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       },
     });
   }

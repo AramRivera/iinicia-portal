@@ -28,6 +28,39 @@ The API uses the `/api/v1` prefix. The permissions catalog is available at
 (default 0), and an optional exact `code` filter. Responses contain `data` and
 pagination metadata in `meta`. The shared contract is in `docs/openapi.yaml`.
 
+### Login desde Postman
+
+Después de actualizar el código, ejecuta `npm ci` en `apps/api`.
+Configura `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `PORT=3000` en `.env`,
+y ejecuta `npm run start:dev`. No se necesita una clave secreta.
+
+1. Crea un usuario confirmado en Supabase Authentication si todavía no existe.
+2. Envía `POST http://localhost:3000/api/v1/auth/login` con Authorization **No Auth**,
+   `Content-Type: application/json` y Body **raw / JSON**:
+
+```json
+{
+  "email": "usuario@example.com",
+  "password": "contraseña-del-usuario"
+}
+```
+
+3. Copia `access_token` de la respuesta `200`.
+4. Envía `GET http://localhost:3000/api/v1/permissions` usando Authorization
+   **Bearer Token** con ese valor. Para ver el catálogo, el perfil debe estar activo
+   y tener `roles.read`. El login no activa perfiles ni concede permisos.
+
+El login devuelve `access_token`, `refresh_token`, `token_type`, `expires_in`,
+`expires_at` (si Supabase lo proporciona) y `user` con `id` y `email`.
+No almacena sesiones en el servidor ni registra contraseñas o tokens.
+Errores: `400` por cuerpo inválido, `401` por credenciales rechazadas,
+`429` por exceso de intentos y `503` por fallos del servicio externo.
+El límite local es de 5 solicitudes por minuto por IP, en memoria por proceso;
+se reinicia al reiniciar la API. Antes de desplegar varias instancias, utiliza
+almacenamiento compartido para el límite y configura únicamente proxies de confianza.
+Usa HTTPS fuera de localhost. No se añade un endpoint de renovación en este cambio;
+para esta prueba, inicia sesión nuevamente cuando venza el access token.
+
 ### Supabase access decision
 
 | Strategy              | Security and operational impact                                                                                                                                                                |
