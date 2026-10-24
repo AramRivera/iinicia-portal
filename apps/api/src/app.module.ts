@@ -5,6 +5,7 @@ import { AppService } from './app.service.js';
 import { PermissionsModule } from './modules/permissions/permissions.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { ProgramsModule } from './modules/programs/programs.module.js';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { HealthModule } from './modules/health/health.module.js';
     PermissionsModule,
     AuthModule,
     HealthModule,
+    ProgramsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

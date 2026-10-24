@@ -41,6 +41,89 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadinessResponse"
+  /auth/register:
+    post:
+      summary: Registrar una cuenta pública
+      description: >
+        Crea la identidad mediante Supabase Auth. El servidor no acepta roles
+        en la solicitud; el trigger `on_auth_user_created` asigna el rol
+        `applicant` y crea el perfil. La respuesta genérica evita revelar si
+        una dirección de correo ya está registrada. No inicia sesión al usuario.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "202":
+          description: Solicitud aceptada; las instrucciones se envían por correo si procede.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterAcceptedResponse"
+        "400":
+          description: Datos inválidos o campos no permitidos.
+        "429":
+          description: Se excedió el límite de solicitudes.
+        "503":
+          description: Supabase Auth no está disponible.
+  /programs:
+    get:
+      summary: Consultar el catálogo público de programas
+      description: >
+        Endpoint público. Devuelve únicamente programas publicados, activos y
+        no eliminados. Supabase PostgREST usa el rol anon y aplica RLS; no se
+        utiliza una clave privilegiada.
+      operationId: listPublicPrograms
+      parameters:
+        - in: query
+          name: limit
+          description: Número máximo de registros por página (máximo 100).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - in: query
+          name: offset
+          description: Número de registros que se omiten.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: type
+          description: Tipo de programa académico.
+          schema:
+            type: string
+            enum: [degree, diploma, certification, course]
+        - in: query
+          name: code
+          description: Código exacto del programa.
+          schema:
+            type: string
+            pattern: "^[A-Z0-9][A-Z0-9_-]{1,31}$"
+            maxLength: 32
+      responses:
+        "200":
+          description: Catálogo público consultado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgramsResponse"
+        "400":
+          description: Parámetros inválidos o no permitidos.
+        "503":
+          description: No fue posible consultar el catálogo.
+        "500":
+          description: La respuesta del catálogo está incompleta.
   /permissions:
     get:
       summary: Consultar el catálogo de permisos
@@ -94,6 +177,105 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          example: persona@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 4096
+          format: password
+        first_name:
+          type: string
+          maxLength: 100
+          example: Ana
+        last_name:
+          type: string
+          maxLength: 100
+          example: García
+        phone:
+          type: string
+          pattern: "^\\+?[0-9 ()-]{7,20}$"
+          example: "+525512345678"
+    RegisterAcceptedResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Si el registro puede completarse, recibirás instrucciones en el correo proporcionado.
+    Program:
+      type: object
+      required:
+        - id
+        - code
+        - slug
+        - name
+        - type
+        - summary
+        - description
+        - duration_hours
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: DIP-CIB-01
+        slug:
+          type: string
+          example: diplomado-ciberseguridad
+        name:
+          type: string
+          example: Diplomado en Ciberseguridad
+        type:
+          type: string
+          enum: [degree, diploma, certification, course]
+        summary:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        duration_hours:
+          type: integer
+          nullable: true
+    ProgramsResponse:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Program"
+        meta:
+          type: object
+          required:
+            - total
+            - limit
+            - offset
+            - hasMore
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            hasMore:
+              type: boolean
     HealthResponse:
       type: object
       required:

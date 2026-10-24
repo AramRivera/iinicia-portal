@@ -52,6 +52,73 @@ The readiness database probe selects only `id` from `public.programs`, whose
 anonymous read access is intentionally allowed by the project RLS policy. It
 does not use a secret/service-role key or read user data.
 
+### Catálogo público de programas
+
+`GET /api/v1/programs` devuelve los programas publicados, activos y no
+eliminados. Acepta `limit` (1–100, predeterminado 50), `offset` (predeterminado
+0), `type` (`degree`, `diploma`, `certification` o `course`) y el filtro exacto
+`code`. Los resultados se ordenan por `sort_order` y luego por `name`; la
+respuesta incluye `data` y metadatos de paginación en `meta`.
+
+Ejemplos:
+
+```bash
+curl -i 'http://localhost:3000/api/v1/programs'
+curl -i 'http://localhost:3000/api/v1/programs?type=diploma&limit=10&offset=0'
+curl -i 'http://localhost:3000/api/v1/programs?code=DIP-CIB-01'
+```
+
+La consulta usa la clave publicable y el rol anónimo de PostgREST. La política
+RLS `programs_select_public` es la autoridad de acceso; la consulta además
+filtra publicación, actividad y baja lógica. No se usa `service_role`. El
+contrato compartido está en `docs/openapi.yaml`.
+
+### Registro público
+
+`POST /api/v1/auth/register` recibe `email` y `password`; `first_name`,
+`last_name` y `phone` son opcionales. Rechaza propiedades no definidas como
+`role`, aplica un límite de 5 intentos por minuto por IP y devuelve siempre
+un mensaje genérico `202` cuando Supabase acepta la solicitud. No devuelve
+tokens ni revela si el correo ya existe. Si la confirmación de correo está
+activa en Supabase, la persona deberá confirmar su dirección y luego iniciar
+sesión por separado.
+
+El esquema de `apps/api/db/iinicia_schema_completo.sql` debe estar aplicado:
+su trigger `on_auth_user_created` crea `profiles`/`profile_details` y asigna
+`applicant` en la base de datos. No se acepta ni utiliza un rol enviado por
+el cliente, ni se requiere una clave privilegiada para el registro.
+
+Pruebas rápidas con `curl` (usa un correo distinto para cada intento exitoso):
+
+1. **Registro válido — esperado `202`:**
+
+   ```bash
+   curl -i http://localhost:3000/api/v1/auth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"ana.prueba@example.com","password":"ClaveSegura123!","first_name":"Ana","last_name":"Prueba","phone":"+525512345678"}'
+   ```
+
+2. **Correo y contraseña inválidos — esperado `400`:**
+
+   ```bash
+   curl -i http://localhost:3000/api/v1/auth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"no-es-correo","password":"123"}'
+   ```
+
+3. **Intento de asignarse un rol — esperado `400`:**
+
+   ```bash
+   curl -i http://localhost:3000/api/v1/auth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"ana.prueba@example.com","password":"ClaveSegura123!","role":"superadmin"}'
+   ```
+
+Las pruebas automatizadas del endpoint están en `apps/api/test/auth.e2e-spec.ts`;
+las llamadas a Supabase se prueban con mocks en
+`apps/api/src/common/supabase/supabase-register.spec.ts`. La integración real
+depende de Supabase y de que el trigger del esquema esté aplicado.
+
 ### Login desde Postman
 
 Después de actualizar el código, ejecuta `npm ci` en `apps/api`.

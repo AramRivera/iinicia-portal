@@ -10,6 +10,9 @@ import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { Database } from './database.types.js';
 
+const REGISTRATION_ACCEPTED_MESSAGE =
+  'Si el registro puede completarse, recibirás instrucciones en el correo proporcionado.';
+
 @Injectable()
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
@@ -19,6 +22,74 @@ export class SupabaseService {
 
   assertConfiguration(): void {
     this.getConfiguration();
+  }
+
+  async register(registration: {
+    email: string;
+    password: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+  }): Promise<{ message: string }> {
+    try {
+      const { data, error } = await this.createClient().auth.signUp({
+        email: registration.email.trim().toLowerCase(),
+        password: registration.password,
+        options: {
+          data: {
+            ...(registration.first_name !== undefined && {
+              first_name: registration.first_name.trim(),
+            }),
+            ...(registration.last_name !== undefined && {
+              last_name: registration.last_name.trim(),
+            }),
+            ...(registration.phone !== undefined && {
+              phone: registration.phone.trim(),
+            }),
+          },
+        },
+      });
+
+      if (error?.status === 429) {
+        throw new HttpException(
+          'Demasiados intentos. Intenta más tarde.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      if (
+        error?.code === 'email_exists' ||
+        error?.code === 'user_already_exists'
+      ) {
+        return { message: REGISTRATION_ACCEPTED_MESSAGE };
+      }
+      if (error) {
+        if (
+          error.status === 400 ||
+          error.status === 422
+        ) {
+          throw new HttpException(
+            'No fue posible procesar el registro con esos datos.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        throw new ServiceUnavailableException(
+          'No fue posible contactar al servicio de registro.',
+        );
+      }
+      if (!data.user) {
+        throw new ServiceUnavailableException(
+          'El servicio de registro devolvió una respuesta incompleta.',
+        );
+      }
+
+      return { message: REGISTRATION_ACCEPTED_MESSAGE };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error('Falló la comunicación con Supabase Auth al registrarse.');
+      throw new ServiceUnavailableException(
+        'No fue posible contactar al servicio de registro.',
+      );
+    }
   }
 
   async signInWithPassword(email: string, password: string) {
@@ -114,6 +185,10 @@ export class SupabaseService {
 
   getClient(accessToken: string): SupabaseClient<Database> {
     return this.createClient(accessToken);
+  }
+
+  getPublicClient(): SupabaseClient<Database> {
+    return this.createClient();
   }
 
   async checkReadiness(): Promise<{
