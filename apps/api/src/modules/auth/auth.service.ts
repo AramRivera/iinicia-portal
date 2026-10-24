@@ -30,7 +30,7 @@ export class AuthService {
   async getMe(
     accessToken: string,
     userId: string,
-    tokenIssuedAt: number | null,
+    _tokenIssuedAt: number | null,
   ): Promise<MeResponse> {
     const profile = await this.repository.findOwnProfile(accessToken, userId);
 

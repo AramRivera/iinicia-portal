@@ -39,6 +39,10 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Usuario no autenticado.');
     }
 
+    if (request.userRoles?.includes('superadministrador')) {
+      return true;
+    }
+
     if (!request.userPermissions) {
       request.userPermissions = await this.resolveUserPermissions(
         accessToken,
