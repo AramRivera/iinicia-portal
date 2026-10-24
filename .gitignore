@@ -24,6 +24,6 @@ docs/migracion/binarios/
 *.sql.gz
 *.dump
 
-Moodle/
-moodle/
-moodledata/
+/Moodle/
+/moodle/
+/moodledata/
