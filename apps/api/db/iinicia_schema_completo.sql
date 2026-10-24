@@ -169,6 +169,11 @@ create table public.profiles (
   moodle_synced_at   timestamptz,
   moodle_sync_error  text,
 
+  -- Revocación de sesiones: lo sincroniza el trigger desde
+  -- auth.users.updated_password_at (GoTrue). La API rechaza tokens
+  -- emitidos antes de esta fecha.
+  password_changed_at timestamptz,
+
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now(),
   deleted_at         timestamptz,
@@ -186,6 +191,7 @@ create table public.profiles (
 comment on table  public.profiles is 'Perfil del usuario del portal (1:1 con auth.users).';
 comment on column public.profiles.status is 'Estado administrativo de la cuenta. Solo modificable desde el backend.';
 comment on column public.profiles.moodle_user_id is 'ID del usuario en Moodle; NULL hasta que el backend lo cree o vincule.';
+comment on column public.profiles.password_changed_at is 'Último cambio de contraseña en Supabase Auth; la API rechaza access tokens emitidos antes.';
 
 -- ---------------------------------------------------------------------
 -- profile_details: datos complementarios (1:1), separados del núcleo
@@ -553,14 +559,19 @@ begin
 end;
 $$;
 
--- Mantener profiles.email alineado con auth.users
+-- Mantener profiles.email y profiles.password_changed_at alineados con auth.users.
+-- updated_password_at lo mantiene GoTrue al cambiar la contraseña.
 create or replace function private.handle_user_email_change()
 returns trigger
 language plpgsql security definer
 set search_path = ''
 as $$
 begin
-  update public.profiles set email = lower(new.email) where id = new.id;
+  update public.profiles
+     set email               = lower(new.email),
+         password_changed_at = coalesce(new.updated_password_at, password_changed_at)
+   where id = new.id;
+
   return new;
 end;
 $$;
@@ -735,9 +746,12 @@ create trigger on_auth_user_created
   for each row execute function private.handle_new_user();
 
 create trigger on_auth_user_email_changed
-  after update of email on auth.users
+  after update of email, updated_password_at on auth.users
   for each row
-  when (old.email is distinct from new.email)
+  when (
+    old.email is distinct from new.email
+    or old.updated_password_at is distinct from new.updated_password_at
+  )
   execute function private.handle_user_email_change();
 -- =====================================================================
 -- 0800 · Datos base: roles, permisos y matriz rol-permiso

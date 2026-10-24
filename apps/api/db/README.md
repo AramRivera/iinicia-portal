@@ -19,7 +19,8 @@ supabase/
 │   ├── 20261022000900_rls_policies.sql               Row Level Security
 │   └── 20261022001000_views_grants.sql               vistas y privilegios (lista blanca)
 ├── seed.sql                                          solo DEV: los 2 cursos de ejemplo como programas
-└── scripts/bootstrap_superadmin.sql                  crea el primer superadministrador
+├── scripts/bootstrap_superadmin.sql                  crea el primer superadministrador
+└── 1100_sessions_password_changed_at.sql             migración incremental: revocación de sesiones
 ```
 
 ## Cómo aplicarlo
@@ -29,6 +30,10 @@ supabase/
 **Opción B (Supabase CLI):** `supabase link --project-ref <ref>` y `supabase db push` (aplica `migrations/` en orden).
 
 Luego: regístrate desde el portal (o Authentication → Users → Add user con *Auto Confirm*) y corre `scripts/bootstrap_superadmin.sql` con tu correo.
+
+**Proyecto que ya existe:** `iinicia_schema_completo.sql` es un `CREATE TABLE` y
+falla sobre un esquema ya creado. Aplica solo la migración incremental
+`1100_sessions_password_changed_at.sql` (idempotente).
 
 ## Modelo
 
@@ -73,6 +78,14 @@ erDiagram
   (requiere conexión directa a Postgres; con supabase-js sin eso, `actor_id` queda `NULL` y conviene guardar el actor en `metadata` desde el backend).
 - Matrícula: crear `enrollment_requests` → aprobar (`reviewed_at`) → matricular en Moodle → marcar `synced` + `synced_at`; si falla, `failed` + `sync_error` + `sync_attempts`.
 - Usuario en Moodle: buscar antes de crear; guardar `moodle_user_id` y `moodle_sync_status = 'synced'` con `moodle_synced_at`.
+
+## Migraciones incrementales
+
+| Archivo | Qué hace |
+|---|---|
+| `1100_sessions_password_changed_at.sql` | Añade `profiles.password_changed_at` y hace que el trigger `on_auth_user_email_changed` también escuche `auth.users.updated_password_at`, para que la API rechace sesiones emitidas antes de un cambio de contraseña. Idempotente; si `auth.users.updated_password_at` no existe, conserva solo la sincronización del correo y avisa con un `WARNING`. |
+
+El cambio también está integrado en `iinicia_schema_completo.sql` (columna en `profiles` y trigger en la sección 0700), de modo que una instalación nueva ya lo incluye.
 
 ## Pendiente para staging/producción
 

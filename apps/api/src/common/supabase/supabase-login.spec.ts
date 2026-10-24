@@ -57,15 +57,36 @@ describe('Supabase password login', () => {
     expect(createClient).toHaveBeenCalledWith(
       'https://example.supabase.co',
       'test-publishable-key',
-      expect.objectContaining({
+      {
         auth: {
           autoRefreshToken: false,
           detectSessionInUrl: false,
           persistSession: false,
         },
-        global: { headers: {} },
-      }),
+        global: {},
+      },
     );
+  });
+
+  it('pins the user bearer token on every request of the scoped client', async () => {
+    service.getClient('user-access-token');
+
+    const [, , options] = vi.mocked(createClient).mock.calls[0];
+    const scoped = options?.global;
+    expect(scoped).toBeDefined();
+    expect(typeof scoped?.fetch).toBe('function');
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null));
+    await scoped?.fetch?.('https://example.supabase.co/rest/v1/profiles', {
+      headers: { Authorization: 'Bearer overwritten-by-the-sdk' },
+    });
+    const sentHeaders = new Headers(
+      (fetchSpy.mock.calls[0][1] as RequestInit).headers,
+    );
+    expect(sentHeaders.get('Authorization')).toBe('Bearer user-access-token');
+    fetchSpy.mockRestore();
   });
 
   it.each([

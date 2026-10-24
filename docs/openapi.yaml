@@ -6,6 +6,37 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
 paths:
+  /auth/me:
+    get:
+      summary: Identidad del usuario autenticado
+      description: >
+        Devuelve el perfil, los roles y los permisos efectivos del dueño del
+        token Bearer. La identidad se obtiene del token validado por Supabase
+        Auth; cualquier identificador enviado por el cliente (`userId` en query
+        o cuerpo) se ignora. Los permisos se resuelven por roles de ámbito
+        global (`user_roles.program_id` nulo), igual que en RLS; los roles
+        acotados a un programa se listan en `roles` pero no elevan
+        `permissions`. Rechaza cuentas cuyo `status` no sea `active` y tokens
+        emitidos antes del último cambio de contraseña.
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Identidad del usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: >
+            Token ausente, inválido o vencido; perfil inexistente o con baja
+            lógica; cuenta con estado distinto de `active`; o sesión emitida
+            antes del último cambio de contraseña.
+        "429":
+          description: Exceso de solicitudes.
+        "503":
+          description: Supabase no está disponible o el esquema no coincide.
   /permissions:
     get:
       summary: Consultar el catálogo de permisos
@@ -59,6 +90,69 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    MeResponse:
+      type: object
+      description: >
+        Identidad efectiva, roles y permisos del usuario autenticado
+        (`GET /api/v1/auth/me`).
+      required:
+        - id
+        - email
+        - first_name
+        - last_name
+        - status
+        - roles
+        - permissions
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador estable de Supabase Auth (`auth.users.id`).
+          example: 11111111-1111-1111-1111-111111111111
+        email:
+          type: string
+          format: email
+          example: usuario@ejemplo.com
+        first_name:
+          type: string
+          nullable: true
+          example: Juan
+        last_name:
+          type: string
+          nullable: true
+          example: "Pérez"
+        status:
+          type: string
+          nullable: true
+          enum: [pending, active, suspended, inactive]
+          description: Estado administrativo de la cuenta (`profiles.status`).
+          example: active
+        roles:
+          type: array
+          description: Códigos únicos de los roles asignados al usuario.
+          items:
+            type: string
+          example: ["admin"]
+        permissions:
+          type: array
+          description: >
+            Códigos únicos de permisos otorgados a los roles de ámbito global
+            del usuario.
+          items:
+            type: string
+          example:
+            - users.read
+            - programs.read
+            - courses.read
+            - enrollments.read
+            - enrollments.manage
+        password_changed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: >
+            Fecha del último cambio de contraseña sincronizada desde Supabase
+            Auth. Un token emitido antes de esta fecha se considera revocado.
     Permission:
       type: object
       required:
@@ -105,3 +199,4 @@ components:
               type: integer
             hasMore:
               type: boolean
+
