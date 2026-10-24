@@ -13,6 +13,7 @@ import { Database } from './database.types.js';
 @Injectable()
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
+  private readonly readinessTimeoutMs = 3000;
 
   constructor(private readonly config: ConfigService) {}
 
@@ -115,6 +116,24 @@ export class SupabaseService {
     return this.createClient(accessToken);
   }
 
+  async checkReadiness(): Promise<{
+    database: boolean;
+    authentication: boolean;
+  }> {
+    const { url, publishableKey } = this.getConfiguration();
+    const databaseUrl = new URL('/rest/v1/programs', url);
+    databaseUrl.searchParams.set('select', 'id');
+    databaseUrl.searchParams.set('limit', '1');
+    const authenticationUrl = new URL('/auth/v1/health', url);
+
+    const [database, authentication] = await Promise.all([
+      this.checkEndpoint(databaseUrl, publishableKey, 'database'),
+      this.checkEndpoint(authenticationUrl, publishableKey, 'authentication'),
+    ]);
+
+    return { database, authentication };
+  }
+
   private createClient(accessToken?: string): SupabaseClient<Database> {
     const { url, publishableKey } = this.getConfiguration();
 
@@ -128,6 +147,30 @@ export class SupabaseService {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       },
     });
+  }
+
+  private async checkEndpoint(
+    url: URL,
+    publishableKey: string,
+    dependency: 'database' | 'authentication',
+  ): Promise<boolean> {
+    try {
+      const response = await fetch(url, {
+        headers: { apikey: publishableKey },
+        signal: AbortSignal.timeout(this.readinessTimeoutMs),
+      });
+      await response.body?.cancel();
+
+      if (!response.ok) {
+        this.logger.warn(`Supabase ${dependency} readiness check failed.`);
+        return false;
+      }
+
+      return true;
+    } catch {
+      this.logger.warn(`Supabase ${dependency} readiness check failed.`);
+      return false;
+    }
   }
 
   private getConfiguration(): { url: string; publishableKey: string } {

@@ -6,6 +6,41 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
 paths:
+  /health:
+    get:
+      summary: Comprobar que la API está activa
+      description: >
+        Endpoint de liveness. No consulta servicios externos y no requiere
+        autenticación; es adecuado para comprobar que el proceso responde.
+      operationId: getHealth
+      responses:
+        "200":
+          description: La API está activa.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /health/ready:
+    get:
+      summary: Comprobar disponibilidad de dependencias
+      description: >
+        Endpoint de readiness. Comprueba Supabase PostgREST y Supabase Auth
+        utilizando la clave publicable del servidor, sin consultar datos
+        privados ni devolver información de configuración.
+      operationId: getReadiness
+      responses:
+        "200":
+          description: La API y sus dependencias requeridas están disponibles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+        "503":
+          description: Una o más dependencias requeridas no están disponibles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
   /permissions:
     get:
       summary: Consultar el catálogo de permisos
@@ -59,6 +94,43 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        timestamp:
+          type: string
+          format: date-time
+    ReadinessResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - dependencies
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        timestamp:
+          type: string
+          format: date-time
+        dependencies:
+          type: object
+          required:
+            - database
+            - authentication
+          properties:
+            database:
+              type: string
+              enum: [available, unavailable]
+            authentication:
+              type: string
+              enum: [available, unavailable]
     Permission:
       type: object
       required:

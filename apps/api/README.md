@@ -28,6 +28,30 @@ The API uses the `/api/v1` prefix. The permissions catalog is available at
 (default 0), and an optional exact `code` filter. Responses contain `data` and
 pagination metadata in `meta`. The shared contract is in `docs/openapi.yaml`.
 
+### Health checks
+
+Both health endpoints are public infrastructure probes and return
+`Cache-Control: no-store`.
+
+- `GET /api/v1/health` is liveness only; it returns `200` while the API process
+  is responding and does not contact external services.
+- `GET /api/v1/health/ready` checks the public Supabase programs endpoint through
+  PostgREST and Supabase Auth. It returns `200` when both are reachable and
+  `503` otherwise. Each request has a three-second timeout. The response only
+  reports dependency availability; it does not include URLs, keys, response
+  bodies, or exception details.
+
+Try the endpoints locally:
+
+```bash
+curl -i http://localhost:3000/api/v1/health
+curl -i http://localhost:3000/api/v1/health/ready
+```
+
+The readiness database probe selects only `id` from `public.programs`, whose
+anonymous read access is intentionally allowed by the project RLS policy. It
+does not use a secret/service-role key or read user data.
+
 ### Login desde Postman
 
 Después de actualizar el código, ejecuta `npm ci` en `apps/api`.
