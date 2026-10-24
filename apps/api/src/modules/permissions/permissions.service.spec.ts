@@ -25,6 +25,7 @@ describe('PermissionsService', () => {
     const permission: PermissionRecord = {
       id: 1,
       code: 'roles.read',
+      module: 'roles',
       description: 'Consultar roles y permisos',
       created_at: '2026-10-23T00:00:00.000Z',
     };

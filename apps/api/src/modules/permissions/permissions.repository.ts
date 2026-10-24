@@ -21,7 +21,7 @@ export class PermissionsRepository {
       let query = this.supabase
         .getClient(accessToken)
         .from('permissions')
-        .select('id, code, description, created_at', { count: 'exact' });
+        .select('id, code, module, description, created_at', { count: 'exact' });
 
       if (params.code) {
         query = query.eq('code', params.code);

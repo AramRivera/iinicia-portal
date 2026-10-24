@@ -44,7 +44,6 @@ export class RolesGuard implements CanActivate {
 
     const userRoles = request.userRoles;
 
-    // El superadministrador siempre tiene acceso total
     if (userRoles.includes('superadministrador')) {
       return true;
     }
@@ -68,15 +67,13 @@ export class RolesGuard implements CanActivate {
   ): Promise<string[]> {
     try {
       const client = this.supabase.getResilientClient(accessToken);
-      // Intentar primero con la función RPC get_my_roles()
-      const { data: rpcRoles, error: rpcError } = await client.rpc(
+      const { data: rpcRoles, error: rpcError } = await (client as any).rpc(
         'get_my_roles',
       );
       if (!rpcError && Array.isArray(rpcRoles) && rpcRoles.length > 0) {
-        return rpcRoles;
+        return rpcRoles as string[];
       }
 
-      // Fallback a consulta directa sobre user_roles y roles
       const { data, error } = await client
         .from('user_roles')
         .select('is_active, expires_at, roles!role_id ( slug )')

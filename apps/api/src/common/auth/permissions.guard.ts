@@ -48,7 +48,6 @@ export class PermissionsGuard implements CanActivate {
 
     const userPermissions = request.userPermissions;
 
-    // Verificar si el usuario cuenta con todos los permisos requeridos
     const hasAll = requiredPermissions.every((perm) =>
       userPermissions.includes(perm),
     );
@@ -69,8 +68,7 @@ export class PermissionsGuard implements CanActivate {
     try {
       const client = this.supabase.getResilientClient(accessToken);
 
-      // Si es superadministrador, tiene todos los permisos
-      const { data: isSuperadmin } = await client.rpc('has_role', {
+      const { data: isSuperadmin } = await (client as any).rpc('has_role', {
         required_role_slug: 'superadministrador',
         target_uid: userId,
       });
@@ -80,11 +78,10 @@ export class PermissionsGuard implements CanActivate {
           .from('permissions')
           .select('code');
         if (Array.isArray(allPerms)) {
-          return allPerms.map((p) => p.code);
+          return (allPerms as Array<{ code: string }>).map((p) => p.code);
         }
       }
 
-      // Obtener roles activos
       const { data: userRoles } = await client
         .from('user_roles')
         .select('role_id, is_active, expires_at')
@@ -96,7 +93,12 @@ export class PermissionsGuard implements CanActivate {
       }
 
       const now = new Date().toISOString();
-      const roleIds = userRoles
+      const roleRows = userRoles as Array<{
+        role_id: number;
+        is_active: boolean;
+        expires_at: string | null;
+      }>;
+      const roleIds = roleRows
         .filter((r) => !r.expires_at || r.expires_at >= now)
         .map((r) => r.role_id);
 
