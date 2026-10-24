@@ -77,23 +77,23 @@ export class SupabaseService {
     phone?: string;
   }) {
     try {
-      const client = this.createClient();
-      const { data, error } = await client.auth.signUp({
+      const adminClient = this.getAdminClient();
+      const { data, error } = await adminClient.auth.admin.createUser({
         email: params.email,
         password: params.password,
-        options: {
-          data: {
-            first_name: params.firstName ?? '',
-            last_name: params.lastName ?? '',
-            phone: params.phone ?? null,
-          },
+        email_confirm: true,
+        user_metadata: {
+          first_name: params.firstName ?? '',
+          last_name: params.lastName ?? '',
+          phone: params.phone ?? null,
         },
       });
 
       if (error) {
+        const msg = error.message?.toLowerCase() ?? '';
         if (
-          error.status === 400 &&
-          error.message?.toLowerCase().includes('already registered')
+          (error.status === 422 || error.status === 400) &&
+          (msg.includes('already registered') || msg.includes('already been registered'))
         ) {
           throw new ConflictException(
             'El correo electrónico ya se encuentra registrado.',
@@ -104,23 +104,45 @@ export class SupabaseService {
             error.message || 'Los datos de registro no son válidos.',
           );
         }
+        this.logger.error(`Error en admin.createUser: [${error.status}] ${error.message}`);
         throw new ServiceUnavailableException(
           'No fue posible contactar al servicio de autenticación.',
         );
       }
 
+      if (!data.user) {
+        throw new ServiceUnavailableException(
+          'No fue posible completar el registro en el servicio de identidad.',
+        );
+      }
+
+      let session: {
+        access_token: string;
+        refresh_token: string;
+        token_type: string;
+        expires_in: number;
+        expires_at?: number;
+      } | null = null;
+
+      try {
+        const loginData = await this.signInWithPassword(params.email, params.password);
+        session = {
+          access_token: loginData.access_token,
+          refresh_token: loginData.refresh_token,
+          token_type: loginData.token_type,
+          expires_in: loginData.expires_in,
+          expires_at: loginData.expires_at,
+        };
+      } catch (loginErr: any) {
+        this.logger.warn(
+          `Usuario registrado pero falló inicio de sesión automático: ${loginErr.message}`,
+        );
+      }
+
       return {
-        id: data.user?.id,
-        email: data.user?.email,
-        session: data.session
-          ? {
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              token_type: data.session.token_type,
-              expires_in: data.session.expires_in,
-              expires_at: data.session.expires_at,
-            }
-          : null,
+        id: data.user.id,
+        email: data.user.email,
+        session,
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
