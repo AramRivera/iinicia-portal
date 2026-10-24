@@ -90,6 +90,24 @@ export class MoodleClient {
   }
 
   /**
+   * Busca un usuario en Moodle por su nombre de usuario (username).
+   */
+  async getUserByUsername(username: string): Promise<MoodleUserResponse | null> {
+    const users = await this.callFunction<MoodleUserResponse[]>(
+      'core_user_get_users_by_field',
+      {
+        field: 'username',
+        values: [username.toLowerCase().trim()],
+      },
+    );
+
+    if (Array.isArray(users) && users.length > 0) {
+      return users[0] ?? null;
+    }
+    return null;
+  }
+
+  /**
    * Crea un usuario en Moodle mediante `core_user_create_users`.
    */
   async createUser(params: {

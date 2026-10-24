@@ -11,6 +11,7 @@ describe('MoodleService', () => {
   let clientMock: {
     checkConnection: ReturnType<typeof vi.fn>;
     getUserByEmail: ReturnType<typeof vi.fn>;
+    getUserByUsername: ReturnType<typeof vi.fn>;
     createUser: ReturnType<typeof vi.fn>;
     enrolUser: ReturnType<typeof vi.fn>;
   };
@@ -27,6 +28,7 @@ describe('MoodleService', () => {
     clientMock = {
       checkConnection: vi.fn(),
       getUserByEmail: vi.fn(),
+      getUserByUsername: vi.fn(),
       createUser: vi.fn(),
       enrolUser: vi.fn(),
     };

@@ -59,19 +59,36 @@ export class MoodleService {
           moodleUsername = existing.username;
         } else {
           // Generar username institucional único a partir del correo o nombre
-          const baseUsername =
+          let candidateUsername =
             profile.email.split('@')[0]?.toLowerCase().replace(/[^a-z0-9_.-]/g, '') ||
             `usr_${userId.slice(0, 8)}`;
 
-          const created = await this.client.createUser({
-            username: baseUsername,
-            email: profile.email,
-            firstname: profile.first_name || 'Estudiante',
-            lastname: profile.last_name || 'IINICIA',
-          });
+          // Prevenir colisiones con usuarios existentes en Moodle
+          const existingByUsername = await this.client.getUserByUsername(candidateUsername);
+          if (
+            existingByUsername &&
+            existingByUsername.email?.toLowerCase() !== profile.email.toLowerCase()
+          ) {
+            candidateUsername = `${candidateUsername}_${userId.slice(0, 4)}`;
+          } else if (
+            existingByUsername &&
+            existingByUsername.email?.toLowerCase() === profile.email.toLowerCase()
+          ) {
+            moodleUserId = existingByUsername.id;
+            moodleUsername = existingByUsername.username;
+          }
 
-          moodleUserId = created.id;
-          moodleUsername = created.username;
+          if (!moodleUserId) {
+            const created = await this.client.createUser({
+              username: candidateUsername,
+              email: profile.email,
+              firstname: profile.first_name || 'Estudiante',
+              lastname: profile.last_name || 'IINICIA',
+            });
+
+            moodleUserId = created.id;
+            moodleUsername = created.username;
+          }
         }
       }
 
@@ -128,6 +145,60 @@ export class MoodleService {
 
       throw err;
     }
+  }
+
+  /**
+   * Sincroniza en lote a todos los usuarios del portal que aún no cuentan
+   * con identificador en Moodle LMS o están en estado no_vinculado / error.
+   */
+  async syncAllUsers() {
+    const admin = this.supabase.getAdminClient();
+    const { data: profiles, error } = await admin
+      .from('profiles')
+      .select('id, email, first_name, last_name, moodle_user_id, moodle_sync_status')
+      .or('moodle_user_id.is.null,moodle_sync_status.neq.sincronizado');
+
+    if (error) {
+      throw new InternalServerErrorException(
+        'Error al consultar perfiles pendientes de sincronizar en Supabase.',
+      );
+    }
+
+    const results: Array<{
+      id: string;
+      email: string;
+      status: 'sincronizado' | 'error';
+      moodle_user_id?: number | null;
+      moodle_username?: string | null;
+      error?: string;
+    }> = [];
+
+    for (const profile of profiles || []) {
+      try {
+        const syncRes = await this.syncUser(profile.id);
+        results.push({
+          id: profile.id,
+          email: profile.email,
+          status: 'sincronizado',
+          moodle_user_id: syncRes.moodle_user_id,
+          moodle_username: syncRes.moodle_username,
+        });
+      } catch (err: any) {
+        results.push({
+          id: profile.id,
+          email: profile.email,
+          status: 'error',
+          error: err.message,
+        });
+      }
+    }
+
+    return {
+      total: results.length,
+      synced: results.filter((r) => r.status === 'sincronizado').length,
+      failed: results.filter((r) => r.status === 'error').length,
+      results,
+    };
   }
 
   /**

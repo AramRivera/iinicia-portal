@@ -35,6 +35,15 @@ export class MoodleController {
     return this.moodleService.syncUser(userId);
   }
 
+  @Post('sync/users')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('superadministrador', 'administrador')
+  @RequirePermissions('moodle.sync.execute')
+  syncAllUsers() {
+    return this.moodleService.syncAllUsers();
+  }
+
   @Post('sync/enrollment/:enrollmentId')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
