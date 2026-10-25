@@ -101,6 +101,22 @@ describe('AuthService.getMe', () => {
     });
   });
 
+  it('handles permissions when perms is an object (PostgREST relation shape) or null', async () => {
+    repository.findOwnRoles.mockResolvedValue([
+      { role_id: 1, is_active: true, expires_at: null, roles: { slug: 'superadministrador' } },
+    ]);
+    repository.findPermissionsByRoles.mockResolvedValue([
+      { role_id: 1, perms: { code: 'system.settings.manage' } as any },
+      { role_id: 1, perms: { code: 'audit.logs.read' } as any },
+      { role_id: 1, perms: null },
+    ]);
+
+    const result = await service.getMe('access-token', profile.id, null);
+
+    expect(result.roles).toEqual(['superadministrador']);
+    expect(result.permissions).toEqual(['audit.logs.read', 'system.settings.manage']);
+  });
+
   it('allows pendiente status (e.g. for aspirante)', async () => {
     repository.findOwnProfile.mockResolvedValue({
       ...profile,
