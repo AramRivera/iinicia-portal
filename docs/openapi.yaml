@@ -1,0 +1,680 @@
+openapi: 3.0.3
+info:
+  title: IINICIA API
+  version: 1.0.0
+  description: >
+    API REST oficial de la Plataforma Digital Universitaria IINICIA (NestJS + Supabase + Moodle).
+    Gestiona la identidad con Supabase Auth, roles RBAC, oferta académica, solicitudes de admisión,
+    matrículas y sincronización bidireccional con Moodle LMS.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Servidor de desarrollo local
+  - url: http://192.168.191.171:3000/api/v1
+    description: Servidor de desarollo remoto
+
+paths:
+  # =========================================================================
+  # SALUD
+  # =========================================================================
+  /health:
+    get:
+      summary: Verificación de salud y estado de integraciones
+      description: Devuelve el estado del backend, de Supabase PostgreSQL y de Moodle Web Services.
+      responses:
+        "200":
+          description: Estado general del sistema.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+
+  # =========================================================================
+  # AUTENTICACIÓN
+  # =========================================================================
+  /auth/login:
+    post:
+      summary: Iniciar sesión en el portal
+      description: Autentica al usuario contra Supabase Auth y devuelve tokens de sesión.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Sesión iniciada correctamente.
+        "401":
+          description: Credenciales incorrectas.
+
+  /auth/register:
+    post:
+      summary: Registro de nuevo aspirante / usuario
+      description: Crea la cuenta en Supabase Auth y genera perfil con rol inicial 'aspirante' y estado 'pendiente'.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, first_name, last_name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        "201":
+          description: Usuario registrado exitosamente.
+        "409":
+          description: Correo electrónico ya registrado.
+
+  /auth/me:
+    get:
+      summary: Identidad del usuario autenticado
+      description: Devuelve el perfil institucional, roles activos, permisos consolidados y estado de Moodle.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Perfil y permisos del usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: Token no válido o cuenta suspendida.
+
+  # =========================================================================
+  # USUARIOS Y PERFILES
+  # =========================================================================
+  /users:
+    get:
+      summary: Listado paginado y filtrado de usuarios
+      description: Consulta usuarios con soporte para búsqueda difusa, filtro por estado o rol. Requiere permiso users.read.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pendiente, activo, suspendido, inactivo, baja]
+        - in: query
+          name: role
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Listado paginado de usuarios.
+
+  /users/{id}:
+    get:
+      summary: Detalle consolidado de usuario
+      description: Devuelve datos completos de perfil, roles y programas. Los estudiantes solo ven su propio perfil.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detalle del usuario.
+        "403":
+          description: Acceso no autorizado al perfil de otro usuario.
+
+  /users/{id}/status:
+    patch:
+      summary: Cambiar estado de usuario (activar, suspender, baja)
+      description: Actualiza el estado administrativo y sincroniza suspensión en Moodle. Requiere permiso users.manage.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pendiente, activo, suspendido, inactivo, baja]
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Estado actualizado exitosamente.
+
+  /users/me/profile:
+    patch:
+      summary: Actualizar perfil propio
+      description: Actualiza campos editables propios (nombre, apellidos, teléfono, avatar, bio) bajo RLS.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                avatar_url:
+                  type: string
+                bio:
+                  type: string
+      responses:
+        "200":
+          description: Perfil actualizado.
+
+  # =========================================================================
+  # ROLES Y PERMISOS
+  # =========================================================================
+  /roles:
+    get:
+      summary: Catálogo de roles
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de roles del sistema.
+
+  /roles/users/{userId}:
+    post:
+      summary: Asignar rol a usuario
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_id]
+              properties:
+                role_id:
+                  type: integer
+                expires_at:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Rol asignado.
+
+  /roles/users/{userId}/{roleId}:
+    delete:
+      summary: Revocar rol de usuario
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: roleId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rol revocado.
+
+  /permissions:
+    get:
+      summary: Catálogo de permisos del sistema
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de permisos granulares.
+
+  # =========================================================================
+  # OFERTA ACADÉMICA Y PROGRAMAS
+  # =========================================================================
+  /programs:
+    get:
+      summary: Catálogo de programas académicos
+      description: Consulta pública de programas activos; administradores pueden visualizar inactivos.
+      responses:
+        "200":
+          description: Lista de programas.
+    post:
+      summary: Crear nuevo programa
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Programa creado.
+
+  /programs/{idOrSlug}:
+    get:
+      summary: Detalle de programa por ID o Slug
+      parameters:
+        - in: path
+          name: idOrSlug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detalle del programa.
+
+  /programs/{id}/enroll-user:
+    post:
+      summary: Vincular usuario a programa académico
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuario vinculado a programa.
+
+  # =========================================================================
+  # CURSOS Y MAPEOS CON MOODLE
+  # =========================================================================
+  /courses:
+    get:
+      summary: Cursos accesibles para el usuario o catálogo para staff
+      description: Los estudiantes y profesores únicamente ven cursos donde tienen matrícula autorizada (CA-11, CA-12, CA-13).
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de cursos correspondientes.
+    post:
+      summary: Crear mapeo entre curso portal y curso Moodle
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Mapeo creado.
+
+  /courses/{id}:
+    get:
+      summary: Detalle de curso mapeado
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detalle del curso.
+
+  # =========================================================================
+  # INSCRIPCIONES Y MATRÍCULAS
+  # =========================================================================
+  /enrollments:
+    get:
+      summary: Consultar solicitudes de inscripción
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de solicitudes.
+    post:
+      summary: Solicitar inscripción a un curso
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Solicitud registrada en estado 'pendiente'.
+
+  /enrollments/{id}/status:
+    patch:
+      summary: Autorizar o rechazar inscripción
+      description: Requiere permiso enrollments.authorize. Si se autoriza, puede sincronizar automáticamente con Moodle.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [autorizada, rechazada, pendiente, desmatriculada]
+                notes:
+                  type: string
+                sync_to_moodle:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: Inscripción actualizada.
+
+  /enrollments/{id}/sync:
+    post:
+      summary: Sincronizar matrícula individual con Moodle
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Matrícula sincronizada con Moodle.
+
+  # =========================================================================
+  # ADMISIONES DE ASPIRANTES
+  # =========================================================================
+  /admissions:
+    get:
+      summary: Consultar solicitudes de admisión
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Solicitudes de admisión.
+    post:
+      summary: Postularse a un programa académico (Aspirantes)
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Postulación registrada.
+
+  /admissions/{id}/review:
+    patch:
+      summary: Dictaminar postulación (admitir, rechazar)
+      description: Al admitir, activa la cuenta y asigna rol estudiante. Requiere admissions.review.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Postulación dictaminada.
+
+  # =========================================================================
+  # MOODLE WEB SERVICES & CAMPUS SSO
+  # =========================================================================
+  /moodle/status:
+    get:
+      summary: Estado de conexión con Moodle Web Services
+      responses:
+        "200":
+          description: Estado del servicio Moodle.
+
+  /moodle/sync/user/{userId}:
+    post:
+      summary: Sincronizar o crear usuario en Moodle evitando duplicados
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Usuario sincronizado en Moodle.
+
+  /moodle/sync/users:
+    post:
+      summary: Sincronización masiva de todos los usuarios no vinculados con Moodle
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Resumen de sincronización por lotes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  synced:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+
+  /moodle/sync/enrollment/{enrollmentId}:
+    post:
+      summary: Sincronizar matrícula autorizada en Moodle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: enrollmentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matrícula sincronizada.
+
+  /moodle/courses/{courseMappingId}/launch:
+    post:
+      summary: Salto seguro al curso de Moodle desde el portal (Mi IINICIA)
+      description: Valida matrícula autorizada, registra en campus_access_logs y devuelve la URL del curso en Moodle.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseMappingId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Enlace de acceso autorizado al campus Moodle.
+        "403":
+          description: Usuario sin matrícula autorizada en el curso.
+
+  # =========================================================================
+  # AUDITORÍA
+  # =========================================================================
+  /audit:
+    get:
+      summary: Bitácora inmutable de auditoría
+      description: Requiere permiso audit.logs.read o rol administrador.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Registros de auditoría con paginación.
+
+  # =========================================================================
+  # CMS, CONTACTO Y REDIRECCIONES WORDPRESS
+  # =========================================================================
+  /cms/contents:
+    get:
+      summary: Contenidos institucionales (noticias, páginas, avisos)
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de contenidos públicos.
+
+  /cms/contents/{slug}:
+    get:
+      summary: Contenido institucional por slug (Misión, Visión, Modelo Educativo)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contenido público.
+
+  /directory:
+    get:
+      summary: Directorio institucional de autoridades y docentes
+      responses:
+        "200":
+          description: Miembros del directorio.
+
+  /contact:
+    post:
+      summary: Enviar mensaje de contacto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, email, subject, message]
+              properties:
+                full_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                subject:
+                  type: string
+                program_of_interest:
+                  type: string
+                  format: uuid
+                message:
+                  type: string
+      responses:
+        "201":
+          description: Mensaje recibido.
+
+  /migration/redirects:
+    get:
+      summary: Mapa de redirecciones 301/302 para migración desde WordPress
+      description: Consumido por el middleware de Next.js para preservar SEO de las URLs históricas.
+      responses:
+        "200":
+          description: Lista de mapeos de redirección.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MeResponse:
+      type: object
+      required:
+        - id
+        - email
+        - first_name
+        - last_name
+        - status
+        - roles
+        - permissions
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pendiente, activo, suspendido, inactivo, baja]
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["estudiante"]
+        permissions:
+          type: array
+          items:
+            type: string
+          example: ["campus.access"]
+        moodle_user_id:
+          type: integer
+          nullable: true
+        moodle_sync_status:
+          type: string
+          enum: [no_vinculado, pendiente, sincronizado, error, suspendido_en_moodle]
