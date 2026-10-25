@@ -21,6 +21,13 @@ export interface UserRoleEmbed {
   roles: { slug: string } | { slug: string }[] | null;
 }
 
+export type PermsEmbed = { code: string } | { code: string }[] | null;
+
+export interface RolePermissionEmbed {
+  role_id: number;
+  perms: PermsEmbed;
+}
+
 @Injectable()
 export class AuthRepository {
   private readonly logger = new Logger(AuthRepository.name);
@@ -81,7 +88,7 @@ export class AuthRepository {
   async findPermissionsByRoles(
     accessToken: string,
     roleIds: number[],
-  ): Promise<{ role_id: number; perms: { code: string }[] }[]> {
+  ): Promise<RolePermissionEmbed[]> {
     if (roleIds.length === 0) return [];
 
     const { data, error } = await this.supabase
@@ -102,7 +109,7 @@ export class AuthRepository {
       );
     }
 
-    return data as unknown as { role_id: number; perms: { code: string }[] }[];
+    return data as unknown as RolePermissionEmbed[];
   }
 
   private toHttpException(

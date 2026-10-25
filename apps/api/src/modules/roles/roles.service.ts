@@ -160,6 +160,7 @@ export class RolesService {
     }
 
     const roleInfo = (assignment as any).roles;
+    const roleSlug = Array.isArray(roleInfo) ? roleInfo[0]?.slug : roleInfo?.slug;
 
     // Registrar en audit_logs
     await admin.from('audit_logs').insert({
@@ -170,7 +171,7 @@ export class RolesService {
       entity_id: assignment.id,
       old_values: {
         role_id: roleId,
-        role_slug: roleInfo?.slug,
+        role_slug: roleSlug,
       },
     });
 

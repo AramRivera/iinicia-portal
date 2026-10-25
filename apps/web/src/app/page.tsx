@@ -6,6 +6,81 @@ import { usePortalTheme } from "@/components/PortalThemeProvider";
 
 type AuthMode = "login" | "register" | "recover";
 
+type PortalProfile = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  status: string;
+  roles: string[];
+  permissions: string[];
+};
+type PortalSession = { accessToken: string; expiresAt: number; profile: PortalProfile };
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/+$/, "");
+const SESSION_KEY = `iinicia.portal.session.v1:${API_URL}`;
+const ROLE_LABELS: Record<string, string> = {
+  superadministrador: "Superadministrador", administrador: "Administrador",
+  coordinador: "Coordinador", profesor: "Profesor", estudiante: "Estudiante",
+  soporte: "Soporte", aspirante: "Aspirante",
+};
+
+class PortalApiError extends Error {
+  constructor(message: string, readonly status = 0) { super(message); }
+}
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isProfile(value: unknown): value is PortalProfile {
+  return isRecord(value) && typeof value.id === "string" && typeof value.email === "string"
+    && typeof value.first_name === "string" && typeof value.last_name === "string"
+    && typeof value.status === "string" && Array.isArray(value.roles)
+    && value.roles.every((role) => typeof role === "string")
+    && Array.isArray(value.permissions) && value.permissions.every((permission) => typeof permission === "string");
+}
+function forgetSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* La sesión también funciona en memoria. */ }
+}
+async function portalRequest(path: "/auth/login" | "/auth/me", options: RequestInit, signal: AbortSignal): Promise<unknown> {
+  if (!API_URL) throw new PortalApiError("Falta configurar la dirección del servicio de acceso.");
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal.addEventListener("abort", abort, { once: true });
+  if (signal.aborted) controller.abort();
+  const timeout = window.setTimeout(abort, 20000);
+  try {
+    const response = await fetch(`${API_URL}${path}`, { ...options, cache: "no-store", credentials: "omit", signal: controller.signal });
+    const data: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      let message = "No fue posible completar la solicitud. Inténtalo de nuevo.";
+      if (response.status === 401) message = path === "/auth/login" ? "Correo o contraseña incorrectos." : "La sesión no es válida o tu cuenta no está activa. Inicia sesión de nuevo.";
+      else if (response.status === 403) message = "Tu cuenta no tiene acceso autorizado al portal.";
+      else if (response.status === 429) message = "Hay demasiados intentos. Espera un momento antes de volver a intentarlo.";
+      else if (response.status >= 500) message = path === "/auth/me" ? "El servicio no pudo consultar tu perfil y permisos. Inténtalo más tarde." : "El servicio de acceso no está disponible en este momento.";
+      else if (response.status === 400 && isRecord(data)) {
+        const detail = Array.isArray(data.message) ? data.message.filter((item) => typeof item === "string").join(" ") : data.message;
+        if (typeof detail === "string" && detail.trim()) message = detail;
+      }
+      throw new PortalApiError(message, response.status);
+    }
+    return data;
+  } catch (error) {
+    if (error instanceof PortalApiError) throw error;
+    if (signal.aborted) throw error;
+    if (controller.signal.aborted) throw new PortalApiError("El servicio tardó demasiado en responder. Vuelve a intentarlo.");
+    throw new PortalApiError("No se pudo conectar al servicio. Verifica tu conexión y vuelve a intentarlo.");
+  } finally {
+    window.clearTimeout(timeout);
+    signal.removeEventListener("abort", abort);
+  }
+}
+async function loadProfile(accessToken: string, signal: AbortSignal): Promise<PortalProfile> {
+  const data = await portalRequest("/auth/me", { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" } }, signal);
+  if (!isProfile(data)) throw new PortalApiError("El servicio devolvió un perfil incompleto. No se pudo abrir la sesión.");
+  if (["suspendido", "inactivo", "baja"].includes(data.status)) throw new PortalApiError("Tu cuenta no está activa. Contacta al administrador.", 403);
+  return data;
+}
+
+
 type Course = {
   id: number;
   title: string;
@@ -103,9 +178,9 @@ const faqs = [
       "La interfaz está diseñada para adaptarse a pantallas grandes y pequeñas. La experiencia de aprendizaje real dependerá de la implementación de las funciones y los contenidos.",
   },
   {
-    question: "¿El inicio de sesión ya valida mis datos?",
+    question: "¿Cómo funciona el inicio de sesión?",
     answer:
-      "No. El formulario permite probar la interacción visual, pero no autentica usuarios ni envía contraseñas a un servidor. No introduzcas contraseñas reales en esta versión.",
+      "El inicio de sesión valida tu cuenta y consulta tu perfil y roles. El registro y la recuperación de contraseña todavía están en preparación.",
   },
 ];
 
@@ -120,12 +195,78 @@ export default function Page() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [sessionRestoring, setSessionRestoring] = useState(true);
+  const [portalSession, setPortalSession] = useState<PortalSession | null>(null);
+  const authRequest = useRef<AbortController | null>(null);
+  const sessionVersion = useRef(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [newsletterSent, setNewsletterSent] = useState(false);
   const [contactSent, setContactSent] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const version = sessionVersion.current;
+    const restore = async () => {
+      try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (!raw) return;
+        let saved: unknown;
+        try { saved = JSON.parse(raw); } catch { forgetSession(); return; }
+        if (!isRecord(saved) || typeof saved.accessToken !== "string" || !saved.accessToken || typeof saved.expiresAt !== "number" || !Number.isFinite(saved.expiresAt) || saved.expiresAt <= Date.now()) {
+          forgetSession(); return;
+        }
+        const profile = await loadProfile(saved.accessToken, controller.signal);
+        if (!controller.signal.aborted && version === sessionVersion.current) {
+          setPortalSession({ accessToken: saved.accessToken, expiresAt: saved.expiresAt, profile });
+        }
+      } catch (error) {
+        if (controller.signal.aborted || version !== sessionVersion.current) return;
+        if (error instanceof PortalApiError && [401, 403].includes(error.status)) forgetSession();
+        setNotice(error instanceof Error ? error.message : "No se pudo comprobar la sesión guardada.");
+      } finally {
+        if (!controller.signal.aborted) setSessionRestoring(false);
+      }
+    };
+    void restore();
+    return () => { controller.abort(); authRequest.current?.abort(); };
+  }, []);
+
+  useEffect(() => {
+    if (!portalSession) return;
+    const checkExpiry = () => {
+      if (portalSession.expiresAt <= Date.now()) {
+        sessionVersion.current += 1;
+        forgetSession();
+        setPortalSession(null);
+        setNotice("Tu sesión terminó. Inicia sesión de nuevo para continuar.");
+      }
+    };
+    const timeout = window.setTimeout(checkExpiry, Math.max(0, portalSession.expiresAt - Date.now()));
+    window.addEventListener("focus", checkExpiry);
+    return () => { window.clearTimeout(timeout); window.removeEventListener("focus", checkExpiry); };
+  }, [portalSession]);
+
+  const closeAuth = () => {
+    authRequest.current?.abort();
+    authRequest.current = null;
+    setAuthBusy(false);
+    setAuthError("");
+    setAuthOpen(false);
+  };
+
+  const closePortalSession = () => {
+    sessionVersion.current += 1;
+    closeAuth();
+    forgetSession();
+    setPortalSession(null);
+    setMenuOpen(false);
+    setNotice("Cerraste la sesión en este portal.");
+  };
 
   // El audio se solicita únicamente al descubrir la sorpresa.
   const reproducirAmbiente = () => {
@@ -226,7 +367,10 @@ export default function Page() {
   useEffect(() => {
     if (!authOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setAuthOpen(false);
+      if (event.key === "Escape") {
+        authRequest.current?.abort(); authRequest.current = null;
+        setAuthBusy(false); setAuthError(""); setAuthOpen(false);
+      }
     };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
@@ -241,6 +385,9 @@ export default function Page() {
   };
 
   const openAuth = (mode: AuthMode) => {
+    if (portalSession && mode === "login") { goTo("mi-iinicia"); return; }
+    authRequest.current?.abort(); authRequest.current = null;
+    setAuthBusy(false); setAuthError("");
     setAuthMode(mode);
     setShowPassword(false);
     setAuthOpen(true);
@@ -256,17 +403,49 @@ export default function Page() {
     window.setTimeout(() => setNotice(""), 6500);
   };
 
-  const handleAuthSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleAuthSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const message =
-      authMode === "login"
-        ? "Formulario de acceso probado. No se inició sesión porque todavía no hay backend conectado."
-        : authMode === "register"
-          ? "Formulario de registro probado. No se creó ninguna cuenta porque todavía no hay backend conectado."
-          : "Formulario de recuperación probado. Aún no se envían correos porque no hay backend conectado.";
-    setAuthOpen(false);
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 7000);
+    if (authRequest.current || sessionRestoring) return;
+    if (authMode !== "login") {
+      setAuthError(authMode === "register"
+        ? "El registro aún es una demostración. No se creó ninguna cuenta."
+        : "La recuperación de contraseña aún no está conectada. No se envió ningún correo.");
+      return;
+    }
+    const form = event.currentTarget;
+    const fields = new FormData(form);
+    const email = String(fields.get("email") ?? "").trim();
+    const password = String(fields.get("password") ?? "");
+    const controller = new AbortController();
+    authRequest.current = controller;
+    const version = ++sessionVersion.current;
+    setAuthBusy(true); setAuthError("");
+    try {
+      const data = await portalRequest("/auth/login", {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email, password }),
+      }, controller.signal);
+      if (!isRecord(data) || typeof data.access_token !== "string" || !data.access_token || typeof data.expires_in !== "number" || !Number.isFinite(data.expires_in) || data.expires_in <= 0) {
+        throw new PortalApiError("El servicio devolvió una sesión incompleta. Inténtalo de nuevo.");
+      }
+      const expiresAt = typeof data.expires_at === "number" && Number.isFinite(data.expires_at)
+        ? data.expires_at * 1000 : Date.now() + data.expires_in * 1000;
+      if (expiresAt <= Date.now()) throw new PortalApiError("La sesión recibida ya expiró. Inicia sesión de nuevo.");
+      const profile = await loadProfile(data.access_token, controller.signal);
+      if (controller.signal.aborted || version !== sessionVersion.current) return;
+      setPortalSession({ accessToken: data.access_token, expiresAt, profile });
+      try {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ accessToken: data.access_token, expiresAt }));
+      } catch { /* Si el almacenamiento está bloqueado, conservar la sesión solo en memoria. */ }
+      form.reset(); setShowPassword(false); setAuthOpen(false);
+      setNotice(`Bienvenido${profile.first_name ? `, ${profile.first_name}` : ""}. Tu sesión está iniciada.`);
+      window.requestAnimationFrame(() => document.getElementById("mi-iinicia")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    } catch (error) {
+      if (controller.signal.aborted || version !== sessionVersion.current) return;
+      setAuthError(error instanceof Error ? error.message : "No fue posible iniciar sesión.");
+    } finally {
+      if (authRequest.current === controller) { authRequest.current = null; setAuthBusy(false); }
+    }
   };
 
   const toggleFavorite = (courseId: number) => {
@@ -425,6 +604,18 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
 .academic-site .portal-party-controls .portal-party-exit { position: static; }
 .academic-site .portal-audio-retry { border: 1px solid #b078c4; background: #251333; color: #fff; padding: 12px 16px; border-radius: 16px; font-size: 12px; line-height: 1.6; }
 .academic-site .portal-audio-retry button { display: block; margin-top: 8px; padding: 6px 0; color: #f0abfc; font-weight: 600; }
+.academic-site button:disabled { opacity: .55; cursor: wait; }
+.academic-site .portal-auth-error { border: 1px solid #ef9a9a; border-radius: 10px; padding: 12px; background: #fff1f2; color: #9f1239; font-size: 13px; line-height: 1.6; }
+.academic-site .portal-account-link { border-radius: 10px; background: var(--portal-lime); color: #1f2c0b; padding: 10px 16px; font-size: 13px; font-weight: 700; }
+.academic-site .portal-session-section { padding: 28px 24px 0; scroll-margin-top: 104px; }
+.academic-site .portal-session-card { margin: auto; max-width: 1280px; padding: 28px; border: 1px solid var(--portal-border); background: var(--portal-surface); border-radius: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.academic-site .portal-session-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .15em; color: var(--portal-accent); }
+.academic-site .portal-session-card h2 { font-size: 24px; margin: 8px 0; }
+.academic-site .portal-session-email { font-size: 13px; color: var(--portal-muted); overflow-wrap: anywhere; }
+.academic-site .portal-session-roles { display: flex; flex-wrap: wrap; gap: 8px; }
+.academic-site .portal-session-roles span { border-radius: 99px; background: var(--portal-tint); color: var(--portal-accent); padding: 8px 12px; font-size: 12px; }
+.academic-site .portal-session-status { width: 100%; font-size: 13px; line-height: 1.7; color: var(--portal-muted); }
+.academic-site .portal-session-logout { border: 1px solid var(--portal-border); border-radius: 10px; padding: 10px 16px; font-size: 12px; color: var(--portal-text); }
 @keyframes portal-disco-spin { to { transform: rotate(360deg); } }
 @keyframes portal-rainbow-flow { to { background-position: 100% 50%; } }
 @media (min-width: 1024px) and (max-width: 1279px) { .academic-site header nav { gap: 12px; font-size: 12px; } .academic-site header>div { gap: 10px; } .academic-site header .portal-theme-label { display: none; } }
@@ -462,20 +653,13 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
           </nav>
 
           <div className="hidden items-center gap-3 xl:flex">
-            <button
-              type="button"
-              onClick={() => openAuth("login")}
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:text-slate-900"
-            >
-              Iniciar sesión
-            </button>
-            <button
-              type="button"
-              onClick={() => openAuth("register")}
-              className="group inline-flex items-center gap-2 rounded-lg bg-lime-300 px-4 py-2.5 text-sm font-bold text-slate-900 shadow-lg shadow-slate-900/5 transition hover:bg-lime-400"
-            >
-              Crear cuenta <span className="transition group-hover:translate-x-0.5">↗</span>
-            </button>
+            {sessionRestoring ? <span role="status" className="text-xs text-slate-600">Comprobando sesión…</span> : portalSession ? <>
+              <button type="button" onClick={() => goTo("mi-iinicia")} className="portal-account-link">Mi IINICIA</button>
+              <button type="button" onClick={closePortalSession} className="rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-900">Cerrar sesión</button>
+            </> : <>
+              <button type="button" onClick={() => openAuth("login")} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:text-slate-900">Iniciar sesión</button>
+              <button type="button" onClick={() => openAuth("register")} className="group inline-flex items-center gap-2 rounded-lg bg-lime-300 px-4 py-2.5 text-sm font-bold text-slate-900 shadow-lg shadow-slate-900/5 transition hover:bg-lime-400">Crear cuenta ↗</button>
+            </>}
           </div>
 
           <button type="button" className="portal-theme-toggle" onClick={() => { apagarAmbiente(); setTheme((current) => current === "light" ? "dark" : "light"); }} aria-label={theme === "light" ? "Activar modo oscuro" : "Activar modo claro"} title={theme === "light" ? "Cambiar a oscuro" : "Cambiar a claro"}>
@@ -515,8 +699,13 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
               </button>
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
-              <button type="button" onClick={() => openAuth("login")} className="rounded-lg border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-900">Iniciar sesión</button>
-              <button type="button" onClick={() => openAuth("register")} className="rounded-lg bg-lime-300 px-3 py-3 text-sm font-bold text-slate-900">Crear cuenta</button>
+              {sessionRestoring ? <p role="status">Comprobando sesión…</p> : portalSession ? <>
+                <button type="button" onClick={() => goTo("mi-iinicia")} className="portal-account-link">Mi IINICIA</button>
+                <button type="button" onClick={closePortalSession} className="rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900">Cerrar sesión</button>
+              </> : <>
+                <button type="button" onClick={() => openAuth("login")} className="rounded-lg border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-900">Iniciar sesión</button>
+                <button type="button" onClick={() => openAuth("register")} className="rounded-lg bg-lime-300 px-3 py-3 text-sm font-bold text-slate-900">Crear cuenta</button>
+              </>}
             </div>
           </nav>
         )}
@@ -532,6 +721,14 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
       )}
 
       <main className="relative z-10">
+        {portalSession && <section id="mi-iinicia" className="portal-session-section" aria-labelledby="portal-session-title">
+          <div className="portal-session-card">
+            <div><p className="portal-session-eyebrow">MI IINICIA · SESIÓN INICIADA</p><h2 id="portal-session-title">Hola, {[portalSession.profile.first_name, portalSession.profile.last_name].filter(Boolean).join(" ") || portalSession.profile.email}</h2><p className="portal-session-email">{portalSession.profile.email}</p></div>
+            <div className="portal-session-roles" aria-label="Roles de tu cuenta">{portalSession.profile.roles.length ? portalSession.profile.roles.map((role) => <span key={role}>{ROLE_LABELS[role] ?? role}</span>) : <span>Sin rol asignado</span>}</div>
+            <p className="portal-session-status">Estado de la cuenta: <strong>{portalSession.profile.status}</strong>. Los paneles y cursos personales se incorporarán en el siguiente avance.</p>
+            <button type="button" onClick={closePortalSession} className="portal-session-logout">Cerrar sesión</button>
+          </div>
+        </section>}
         {/* Hero */}
         <section id="inicio" className="academic-hero scroll-mt-28 px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:px-10 lg:pt-24">
           <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.02fr_.98fr] lg:gap-12">
@@ -747,31 +944,32 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
             <div><h3 className="text-sm font-bold text-slate-900">Portal</h3><div className="mt-4 space-y-3 text-sm text-slate-600"><button type="button" onClick={() => openAuth("login")} className="block hover:text-slate-900">Iniciar sesión</button><button type="button" onClick={() => openAuth("register")} className="block hover:text-slate-900">Crear cuenta</button><button type="button" onClick={() => goTo("preguntas")} className="block hover:text-slate-900">Preguntas frecuentes</button></div></div>
             <div><h3 className="text-sm font-bold text-slate-900">Información</h3><div className="mt-4 space-y-3 text-sm text-slate-600"><button type="button" onClick={() => showComingSoon("El aviso de privacidad")} className="block hover:text-slate-900">Aviso de privacidad</button><button type="button" onClick={() => showComingSoon("Los términos de uso")} className="block hover:text-slate-900">Términos de uso</button><button type="button" onClick={() => goTo("contacto")} className="block hover:text-slate-900">Contacto</button></div></div>
           </div>
-          <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 IINICIA · Proyecto de demostración visual.</p><p>Frontend de muestra · Sin autenticación ni envíos reales.</p><button type="button" onClick={() => goTo("inicio")} className="self-start font-semibold text-slate-600 hover:text-slate-900 sm:self-auto">Volver al inicio ↑</button></div>
+          <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 IINICIA · Proyecto de demostración visual.</p><p>Acceso conectado · Contacto y suscripción de demostración.</p><button type="button" onClick={() => goTo("inicio")} className="self-start font-semibold text-slate-600 hover:text-slate-900 sm:self-auto">Volver al inicio ↑</button></div>
         </div>
         <div className="portal-easter-egg"><button type="button" onClick={alternarAmbiente} aria-label={disco ? "Desactivar modo discoteca" : "Activar sorpresa de colores"} aria-pressed={disco} title={disco ? "Volver al diseño normal" : "¿Y esta estrellita?"}>{disco ? "✦ Salir del modo discoteca" : "✦"}</button></div>
       </footer>
 
       {/* Login / registration modal */}
       {authOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-md" onMouseDown={(event) => { if (event.target === event.currentTarget) setAuthOpen(false); }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-md" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAuth(); }}>
           <div role="dialog" aria-modal="true" aria-labelledby="auth-title" className="relative my-6 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/5">
             <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-lime-200 via-lime-200 to-lime-100" />
-            <button type="button" onClick={() => setAuthOpen(false)} aria-label="Cerrar ventana" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-white hover:text-slate-900">✕</button>
+            <button type="button" onClick={closeAuth} aria-label="Cerrar ventana" className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-white hover:text-slate-900">✕</button>
             <div className="px-6 pb-7 pt-8 sm:px-8">
               <div className="mb-6 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl border border-lime-600/30 bg-lime-400/10 font-semibold text-lime-800">I²</span><div><p className="text-sm font-semibold tracking-[0.15em] text-slate-900">IINICIA</p><p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-slate-600">Portal de aprendizaje</p></div></div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-lime-800">{authMode === "login" ? "Qué gusto verte" : authMode === "register" ? "Comienza tu camino" : "Recupera tu acceso"}</p>
               <h2 id="auth-title" tabIndex={-1} className="mt-2 text-2xl font-semibold text-slate-900">{authMode === "login" ? "Iniciar sesión" : authMode === "register" ? "Crear una cuenta" : "Recuperar contraseña"}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{authMode === "login" ? "Ingresa tus datos para probar la interfaz de acceso." : authMode === "register" ? "Completa los campos para probar la pantalla de registro." : "Ingresa tu correo para probar el flujo de recuperación."}</p>
-              <form onSubmit={handleAuthSubmit} className="mt-6 space-y-4">
+              <p className="mt-2 text-sm leading-6 text-slate-600">{authMode === "login" ? "Ingresa el correo y la contraseña de tu cuenta IINICIA." : authMode === "register" ? "Completa los campos para probar la pantalla de registro." : "Ingresa tu correo para probar el flujo de recuperación."}</p>
+              <form onSubmit={handleAuthSubmit} aria-busy={authBusy} className="mt-6 space-y-4">
                 {authMode === "register" && <div><label htmlFor="auth-name" className="mb-2 block text-xs font-semibold text-slate-700">Nombre completo</label><input id="auth-name" name="name" type="text" autoComplete="name" required placeholder="Tu nombre" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-lime-600/70" /></div>}
                 <div><label htmlFor="auth-email" className="mb-2 block text-xs font-semibold text-slate-700">Correo electrónico</label><input id="auth-email" name="email" type="email" autoComplete="email" required placeholder="nombre@correo.com" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-lime-600/70" /></div>
-                {authMode !== "recover" && <div><label htmlFor="auth-password" className="mb-2 block text-xs font-semibold text-slate-700">Contraseña</label><div className="flex rounded-lg border border-slate-200 bg-slate-50 pr-3 focus-within:border-lime-600/70"><input id="auth-password" name="password" type={showPassword ? "text" : "password"} autoComplete={authMode === "login" ? "current-password" : "new-password"} required minLength={6} placeholder="Mínimo 6 caracteres" className="w-full min-w-0 bg-transparent px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-500" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} className="shrink-0 text-xs font-semibold text-slate-600 hover:text-slate-900">{showPassword ? "Ocultar" : "Mostrar"}</button></div></div>}
-                {authMode === "login" && <div className="flex items-center justify-between gap-3 text-xs"><label className="flex cursor-pointer items-center gap-2 text-slate-600"><input type="checkbox" name="remember" className="accent-lime-600" /> Recordarme</label><button type="button" onClick={() => setAuthMode("recover")} className="font-semibold text-lime-800 hover:text-slate-900">¿Olvidaste tu contraseña?</button></div>}
-                <button type="submit" className="w-full rounded-lg bg-lime-300 px-4 py-3.5 text-sm font-bold text-slate-900 shadow-lg shadow-slate-900/5 transition hover:bg-lime-400">{authMode === "login" ? "ENTRAR AL PORTAL" : authMode === "register" ? "CREAR CUENTA DE MUESTRA" : "PROBAR RECUPERACIÓN"}</button>
+                {authMode !== "recover" && <div><label htmlFor="auth-password" className="mb-2 block text-xs font-semibold text-slate-700">Contraseña</label><div className="flex rounded-lg border border-slate-200 bg-slate-50 pr-3 focus-within:border-lime-600/70"><input id="auth-password" name="password" type={showPassword ? "text" : "password"} autoComplete={authMode === "login" ? "current-password" : "new-password"} required minLength={authMode === "register" ? 8 : 1} placeholder={authMode === "login" ? "Tu contraseña" : "Mínimo 8 caracteres"} className="w-full min-w-0 bg-transparent px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-500" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} className="shrink-0 text-xs font-semibold text-slate-600 hover:text-slate-900">{showPassword ? "Ocultar" : "Mostrar"}</button></div></div>}
+                {authMode === "login" && <div className="flex items-center justify-between gap-3 text-xs"><span className="text-slate-600">Sesión en esta pestaña</span><button type="button" disabled={authBusy} onClick={() => { setAuthError(""); setAuthMode("recover"); }} className="font-semibold text-lime-800 hover:text-slate-900">¿Olvidaste tu contraseña?</button></div>}
+                <button type="submit" disabled={authBusy || sessionRestoring} className="w-full rounded-lg bg-lime-300 px-4 py-3.5 text-sm font-bold text-slate-900 shadow-lg shadow-slate-900/5 transition hover:bg-lime-400">{authBusy ? "VERIFICANDO ACCESO…" : authMode === "login" ? "ENTRAR AL PORTAL" : authMode === "register" ? "CREAR CUENTA DE MUESTRA" : "PROBAR RECUPERACIÓN"}</button>
+                {authError && <p role="alert" className="portal-auth-error">{authError}</p>}
               </form>
-              <div className="mt-6 border-t border-slate-200 pt-5 text-center text-xs text-slate-600">{authMode === "login" ? <>¿Todavía no tienes cuenta? <button type="button" onClick={() => setAuthMode("register")} className="font-bold text-lime-800 hover:text-slate-900">Regístrate</button></> : authMode === "register" ? <>¿Ya tienes cuenta? <button type="button" onClick={() => setAuthMode("login")} className="font-bold text-lime-800 hover:text-slate-900">Inicia sesión</button></> : <>¿Recordaste tu contraseña? <button type="button" onClick={() => setAuthMode("login")} className="font-bold text-lime-800 hover:text-slate-900">Volver al acceso</button></>}</div>
-              <p className="mt-5 rounded-lg border border-yellow-500/15 bg-yellow-500/[0.04] px-3 py-2.5 text-[10px] leading-5 text-amber-900">Modo demostración: no se autentican usuarios, no se crean cuentas y no se envían correos. Usa datos ficticios.</p>
+              <div className="mt-6 border-t border-slate-200 pt-5 text-center text-xs text-slate-600">{authMode === "login" ? <>¿Todavía no tienes cuenta? <button type="button" disabled={authBusy} onClick={() => { setAuthError(""); setAuthMode("register"); }} className="font-bold text-lime-800 hover:text-slate-900">Regístrate</button></> : authMode === "register" ? <>¿Ya tienes cuenta? <button type="button" disabled={authBusy} onClick={() => { setAuthError(""); setAuthMode("login"); }} className="font-bold text-lime-800 hover:text-slate-900">Inicia sesión</button></> : <>¿Recordaste tu contraseña? <button type="button" disabled={authBusy} onClick={() => { setAuthError(""); setAuthMode("login"); }} className="font-bold text-lime-800 hover:text-slate-900">Volver al acceso</button></>}</div>
+              <p className="mt-5 rounded-lg border border-yellow-500/15 bg-yellow-500/[0.04] px-3 py-2.5 text-[10px] leading-5 text-amber-900">{authMode === "login" ? "Tu acceso se conserva en esta pestaña hasta que cierres sesión o expire. No guardamos tu contraseña." : "Esta pantalla aún es de demostración: no crea cuentas ni envía correos."}</p>
             </div>
           </div>
         </div>
