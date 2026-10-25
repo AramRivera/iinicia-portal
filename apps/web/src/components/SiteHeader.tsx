@@ -1,135 +1,94 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { usePortalTheme } from "@/components/PortalThemeProvider";
 
 const navItems = [
   { label: "Inicio", href: "/" },
   { label: "Cursos", href: "/cursos" },
   { label: "Certificaciones", href: "/certificaciones" },
   { label: "Diplomados", href: "/diplomados" },
-  { label: "Universidad IINICIA", href: "/universidad" },
+  { label: "Universidad", href: "/universidad" },
+  { label: "Ayuda", href: "/#preguntas" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const { theme, toggleTheme } = usePortalTheme();
+
+  // La portada ya incluye su propio encabezado (modales y modo ambiente).
+  // Evitamos duplicarlo; el encabezado global aparece en las demás rutas.
+  if (pathname === "/") return null;
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-border">
-      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-[52px] sm:px-6">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <LogoMark />
-          <span className="text-[17px] font-semibold tracking-tight text-foreground">
-            IINICIA
+    <header className="portal-global-header sticky top-0 z-50 border-b px-4 backdrop-blur-xl sm:px-6 lg:px-10">
+      <nav aria-label="Navegación principal" className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-4">
+        <Link href="/" onClick={() => setOpen(false)} aria-label="IINICIA, ir al inicio" className="flex shrink-0 items-center gap-3">
+          <span className="portal-logo-mark relative flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm">
+            <span className="text-sm font-semibold tracking-tight">I²</span>
+            <span className="portal-logo-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2" />
+          </span>
+          <span>
+            <span className="block text-lg font-semibold tracking-[0.16em]">IINICIA</span>
+            <span className="portal-muted -mt-0.5 block text-[9px] font-medium uppercase tracking-[0.23em]">Ciencias aplicadas</span>
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-7 lg:flex">
+        <ul className="hidden items-center gap-5 text-[13px] font-medium xl:flex">
           {navItems.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="hover-underline text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground"
-              >
-                {item.label}
-              </Link>
+                aria-current={pathname === item.href ? "page" : undefined}
+                className="portal-global-nav-link transition-colors"
+              >{item.label}</Link>
             </li>
           ))}
         </ul>
 
-        <div className="hidden items-center gap-5 lg:flex">
-          <Link
-            href="/login"
-            className="hover-underline text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
-            href="/registro"
-            className="rounded-full bg-accent px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-accent-strong"
-          >
-            Registrarse
+        <div className="hidden items-center gap-3 xl:flex">
+          <Link href="/login" className="portal-global-nav-link rounded-lg px-4 py-2.5 text-sm font-semibold">Iniciar sesión</Link>
+          <Link href="/registro" className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm">
+            Crear cuenta <span aria-hidden="true">↗</span>
           </Link>
         </div>
 
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Abrir menú"
-          aria-expanded={open}
-          className="grid h-9 w-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 lg:hidden"
+          onClick={toggleTheme}
+          className="portal-global-theme-toggle inline-flex shrink-0 items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold"
+          aria-label={theme === "light" ? "Activar modo oscuro" : "Activar modo claro"}
+          title={theme === "light" ? "Cambiar a oscuro" : "Cambiar a claro"}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            {open ? (
-              <path d="M6 6l12 12M18 6L6 18" />
-            ) : (
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            )}
-          </svg>
+          <span aria-hidden="true" className="text-lg leading-none">{theme === "light" ? "☾" : "☀"}</span>
+          <span className="hidden sm:inline">{theme === "light" ? "Oscuro" : "Claro"}</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          aria-expanded={open}
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
+          className="portal-global-theme-toggle rounded-lg border px-3 py-2 text-sm xl:hidden"
+        >{open ? "Cerrar ✕" : "Menú ☰"}</button>
       </nav>
 
       {open && (
-        <div className="border-t border-border bg-background/95 backdrop-blur-xl lg:hidden">
-          <ul className="flex flex-col px-3 py-3">
-            {navItems.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="block rounded-2xl px-4 py-3 text-[15px] font-medium text-foreground transition-colors hover:bg-foreground/5"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-            <li className="mt-2 flex flex-col gap-2 border-t border-border px-1 pt-3">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="rounded-full border border-border px-4 py-2.5 text-center text-[15px] font-medium text-foreground"
-              >
-                Iniciar sesión
-              </Link>
-              <Link
-                href="/registro"
-                onClick={() => setOpen(false)}
-                className="rounded-full bg-accent px-4 py-2.5 text-center text-[15px] font-semibold text-white"
-              >
-                Registrarse
-              </Link>
-            </li>
-          </ul>
-        </div>
+        <nav aria-label="Navegación móvil" className="portal-mobile-menu border-t py-3 xl:hidden">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="portal-mobile-link block rounded-lg px-3 py-3 text-sm">
+              {item.label}
+            </Link>
+          ))}
+          <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-3">
+            <Link href="/login" onClick={() => setOpen(false)} className="portal-global-theme-toggle rounded-lg border px-3 py-3 text-center text-sm font-semibold">Iniciar sesión</Link>
+            <Link href="/registro" onClick={() => setOpen(false)} className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold">Crear cuenta</Link>
+          </div>
+        </nav>
       )}
     </header>
-  );
-}
-
-function LogoMark() {
-  return (
-    <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-gradient-to-b from-[#0a84ff] to-[#0060df] text-white shadow-[0_2px_6px_rgba(0,113,227,0.4)]">
-      <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2z" />
-        <path d="M12 2v9l8 4.5M12 11l-8 4.5" />
-      </svg>
-    </span>
   );
 }

@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePortalTheme } from "@/components/PortalThemeProvider";
 
 type AuthMode = "login" | "register" | "recover";
 
@@ -109,7 +110,7 @@ const faqs = [
 ];
 
 export default function Page() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { theme, setTheme } = usePortalTheme();
   const [disco, setDisco] = useState(false);
   const [ambienteError, setAmbienteError] = useState(false);
   const ambienteRef = useRef<HTMLAudioElement | null>(null);
