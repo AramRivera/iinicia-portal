@@ -77,11 +77,15 @@ export class AuthService {
     );
 
     const permissions = uniqueSorted(
-      permissionRows.flatMap((row) =>
-        (row.perms ?? [])
-          .map((perm) => perm.code)
-          .filter((code): code is string => typeof code === 'string'),
-      ),
+      permissionRows.flatMap((row) => {
+        if (!row.perms) return [];
+        if (Array.isArray(row.perms)) {
+          return row.perms
+            .map((perm) => perm?.code)
+            .filter((code): code is string => typeof code === 'string');
+        }
+        return typeof row.perms.code === 'string' ? [row.perms.code] : [];
+      }),
     );
 
     return {
