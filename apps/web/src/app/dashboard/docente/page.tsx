@@ -77,7 +77,7 @@ export default function DocenteDashboardPage() {
           <div className="rounded-2xl border border-border/50 bg-foreground/[0.02] p-4">
             <span className="text-xs text-foreground/60">Cuenta Moodle</span>
             <p className="mt-1 font-mono text-sm font-semibold text-foreground">
-              {user?.moodle_username || 'Profesor'}
+              {user?.moodle_username || 'profesor'}
             </p>
           </div>
           <div className="rounded-2xl border border-border/50 bg-foreground/[0.02] p-4">
@@ -91,6 +91,22 @@ export default function DocenteDashboardPage() {
             <p className="mt-1 text-sm font-semibold text-violet-400">
               Profesor Titular (Editing Teacher)
             </p>
+          </div>
+        </div>
+
+        {/* Aviso de Acceso y Sesión en Moodle */}
+        <div className="mt-4 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4 text-xs text-foreground/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <span className="text-base leading-none">ℹ️</span>
+            <div>
+              <p className="font-semibold text-foreground">Acceso Docente al Aula Moodle</p>
+              <p className="mt-0.5 text-foreground/70">
+                Al pulsar <strong>&quot;Gestionar en Moodle&quot;</strong> serás transferido a Moodle LMS con privilegios docentes. Si tu navegador aún no tiene sesión abierta en Moodle, ingresa con tu usuario institucional.
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 rounded-xl border border-border/80 bg-background/80 px-3 py-2 font-mono text-[11px] text-foreground/90">
+            Usuario: <span className="font-bold text-accent">{user?.moodle_username || 'profesor'}</span>
           </div>
         </div>
       </div>

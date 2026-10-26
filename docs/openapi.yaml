@@ -675,6 +675,9 @@ components:
         moodle_user_id:
           type: integer
           nullable: true
+        moodle_username:
+          type: string
+          nullable: true
         moodle_sync_status:
           type: string
           enum: [no_vinculado, pendiente, sincronizado, error, suspendido_en_moodle]
