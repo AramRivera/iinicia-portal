@@ -111,27 +111,34 @@ export default function LoginPage() {
           <p className="text-center text-xs font-medium text-foreground/60">
             Cuentas de prueba rápidas:
           </p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@iinicia.org', 'Admin.2026!')}
-              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors"
+              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
             >
               Superadmin
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('profesor@iinicia.org', 'Docente.2026!')}
-              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors"
+              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
             >
               Profesor
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('estudiante1@iinicia.org', 'Alumno.2026!')}
-              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors"
+              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
             >
               Estudiante
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('user3@yopmail.com', '123456789')}
+              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
+            >
+              Aspirante
             </button>
           </div>
         </div>

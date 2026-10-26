@@ -23,7 +23,7 @@ import { CmsModule } from './modules/cms/cms.module.js';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 100,
+        limit: process.env.NODE_ENV === 'production' ? 100 : 300,
       },
     ]),
     SupabaseModule,
