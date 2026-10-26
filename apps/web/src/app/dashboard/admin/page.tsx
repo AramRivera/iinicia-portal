@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
           usersApi.getUsers({ limit: 50 }).catch(() => ({ data: [], meta: {} })),
           rolesApi.getRoles().catch(() => []),
           coursesApi.getOfferings().catch(() => []),
-          enrollmentsApi.getAllEnrollments().catch(() => ({ data: [], meta: {} })),
+          enrollmentsApi.getAllEnrollments().catch(() => []),
           programsApi.getPrograms().catch(() => []),
           auditApi.getLogs({ limit: 30 }).catch(() => []),
         ]);
@@ -126,7 +126,8 @@ export default function AdminDashboardPage() {
       setUsers(usersRes.data || []);
       setRoles(rolesRes || []);
       setCourses(coursesRes || []);
-      setEnrollments(enrollRes.data || []);
+      const enrollList = Array.isArray(enrollRes) ? enrollRes : ((enrollRes as any)?.data || []);
+      setEnrollments(enrollList);
       setPrograms(progRes || []);
       setAuditLogs(auditRes || []);
     } catch (err: any) {
@@ -531,7 +532,8 @@ export default function AdminDashboardPage() {
 
   const openAssignModalForUser = (targetUser: UserProfile) => {
     setAssignTargetUserId(targetUser.id);
-    setAssignCourseId(courses[0]?.id || '');
+    const defaultCourseId = courses[0]?.id || (courses[0] as any)?.course_mapping_id || '';
+    setAssignCourseId(defaultCourseId);
     setAssignMoodleRole('student');
     setShowAssignCourseModal(true);
   };
@@ -748,7 +750,7 @@ export default function AdminDashboardPage() {
                   onClick={() => {
                     setAssignTargetUserId('');
                     setAssignUserModalSearch('');
-                    setAssignCourseId(courses[0]?.id || '');
+                    setAssignCourseId(courses[0]?.id || (courses[0] as any)?.course_mapping_id || '');
                     setShowAssignCourseModal(true);
                   }}
                   className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-accent-strong transition-all flex items-center gap-1.5"
@@ -1352,7 +1354,7 @@ export default function AdminDashboardPage() {
 
                         <td className="px-4 py-3.5">
                           <p className="font-semibold text-foreground">
-                            {enr.course_mappings?.courses?.name || 'Curso IINICIA'}
+                            {enr.course_mappings?.course_name || enr.course_mappings?.courses?.name || enr.course_mappings?.moodle_shortname || 'Curso IINICIA'}
                           </p>
                           <p className="font-mono text-[10px] text-foreground/50">
                             ID Moodle: #{enr.course_mappings?.moodle_course_id || 'N/A'}
@@ -1994,11 +1996,14 @@ export default function AdminDashboardPage() {
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
                 >
                   <option value="">-- Elige un curso --</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.portal_course_code || c.code} - {c.course_name || c.name} (Moodle #{c.moodle_course_id})
-                    </option>
-                  ))}
+                  {courses.map((c) => {
+                    const cId = c.id || (c as any).course_mapping_id;
+                    return (
+                      <option key={cId} value={cId}>
+                        {c.portal_course_code || c.code} - {c.course_name || c.name} (Moodle #{c.moodle_course_id})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 

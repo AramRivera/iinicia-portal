@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
@@ -25,13 +26,8 @@ export class EnrollmentsController {
 
   @Get()
   @UseGuards(SupabaseAuthGuard)
-  findEnrollments(@Req() req: AuthenticatedRequest) {
-    const userRoles = (req as any).userRoles || [];
-    const isStaff =
-      userRoles.includes('superadministrador') ||
-      userRoles.includes('administrador') ||
-      userRoles.includes('coordinador') ||
-      userRoles.includes('soporte');
+  async findEnrollments(@Req() req: AuthenticatedRequest) {
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
 
     return this.enrollmentsService.findEnrollments(
       req.user.id,
@@ -42,21 +38,26 @@ export class EnrollmentsController {
 
   @Post()
   @HttpCode(201)
-  @UseGuards(SupabaseAuthGuard, RolesGuard)
-  createEnrollmentRequest(
+  @UseGuards(SupabaseAuthGuard)
+  async createEnrollmentRequest(
     @Body() dto: CreateEnrollmentRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const isStaff =
-      req.userRoles?.includes('superadministrador') ||
-      req.userRoles?.includes('administrador') ||
-      req.userRoles?.includes('coordinador');
-    const targetUserId = isStaff && dto.user_id ? dto.user_id : req.user.id;
+    const isAssigningOther = Boolean(dto.user_id && dto.user_id !== req.user.id);
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
+
+    if (isAssigningOther && !isStaff) {
+      throw new ForbiddenException(
+        'No posees privilegios de administración para asignar cursos a otros usuarios.',
+      );
+    }
+
+    const targetUserId = isAssigningOther ? dto.user_id! : req.user.id;
     return this.enrollmentsService.createEnrollmentRequest(
       targetUserId,
       dto,
       req.user.id,
-      Boolean(isStaff && dto.user_id),
+      isStaff,
     );
   }
 

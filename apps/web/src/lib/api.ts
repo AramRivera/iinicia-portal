@@ -169,9 +169,10 @@ export const enrollmentsApi = {
     return apiFetch<EnrollmentRequest[]>('/enrollments/my');
   },
 
-  getAllEnrollments: async (status?: string): Promise<{ data: EnrollmentRequest[]; meta: any }> => {
+  getAllEnrollments: async (status?: string): Promise<EnrollmentRequest[]> => {
     const query = status ? `?status=${status}` : '';
-    return apiFetch<{ data: EnrollmentRequest[]; meta: any }>(`/enrollments${query}`);
+    const res = await apiFetch<any>(`/enrollments${query}`);
+    return Array.isArray(res) ? res : res?.data || [];
   },
 
   authorizeEnrollment: async (

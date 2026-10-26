@@ -83,7 +83,7 @@ describe('EnrollmentsService', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   maybeSingle: vi.fn().mockResolvedValue({
-                    data: { id: 'enr-exist', status: 'pendiente' },
+                    data: { id: 'enr-exist', status: 'sincronizada' },
                     error: null,
                   }),
                 }),

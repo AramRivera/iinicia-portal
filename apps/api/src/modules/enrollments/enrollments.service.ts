@@ -21,6 +21,29 @@ export class EnrollmentsService {
   ) {}
 
   /**
+   * Verifica si un usuario posee roles administrativos o de coordinación.
+   */
+  async checkIsStaff(userId: string): Promise<boolean> {
+    const admin = this.supabase.getAdminClient();
+    const { data: roles } = await admin
+      .from('user_roles')
+      .select('roles!role_id ( slug )')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    if (!roles || !Array.isArray(roles)) return false;
+    const slugs = roles
+      .map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.slug : r.roles?.slug))
+      .filter(Boolean);
+
+    return (
+      slugs.includes('superadministrador') ||
+      slugs.includes('administrador') ||
+      slugs.includes('coordinador')
+    );
+  }
+
+  /**
    * Consulta de inscripciones y solicitudes:
    * - Personal administrativo (staff): puede consultar todas las solicitudes.
    * - Alumnos / aspirantes: únicamente consultan sus propias solicitudes.
@@ -82,17 +105,46 @@ export class EnrollmentsService {
       .eq('course_mapping_id', dto.course_mapping_id)
       .maybeSingle();
 
+    const nowIso = new Date().toISOString();
+    const effectiveActor = actorId || userId;
+
     if (existing) {
-      throw new ConflictException(
-        `El usuario ya cuenta con una inscripción en este curso (estado: ${existing.status}).`,
-      );
+      if (existing.status === 'sincronizada' || existing.status === 'autorizada') {
+        throw new ConflictException(
+          `El usuario ya cuenta con una matrícula activa en este curso.`,
+        );
+      }
+
+      // Si existía como pendiente, rechazada o error, se autoriza y sincroniza de inmediato
+      const { data: updated, error: updError } = await admin
+        .from('enrollment_requests')
+        .update({
+          status: 'autorizada',
+          moodle_role: dto.moodle_role || 'student',
+          authorized_by: effectiveActor,
+          authorized_at: nowIso,
+          notes: dto.notes ?? (isStaffAssignment ? 'Asignado directamente por administrador' : null),
+        })
+        .eq('id', existing.id)
+        .select()
+        .maybeSingle();
+
+      if (updError || !updated) {
+        throw new InternalServerErrorException('Error al reactivar solicitud de inscripción.');
+      }
+
+      try {
+        await this.moodleService.syncEnrollment(updated.id);
+      } catch (err: any) {
+        this.logger.warn(`Error al sincronizar matrícula existente con Moodle: ${err?.message}`);
+      }
+
+      return updated;
     }
 
     const programId = dto.program_id || course.program_id;
     // Cursos públicos activos se autorizan de inmediato para que el alumno pueda tomarlos de forma directa
     const initialStatus = 'autorizada';
-    const effectiveActor = actorId || userId;
-    const nowIso = new Date().toISOString();
 
     const { data, error } = await admin
       .from('enrollment_requests')
