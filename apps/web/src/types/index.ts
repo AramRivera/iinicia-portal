@@ -144,7 +144,9 @@ export interface EnrollmentRequest {
   moodle_enrolled_at?: string | null;
   created_at: string;
   course_mappings?: {
-    code: string;
+    code?: string;
+    portal_course_code?: string;
+    course_name?: string;
     moodle_course_id: number;
     moodle_shortname: string;
     courses?: {

@@ -52,13 +52,13 @@ export default function AspiranteDashboardPage() {
 
     try {
       await enrollmentsApi.requestEnrollment(courseMappingId);
-      setMessage(`¡Solicitud enviada con éxito para "${courseName}"! El coordinador revisará tu admisión.`);
+      setMessage(`¡Inscripción exitosa en "${courseName}"! Ya estás matriculado en Moodle LMS y tu acceso está listo.`);
 
       // Recargar solicitudes
       const updated = await enrollmentsApi.getMyEnrollments();
       setEnrollments(updated);
     } catch (err: any) {
-      setError(err.message || 'No fue posible enviar la solicitud de matrícula.');
+      setError(err.message || 'No fue posible registrar la inscripción.');
     } finally {
       setActionLoading(null);
     }
@@ -104,18 +104,24 @@ export default function AspiranteDashboardPage() {
 
         {/* Guía informativa */}
         <div className="mt-6 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 text-xs text-blue-200">
-          <p className="font-semibold text-blue-300">¿Cómo funciona el proceso?</p>
+          <p className="font-semibold text-blue-300">¿Cómo empezar?</p>
           <ol className="mt-1.5 list-decimal pl-4 space-y-1 text-blue-200/80">
-            <li>Selecciona el curso que deseas tomar y haz clic en <strong>"Solicitar Inscripción"</strong>.</li>
-            <li>El equipo académico o coordinador autorizará tu matrícula.</li>
-            <li>Una vez autorizada, tu cuenta se sincronizará automáticamente en Moodle LMS y podrás entrar al aula virtual.</li>
+            <li>Elige cualquiera de los cursos disponibles y haz clic en <strong>"Inscribirme y Tomar Curso"</strong>.</li>
+            <li>El sistema sincronizará tu cuenta con Moodle LMS automáticamente.</li>
+            <li>Podrás ingresar directamente a tu aula virtual y comenzar tu formación.</li>
           </ol>
         </div>
       </div>
 
       {message && (
-        <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
-          {message}
+        <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm font-medium text-emerald-300 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <span>{message}</span>
+          <Link
+            href="/dashboard/estudiante"
+            className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-bold text-black hover:bg-emerald-400 transition-all shrink-0"
+          >
+            Ir a mi Aula de Estudiante →
+          </Link>
         </div>
       )}
 

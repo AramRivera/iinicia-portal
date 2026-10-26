@@ -26,14 +26,14 @@ import type {
 } from '@/types';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 
-type AdminTab = 'usuarios' | 'cursos' | 'matriculas' | 'programas' | 'moodle' | 'auditoria';
+type AdminTab = 'asignaciones' | 'usuarios' | 'cursos' | 'matriculas' | 'programas' | 'moodle' | 'auditoria';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, hasRole } = useAuth();
 
   // Estados de pestañas y carga
-  const [activeTab, setActiveTab] = useState<AdminTab>('usuarios');
+  const [activeTab, setActiveTab] = useState<AdminTab>('asignaciones');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -47,6 +47,12 @@ export default function AdminDashboardPage() {
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  // Filtros de asignaciones
+  const [assignSearch, setAssignSearch] = useState('');
+  const [assignRoleFilter, setAssignRoleFilter] = useState('');
+  const [assignCourseFilter, setAssignCourseFilter] = useState('');
+  const [assignUserModalSearch, setAssignUserModalSearch] = useState('');
 
   // Filtros de usuarios
   const [userSearch, setUserSearch] = useState('');
@@ -475,6 +481,66 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Mapeo O(1) de usuario a matrículas/cursos
+  const userEnrollmentsMap = useMemo(() => {
+    const map: Record<string, EnrollmentRequest[]> = {};
+    for (const enr of enrollments) {
+      if (!map[enr.user_id]) map[enr.user_id] = [];
+      map[enr.user_id].push(enr);
+    }
+    return map;
+  }, [enrollments]);
+
+  // Filtro de usuarios para la pestaña de Asignación de Cursos y Roles
+  const filteredAssignmentUsers = useMemo(() => {
+    return users.filter((u) => {
+      const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      const username = (u.moodle_username || '').toLowerCase();
+      const q = assignSearch.toLowerCase().trim();
+
+      const matchesQuery = !q || fullName.includes(q) || email.includes(q) || username.includes(q);
+
+      const userRoles = (u.active_roles || u.roles || []) as string[];
+      const matchesRole =
+        !assignRoleFilter ||
+        userRoles.some((r) => r.toLowerCase().includes(assignRoleFilter.toLowerCase()));
+
+      const userEnrs = userEnrollmentsMap[u.id] || [];
+      const matchesCourse =
+        !assignCourseFilter ||
+        (assignCourseFilter === 'con_cursos' && userEnrs.length > 0) ||
+        (assignCourseFilter === 'sin_cursos' && userEnrs.length === 0);
+
+      return matchesQuery && matchesRole && matchesCourse;
+    });
+  }, [users, assignSearch, assignRoleFilter, assignCourseFilter, userEnrollmentsMap]);
+
+  // Búsqueda de usuarios dentro del modal interactivo
+  const matchingModalUsers = useMemo(() => {
+    if (!assignUserModalSearch.trim()) return users.slice(0, 8);
+    const q = assignUserModalSearch.toLowerCase().trim();
+    return users
+      .filter((u) => {
+        const fullName = `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        return fullName.includes(q) || email.includes(q);
+      })
+      .slice(0, 10);
+  }, [users, assignUserModalSearch]);
+
+  const openAssignModalForUser = (targetUser: UserProfile) => {
+    setAssignTargetUserId(targetUser.id);
+    setAssignCourseId(courses[0]?.id || '');
+    setAssignMoodleRole('student');
+    setShowAssignCourseModal(true);
+  };
+
+  const openRolesModalForUser = (targetUser: UserProfile) => {
+    setSelectedUserForRole(targetUser);
+    setRoleToAssign(5);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -626,8 +692,9 @@ export default function AdminDashboardPage() {
       {/* Navegación por Pestañas */}
       <div className="flex overflow-x-auto border-b border-border/80 gap-2 pb-2">
         {[
-          { id: 'usuarios', label: '👥 Gestión de Usuarios', count: users.length },
-          { id: 'cursos', label: '📚 Cursos & Asignación', count: courses.length },
+          { id: 'asignaciones', label: '🎯 Asignación de Cursos y Roles', count: users.length },
+          { id: 'usuarios', label: '👥 Directorio de Usuarios', count: users.length },
+          { id: 'cursos', label: '📚 Cursos & Materias Moodle', count: courses.length },
           { id: 'matriculas', label: '🎓 Matrículas & Solicitudes', count: enrollments.filter((e) => e.status === 'pendiente').length || undefined },
           { id: 'programas', label: '🏛️ Programas Académicos', count: programs.length },
           { id: 'moodle', label: '⚙️ Integración Moodle & SSO' },
@@ -658,7 +725,289 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* PESTAÑA 1: GESTIÓN DE USUARIOS                                            */}
+      {/* PESTAÑA PRINCIPAL: ASIGNACIÓN DE CURSOS Y ROLES (FILTRADO AVANZADO)       */}
+      {/* ========================================================================= */}
+      {activeTab === 'asignaciones' && (
+        <div className="space-y-4">
+          {/* Header y Filtros */}
+          <div className="rounded-3xl border border-border/80 bg-background/60 p-5 backdrop-blur-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <span>🎯</span>
+                  <span>Tabla Maestra de Asignación de Cursos y Roles</span>
+                </h2>
+                <p className="mt-1 text-xs text-foreground/70">
+                  Filtra usuarios instantáneamente por nombre o correo para asignar materias en Moodle LMS y gestionar roles.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignTargetUserId('');
+                    setAssignUserModalSearch('');
+                    setAssignCourseId(courses[0]?.id || '');
+                    setShowAssignCourseModal(true);
+                  }}
+                  className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-accent-strong transition-all flex items-center gap-1.5"
+                >
+                  <span>+</span>
+                  <span>Asignar Curso a Usuario</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Barra de Búsqueda y Filtros en Tiempo Real */}
+            <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-4 border-t border-border/60 pt-4">
+              <div className="sm:col-span-2 relative">
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar por nombre, apellido, correo o usuario Moodle..."
+                  value={assignSearch}
+                  onChange={(e) => setAssignSearch(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-xs text-foreground placeholder-foreground/40 focus:border-accent focus:outline-none"
+                />
+                {assignSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setAssignSearch('')}
+                    className="absolute right-3 top-2.5 text-xs text-foreground/50 hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <select
+                value={assignRoleFilter}
+                onChange={(e) => setAssignRoleFilter(e.target.value)}
+                className="rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+              >
+                <option value="">Todos los Roles</option>
+                <option value="estudiante">Estudiantes</option>
+                <option value="profesor">Docentes / Profesores</option>
+                <option value="aspirante">Aspirantes</option>
+                <option value="coordinador">Coordinadores</option>
+                <option value="administrador">Administradores</option>
+                <option value="superadministrador">Superadministradores</option>
+              </select>
+
+              <select
+                value={assignCourseFilter}
+                onChange={(e) => setAssignCourseFilter(e.target.value)}
+                className="rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+              >
+                <option value="">Todos los Cursos</option>
+                <option value="con_cursos">Con cursos matriculados</option>
+                <option value="sin_cursos">Sin cursos asignados</option>
+              </select>
+            </div>
+
+            <div className="mt-2 text-[11px] text-foreground/50 flex items-center justify-between">
+              <span>
+                Mostrando <strong>{filteredAssignmentUsers.length}</strong> de <strong>{users.length}</strong> usuarios
+              </span>
+              {(assignSearch || assignRoleFilter || assignCourseFilter) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignSearch('');
+                    setAssignRoleFilter('');
+                    setAssignCourseFilter('');
+                  }}
+                  className="text-accent hover:underline font-semibold"
+                >
+                  Restablecer filtros
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Tabla de Asignaciones */}
+          <div className="overflow-hidden rounded-3xl border border-border/80 bg-background/60 backdrop-blur-xl shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border bg-foreground/[0.03] text-foreground/70 uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="px-5 py-3.5 font-bold">Usuario</th>
+                    <th className="px-5 py-3.5 font-bold">Roles en Portal</th>
+                    <th className="px-5 py-3.5 font-bold">Materias Asignadas en Moodle</th>
+                    <th className="px-5 py-3.5 font-bold text-right">Acciones Rápidas</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {filteredAssignmentUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-8 text-center text-foreground/60">
+                        No se encontraron usuarios con los criterios de búsqueda especificados.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAssignmentUsers.map((u) => {
+                      const userEnrs = userEnrollmentsMap[u.id] || [];
+                      const initials = `${(u.first_name || 'U')[0]}${(u.last_name || 'U')[0]}`.toUpperCase();
+                      const userRoles = (u.active_roles || u.roles || []) as string[];
+
+                      return (
+                        <tr key={u.id} className="hover:bg-foreground/[0.02] transition-colors">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 font-bold text-accent text-xs">
+                                {initials}
+                              </div>
+                              <div>
+                                <p className="font-bold text-foreground text-sm">
+                                  {u.first_name} {u.last_name}
+                                </p>
+                                <p className="text-xs text-foreground/60 font-mono">
+                                  {u.email}
+                                </p>
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <MoodleSyncBadge status={u.moodle_sync_status} moodleId={u.moodle_user_id} />
+                                  {u.moodle_username && (
+                                    <span className="text-[10px] text-foreground/50 font-mono">
+                                      (@{u.moodle_username})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
+                              {userRoles.map((role) => (
+                                <span
+                                  key={role}
+                                  className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold border ${
+                                    role === 'superadministrador'
+                                      ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                      : role === 'administrador'
+                                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                      : role === 'coordinador'
+                                      ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                                      : role === 'profesor'
+                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                      : role === 'estudiante'
+                                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                      : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                                  }`}
+                                >
+                                  {role}
+                                </span>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => openRolesModalForUser(u)}
+                                className="rounded-lg border border-border/80 bg-background/80 px-2 py-0.5 text-[10px] font-semibold text-accent hover:bg-accent/10 transition-colors"
+                                title="Agregar o revocar roles de este usuario"
+                              >
+                                ✎ Roles
+                              </button>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            {userEnrs.length === 0 ? (
+                              <span className="text-xs text-foreground/40 italic">
+                                Sin cursos asignados
+                              </span>
+                            ) : (
+                              <div className="flex flex-col gap-1.5 max-w-md">
+                                {userEnrs.map((enr) => {
+                                  const cName =
+                                    enr.course_mappings?.course_name ||
+                                    enr.course_mappings?.courses?.name ||
+                                    enr.course_mappings?.moodle_shortname ||
+                                    'Materia';
+                                  const cCode =
+                                    enr.course_mappings?.portal_course_code ||
+                                    enr.course_mappings?.code ||
+                                    '';
+                                  const mId = enr.course_mappings?.moodle_course_id;
+
+                                  return (
+                                    <div
+                                      key={enr.id}
+                                      className="flex items-center justify-between rounded-xl border border-border/60 bg-foreground/[0.02] px-2.5 py-1.5"
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        {cCode && (
+                                          <span className="font-mono text-[10px] font-bold text-accent">
+                                            [{cCode}]
+                                          </span>
+                                        )}
+                                        <span className="font-medium text-foreground text-xs">
+                                          {cName}
+                                        </span>
+                                        {mId && (
+                                          <span className="text-[10px] text-foreground/50">
+                                            (Moodle #{mId})
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span
+                                        className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                          enr.status === 'sincronizada' || enr.status === 'autorizada'
+                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                            : enr.status === 'pendiente'
+                                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                        }`}
+                                      >
+                                        {enr.status}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openAssignModalForUser(u)}
+                                className="rounded-xl bg-accent px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-accent-strong transition-all"
+                              >
+                                + Asignar Curso
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openRolesModalForUser(u)}
+                                className="rounded-xl border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-foreground/5 transition-colors"
+                              >
+                                Roles
+                              </button>
+                              {!u.moodle_user_id && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSyncSingleUser(u.id)}
+                                  disabled={actionLoading === `user-sync-${u.id}`}
+                                  className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-2.5 py-1.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/20 transition-colors"
+                                  title="Crear cuenta de este usuario en Moodle"
+                                >
+                                  ⚡ Moodle
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PESTAÑA 2: GESTIÓN DE USUARIOS                                            */}
       {/* ========================================================================= */}
       {activeTab === 'usuarios' && (
         <div className="space-y-4">
@@ -1566,21 +1915,72 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleDirectCourseAssignment} className="mt-4 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-foreground/80 mb-1.5">
-                  Seleccionar Alumno o Docente:
+                  Alumno o Docente a Matricular:
                 </label>
-                <select
-                  required
-                  value={assignTargetUserId}
-                  onChange={(e) => setAssignTargetUserId(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
-                >
-                  <option value="">-- Elige un usuario --</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.first_name} {u.last_name} ({u.email}) - {((u.active_roles || u.roles || []) as string[]).join(', ')}
-                    </option>
-                  ))}
-                </select>
+                {assignTargetUserId ? (
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                        ✓ Usuario Seleccionado
+                      </span>
+                      <p className="font-bold text-foreground text-xs mt-0.5">
+                        {users.find((u) => u.id === assignTargetUserId)?.first_name}{' '}
+                        {users.find((u) => u.id === assignTargetUserId)?.last_name}
+                      </p>
+                      <p className="text-[11px] text-foreground/70 font-mono">
+                        {users.find((u) => u.id === assignTargetUserId)?.email}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAssignTargetUserId('')}
+                      className="rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground/80 hover:bg-foreground/5"
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Escribe el nombre o correo del usuario para filtrar..."
+                      value={assignUserModalSearch}
+                      onChange={(e) => setAssignUserModalSearch(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground placeholder-foreground/40 focus:border-accent focus:outline-none mb-2"
+                    />
+                    <div className="max-h-40 overflow-y-auto divide-y divide-border/60 rounded-xl border border-border bg-background">
+                      {matchingModalUsers.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-foreground/50">
+                          No se encontraron usuarios coincidentes.
+                        </div>
+                      ) : (
+                        matchingModalUsers.map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => {
+                              setAssignTargetUserId(u.id);
+                              setAssignUserModalSearch('');
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-accent/10 flex items-center justify-between transition-colors text-xs"
+                          >
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {u.first_name} {u.last_name}
+                              </p>
+                              <p className="text-[11px] text-foreground/60 font-mono">
+                                {u.email}
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] text-foreground/70">
+                              {((u.active_roles || u.roles || []) as string[]).join(', ') || 'Sin rol'}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

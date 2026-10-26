@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, enrollmentsApi } from '@/lib/api';
-import type { AuthorizedCourse, EnrollmentRequest } from '@/types';
+import type { AuthorizedCourse, CourseOffering, EnrollmentRequest } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 
@@ -14,9 +14,30 @@ export default function EstudianteDashboardPage() {
   const { user, loading: authLoading } = useAuth();
 
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
+  const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [userCourses, myEnrollments, allOfferings] = await Promise.all([
+        coursesApi.getAuthorizedCourses().catch(() => []),
+        enrollmentsApi.getMyEnrollments().catch(() => []),
+        coursesApi.getOfferings().catch(() => []),
+      ]);
+      setCourses(userCourses);
+      setEnrollments(myEnrollments);
+      setOfferings(allOfferings);
+    } catch (err: any) {
+      setError(err.message || 'No fue posible cargar tus cursos.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -25,24 +46,29 @@ export default function EstudianteDashboardPage() {
       return;
     }
 
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [userCourses, myEnrollments] = await Promise.all([
-          coursesApi.getAuthorizedCourses().catch(() => []),
-          enrollmentsApi.getMyEnrollments().catch(() => []),
-        ]);
-        setCourses(userCourses);
-        setEnrollments(myEnrollments);
-      } catch (err: any) {
-        setError(err.message || 'No fue posible cargar tus cursos.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadData();
   }, [user, authLoading, router]);
+
+  const handleQuickEnroll = async (courseMappingId: string, courseName: string) => {
+    setEnrollingId(courseMappingId);
+    setNotice(null);
+    setError(null);
+
+    try {
+      await enrollmentsApi.requestEnrollment(courseMappingId);
+      setNotice(`✓ ¡Te has inscrito exitosamente a "${courseName}"! Ya está disponible en tus materias activas.`);
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Error al inscribirse en el curso.');
+    } finally {
+      setEnrollingId(null);
+    }
+  };
+
+  const enrolledMappingIds = new Set(courses.map((c) => c.course_mapping_id));
+  const availableToEnroll = offerings.filter(
+    (off) => !enrolledMappingIds.has(off.course_mapping_id),
+  );
 
   if (authLoading || loading) {
     return (
@@ -125,6 +151,12 @@ export default function EstudianteDashboardPage() {
         </div>
       </div>
 
+      {notice && (
+        <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm font-medium text-emerald-300">
+          {notice}
+        </div>
+      )}
+
       {error && (
         <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
           {error}
@@ -194,6 +226,76 @@ export default function EstudianteDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Sección: Cursos Públicos Disponibles para Inscripción Inmediata */}
+      {availableToEnroll.length > 0 && (
+        <div className="mt-12">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                Cursos Disponibles para Tomar
+              </h2>
+              <p className="mt-0.5 text-xs text-foreground/60">
+                Puedes inscribirte directamente y comenzar a estudiar de inmediato en el aula virtual.
+              </p>
+            </div>
+            <Link
+              href="/cursos"
+              className="text-xs font-semibold text-accent hover:underline"
+            >
+              Ver catálogo completo →
+            </Link>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
+            {availableToEnroll.map((off) => {
+              const isSubmitting = enrollingId === off.course_mapping_id;
+
+              return (
+                <div
+                  key={off.course_mapping_id}
+                  className="flex flex-col justify-between rounded-3xl border border-border/80 bg-background/50 p-6 shadow-sm hover:border-accent/40 transition-all"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-lg bg-accent/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-accent">
+                        {off.code}
+                      </span>
+                      <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/20">
+                        Moodle ID #{off.moodle_course_id}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-bold text-foreground">
+                      {off.name}
+                    </h3>
+                    <p className="mt-1 text-xs text-foreground/60">
+                      Programa: {off.program_name} • {off.credits} créditos SATCA
+                    </p>
+                  </div>
+
+                  <div className="mt-6 border-t border-border/60 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickEnroll(off.course_mapping_id, off.name)}
+                      disabled={isSubmitting}
+                      className="w-full rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-accent-strong transition-all disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Matriculando en Moodle...
+                        </span>
+                      ) : (
+                        '+ Inscribirme y Empezar Curso'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Sección: Solicitudes de Matrícula */}
       <div className="mt-12">

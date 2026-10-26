@@ -89,8 +89,10 @@ export class EnrollmentsService {
     }
 
     const programId = dto.program_id || course.program_id;
-    const initialStatus = isStaffAssignment ? 'autorizada' : 'pendiente';
+    // Cursos públicos activos se autorizan de inmediato para que el alumno pueda tomarlos de forma directa
+    const initialStatus = 'autorizada';
     const effectiveActor = actorId || userId;
+    const nowIso = new Date().toISOString();
 
     const { data, error } = await admin
       .from('enrollment_requests')
@@ -101,8 +103,8 @@ export class EnrollmentsService {
         moodle_role: dto.moodle_role || 'student',
         status: initialStatus,
         requested_by: effectiveActor,
-        authorized_by: isStaffAssignment ? effectiveActor : null,
-        authorized_at: isStaffAssignment ? new Date().toISOString() : null,
+        authorized_by: effectiveActor,
+        authorized_at: nowIso,
         notes: dto.notes ?? null,
       })
       .select()
@@ -115,10 +117,31 @@ export class EnrollmentsService {
       );
     }
 
+    // Si el usuario no tiene rol de estudiante (id: 5), asignarlo automáticamente para que acceda al aula
+    try {
+      const { data: existingRoles } = await admin
+        .from('user_roles')
+        .select('role_id')
+        .eq('user_id', userId);
+
+      const hasStudentRole = existingRoles?.some((r) => r.role_id === 5);
+      if (!hasStudentRole) {
+        await admin.from('user_roles').insert({
+          user_id: userId,
+          role_id: 5,
+          assigned_by: effectiveActor,
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`No se pudo verificar/asignar rol de estudiante al usuario ${userId}: ${err?.message}`);
+    }
+
     await admin.from('audit_logs').insert({
       actor_id: effectiveActor,
       target_user_id: userId,
-      action: isStaffAssignment ? 'ENROLLMENT_ASSIGNED_BY_ADMIN' : 'ENROLLMENT_REQUESTED',
+      action: isStaffAssignment
+        ? 'ENROLLMENT_ASSIGNED_BY_ADMIN'
+        : 'ENROLLMENT_PUBLIC_COURSE_SELF_REGISTERED',
       entity_name: 'enrollment_requests',
       entity_id: data.id,
       new_values: {
@@ -129,14 +152,13 @@ export class EnrollmentsService {
       },
     });
 
-    if (isStaffAssignment) {
-      try {
-        await this.moodleService.syncEnrollment(data.id);
-      } catch (err: any) {
-        this.logger.warn(
-          `Matrícula creada pero falló sincronización inmediata a Moodle: ${err?.message}`,
-        );
-      }
+    // Sincronizar inmediatamente la matrícula con Moodle LMS
+    try {
+      await this.moodleService.syncEnrollment(data.id);
+    } catch (err: any) {
+      this.logger.warn(
+        `Matrícula autorizada pero falló sincronización inmediata a Moodle: ${err?.message}`,
+      );
     }
 
     return data;

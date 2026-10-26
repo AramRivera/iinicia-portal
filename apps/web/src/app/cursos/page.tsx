@@ -4,31 +4,41 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { coursesApi, enrollmentsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import type { CourseOffering } from '@/types';
+import type { AuthorizedCourse, CourseOffering } from '@/types';
+import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 
 export default function CursosPage() {
   const { user } = useAuth();
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
+  const [myCourses, setMyCourses] = useState<AuthorizedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadOfferings() {
-      try {
-        setLoading(true);
-        const data = await coursesApi.getOfferings();
-        setOfferings(data);
-      } catch (err: any) {
-        setError(err.message || 'No fue posible cargar el catálogo de cursos.');
-      } finally {
-        setLoading(false);
-      }
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [offeringsData, authorized] = await Promise.all([
+        coursesApi.getOfferings(),
+        user ? coursesApi.getAuthorizedCourses().catch(() => []) : Promise.resolve([]),
+      ]);
+      setOfferings(offeringsData);
+      setMyCourses(authorized);
+    } catch (err: any) {
+      setError(err.message || 'No fue posible cargar el catálogo de cursos.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    loadOfferings();
-  }, []);
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  const isEnrolled = (courseMappingId: string) => {
+    return myCourses.some((c) => c.course_mapping_id === courseMappingId);
+  };
 
   const handleEnroll = async (courseMappingId: string, courseName: string) => {
     if (!user) {
@@ -42,9 +52,10 @@ export default function CursosPage() {
       setError(null);
 
       await enrollmentsApi.requestEnrollment(courseMappingId);
-      setMessage(`¡Solicitud enviada para "${courseName}"! Puedes ver el estado en tu panel.`);
+      setMessage(`¡Inscripción exitosa en "${courseName}"! Ya estás matriculado en el campus y puedes ingresar directamente.`);
+      await loadData();
     } catch (err: any) {
-      setError(err.message || 'Error al solicitar inscripción.');
+      setError(err.message || 'Error al inscribirse en el curso.');
     } finally {
       setApplyingId(null);
     }
@@ -61,15 +72,18 @@ export default function CursosPage() {
           Cursos y Asignaturas IINICIA
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-sm text-foreground/70 sm:text-base">
-          Desarrolla habilidades aplicadas con cursos respaldados e impartidos a través del Campus Virtual Moodle LMS.
+          Desarrolla habilidades aplicadas con cursos respaldados e impartidos a través del Campus Virtual Moodle LMS. Los alumnos registrados pueden inscribirse y comenzar a tomar sus cursos de inmediato.
         </p>
       </div>
 
       {message && (
-        <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm text-emerald-300">
-          {message}{' '}
-          <Link href="/dashboard/aspirante" className="font-semibold underline ml-2">
-            Ver mis solicitudes
+        <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm text-emerald-300 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <span>{message}</span>
+          <Link
+            href="/dashboard/estudiante"
+            className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-bold text-black hover:bg-emerald-400 transition-all shrink-0"
+          >
+            Ir a mi Aula Virtual
           </Link>
         </div>
       )}
@@ -91,20 +105,32 @@ export default function CursosPage() {
         <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2">
           {offerings.map((off) => {
             const isSubmitting = applyingId === off.course_mapping_id;
+            const alreadyEnrolled = isEnrolled(off.course_mapping_id);
 
             return (
               <div
                 key={off.course_mapping_id}
-                className="flex flex-col justify-between rounded-3xl border border-border/80 bg-background/60 p-7 shadow-sm hover:border-accent/50 hover:shadow-xl transition-all"
+                className={`flex flex-col justify-between rounded-3xl border p-7 shadow-sm transition-all ${
+                  alreadyEnrolled
+                    ? 'border-emerald-500/40 bg-emerald-500/[0.03]'
+                    : 'border-border/80 bg-background/60 hover:border-accent/50 hover:shadow-xl'
+                }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="rounded-lg bg-accent/10 px-2.5 py-1 font-mono text-xs font-semibold text-accent">
                       {off.code}
                     </span>
-                    <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/20">
-                      Moodle ID #{off.moodle_course_id}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {alreadyEnrolled && (
+                        <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/30">
+                          ✓ Matriculado
+                        </span>
+                      )}
+                      <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/20">
+                        Moodle ID #{off.moodle_course_id}
+                      </span>
+                    </div>
                   </div>
 
                   <h3 className="mt-4 text-xl font-bold text-foreground">
@@ -130,29 +156,38 @@ export default function CursosPage() {
                 </div>
 
                 <div className="mt-8 border-t border-border/80 pt-4">
-                  {user ? (
-                    <button
-                      type="button"
-                      onClick={() => handleEnroll(off.course_mapping_id, off.name)}
-                      disabled={isSubmitting}
-                      className="w-full rounded-xl bg-accent px-4 py-3 text-xs font-semibold text-white shadow-md hover:bg-accent-strong transition-all disabled:opacity-50"
-                    >
-                      {isSubmitting ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Enviando solicitud...
-                        </span>
-                      ) : (
-                        'Solicitar Inscripción a este curso'
-                      )}
-                    </button>
-                  ) : (
+                  {!user ? (
                     <Link
                       href="/login"
                       className="block w-full rounded-xl bg-accent px-4 py-3 text-center text-xs font-semibold text-white shadow-md hover:bg-accent-strong transition-all"
                     >
-                      Inicia sesión para inscribirte
+                      Inicia sesión para inscribirte y tomarlo
                     </Link>
+                  ) : alreadyEnrolled ? (
+                    <div className="space-y-2">
+                      <LaunchCourseButton
+                        courseMappingId={off.course_mapping_id}
+                        courseName={off.name}
+                        isAuthorized={true}
+                        className="w-full shadow-md"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleEnroll(off.course_mapping_id, off.name)}
+                      disabled={isSubmitting}
+                      className="w-full rounded-xl bg-accent px-4 py-3 text-xs font-bold text-white shadow-md hover:bg-accent-strong transition-all disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Matriculando en Moodle LMS...
+                        </span>
+                      ) : (
+                        'Inscribirme y Tomar este Curso'
+                      )}
+                    </button>
                   )}
                 </div>
               </div>

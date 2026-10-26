@@ -79,7 +79,41 @@ El portal implementa una integración de inicio de sesión único (**Single Sign
 
 ---
 
-## 5. Gestión de Programas Académicos
+## 5. Tabla Maestra de Asignación de Cursos y Roles
+
+Disponible tanto en la primera pestaña del panel como en la ruta directa **`http://localhost:4000/dashboard/admin/asignaciones`**:
+
+- **Búsqueda instantánea:** Permite filtrar en tiempo real cientos o miles de usuarios por nombre, apellido, correo electrónico o nombre de usuario en Moodle LMS.
+- **Filtros combinados:**
+  - *Por Rol:* Todos, Estudiantes, Profesores, Aspirantes, Coordinadores, Administradores o Superadministradores.
+  - *Por Estado de Cursos:* Con cursos matriculados vs Sin cursos asignados.
+- **Visualización integrada por usuario:**
+  - Ficha de usuario con iniciales, correo y estado de sincronización en Moodle LMS.
+  - Lista de roles activos con acceso rápido al botón `✎ Roles`.
+  - Desglose de todas las asignaturas asignadas en Moodle LMS con su código, nombre, ID de Moodle y estado de sincronización (`sincronizada`, `autorizada`, `pendiente`).
+- **Acciones Rápidas en 1 Clic:**
+  - **`+ Asignar Curso`:** Al hacer clic en este botón dentro de la fila de un usuario, el modal de asignación se abre **con ese usuario ya preseleccionado y bloqueado**, evitando tener que buscarlo en desplegables extensos. Solo se selecciona el curso, el rol de Moodle (`student` o `editingteacher`), y se confirma la matrícula.
+  - **`Roles`:** Permite agregar o remover roles del usuario de inmediato.
+  - **`⚡ Moodle`:** Si el usuario aún no tiene cuenta remota creada, la genera en Moodle LMS de forma instantánea.
+- **Selector Inteligente de Usuarios en Modal Global:**
+  - Al presionar el botón general `+ Asignar Curso a Usuario` en el encabezado, el modal incorpora un buscador en vivo que filtra los usuarios conforme se escribe, mostrando tarjetas seleccionables con nombre, correo y roles.
+
+---
+
+## 6. Autoinscripción en Cursos Públicos y Acceso Inmediato
+
+El portal ofrece un catálogo abierto de cursos institucionales en `/cursos` y en los dashboards de alumno y aspirante:
+- Cuando cualquier usuario registrado (incluso recién registrado con rol inicial de aspirante) navega por los cursos disponibles, puede hacer clic en **"Inscribirme y Tomar este Curso"**.
+- El sistema:
+  1. Registra la matrícula con estado `autorizada`.
+  2. Promueve automáticamente la cuenta del usuario asignándole el rol de `estudiante` (rol ID 5).
+  3. Crea o vincula de forma transparente su cuenta en Moodle LMS.
+  4. Ejecuta el Web Service de matriculación de Moodle (`enrol_manual_enrol_users`).
+  5. Desbloquea de inmediato el botón **`🚀 Entrar al Aula (Moodle)`**, permitiendo al alumno comenzar su curso sin esperas ni aprobaciones manuales innecesarias.
+
+---
+
+## 7. Gestión de Programas Académicos
 
 Pestaña **Programas**:
 - Permite consultar la oferta académica de la institución (Licenciaturas, Maestrías, Diplomados y Certificaciones).
