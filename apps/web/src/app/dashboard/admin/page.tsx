@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   auditApi,
+  authApi,
   coursesApi,
   enrollmentsApi,
   moodleApi,
@@ -55,9 +56,9 @@ export default function AdminDashboardPage() {
   // Filtros de matrículas
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState('');
 
-  // Modales
+  // Modales existentes
   const [selectedUserForRole, setSelectedUserForRole] = useState<UserProfile | null>(null);
-  const [roleToAssign, setRoleToAssign] = useState<number>(5); // default Estudiante (5)
+  const [roleToAssign, setRoleToAssign] = useState<number>(5);
 
   const [selectedUserForStatus, setSelectedUserForStatus] = useState<UserProfile | null>(null);
   const [newStatus, setNewStatus] = useState<string>('activo');
@@ -76,6 +77,25 @@ export default function AdminDashboardPage() {
   const [newMoodleShortname, setNewMoodleShortname] = useState('');
   const [newCourseProgramId, setNewCourseProgramId] = useState('');
   const [newCourseTerm, setNewCourseTerm] = useState<number>(1);
+
+  // Nuevos Modales: Crear Usuario y Crear Programa
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newInitialRole, setNewInitialRole] = useState<number>(5); // Estudiante
+
+  const [showCreateProgramModal, setShowCreateProgramModal] = useState(false);
+  const [newProgName, setNewProgName] = useState('');
+  const [newProgCode, setNewProgCode] = useState('');
+  const [newProgSlug, setNewProgSlug] = useState('');
+  const [newProgType, setNewProgType] = useState<any>('licenciatura');
+  const [newProgModality, setNewProgModality] = useState<any>('en_linea');
+  const [newProgDuration, setNewProgDuration] = useState('3 años');
+  const [newProgHours, setNewProgHours] = useState<number>(1800);
+  const [newProgDesc, setNewProgDesc] = useState('');
 
   const isAdminOrCoordinator =
     hasRole('superadministrador') || hasRole('administrador') || hasRole('coordinador');
@@ -133,9 +153,8 @@ export default function AdminDashboardPage() {
         `${u.first_name} ${u.last_name}`.toLowerCase().includes(userSearch.toLowerCase()) ||
         (u.moodle_username && u.moodle_username.toLowerCase().includes(userSearch.toLowerCase()));
 
-      const userRoles = (u.active_roles || u.roles || []) as string[];
-      const matchesRole =
-        userRoleFilter === '' || userRoles.includes(userRoleFilter);
+      const userRoles = ((u.active_roles || u.roles || []) as string[]);
+      const matchesRole = userRoleFilter === '' || userRoles.includes(userRoleFilter);
 
       const matchesStatus = userStatusFilter === '' || u.status === userStatusFilter;
 
@@ -326,7 +345,102 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Acciones: Sincronización Moodle
+  // Acciones: Crear Usuario Administrativo
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || !newPassword || !newFirstName || !newLastName) {
+      setError('Completa todos los campos obligatorios del nuevo usuario.');
+      return;
+    }
+
+    setActionLoading('create-user');
+    setNotice(null);
+    setError(null);
+
+    try {
+      const res = await authApi.register({
+        email: newEmail.trim(),
+        password: newPassword,
+        first_name: newFirstName.trim(),
+        last_name: newLastName.trim(),
+        phone: newPhone.trim() || undefined,
+      });
+
+      if (Number(newInitialRole) !== 7) {
+        await rolesApi.assignRole(res.id, Number(newInitialRole));
+      }
+
+      setNotice(`✓ Usuario "${newEmail}" creado exitosamente.`);
+      setShowCreateUserModal(false);
+      setNewFirstName('');
+      setNewLastName('');
+      setNewEmail('');
+      setNewPassword('');
+      setNewPhone('');
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Error al crear el nuevo usuario.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Acciones: Crear Programa Académico
+  const handleCreateProgram = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProgName || !newProgCode) {
+      setError('Completa el código y nombre del programa.');
+      return;
+    }
+
+    setActionLoading('create-program');
+    setNotice(null);
+    setError(null);
+
+    try {
+      await programsApi.createProgram({
+        code: newProgCode.trim().toUpperCase(),
+        name: newProgName.trim(),
+        slug: newProgSlug.trim() || newProgCode.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'),
+        type: newProgType,
+        modality: newProgModality,
+        duration_text: newProgDuration.trim() || '120 horas',
+        duration_hours: Number(newProgHours) || 120,
+        description: newProgDesc.trim() || undefined,
+        is_active: true,
+      });
+
+      setNotice(`✓ Programa académico "${newProgName}" creado exitosamente.`);
+      setShowCreateProgramModal(false);
+      setNewProgCode('');
+      setNewProgName('');
+      setNewProgSlug('');
+      setNewProgDesc('');
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Error al registrar el programa.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Acciones: Sincronización y Acceso SSO a Moodle
+  const handleLaunchCampusSSO = async () => {
+    setActionLoading('launch-campus');
+    setNotice(null);
+    setError(null);
+
+    try {
+      const res = await moodleApi.launchCampus();
+      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+      setNotice('✓ Sesión iniciada con éxito en Moodle vía SSO (abierta en nueva pestaña).');
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión SSO en Moodle.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleBulkMoodleSync = async () => {
     setActionLoading('bulk-sync');
     setNotice(null);
@@ -383,18 +497,46 @@ export default function AdminDashboardPage() {
                 Super Administrador
               </span>
               <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
-                LMS Moodle 5.3+ Activo
+                LMS Moodle 5.3+ (auth_userkey SSO Activo)
               </span>
             </div>
             <h1 className="mt-2 text-2xl font-black text-foreground sm:text-3xl">
               Panel de Control Maestro IINICIA
             </h1>
             <p className="mt-1 text-sm text-foreground/70">
-              Administración unificada de usuarios, docentes, estudiantes, cursos, roles y sincronización bidireccional con Moodle LMS.
+              Administración unificada de usuarios, docentes, estudiantes, cursos, roles y salto automático SSO a Moodle LMS.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleLaunchCampusSSO}
+              disabled={actionLoading === 'launch-campus'}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-purple-600/25 hover:bg-purple-500 transition-all disabled:opacity-50"
+              title="Abrir Moodle como Administrador con sesión iniciada al instante"
+            >
+              {actionLoading === 'launch-campus' ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Iniciando SSO...</span>
+                </>
+              ) : (
+                <>
+                  <span>🚀</span>
+                  <span>Entrar al Campus (SSO)</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowCreateUserModal(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-foreground/5 px-3.5 py-2.5 text-xs font-semibold text-foreground hover:bg-foreground/10 transition-all"
+            >
+              + Nuevo Usuario
+            </button>
+
             <button
               type="button"
               onClick={() => setShowAssignCourseModal(true)}
@@ -402,13 +544,7 @@ export default function AdminDashboardPage() {
             >
               + Asignar Curso
             </button>
-            <button
-              type="button"
-              onClick={() => setShowCreateCourseModal(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-foreground/10 transition-all"
-            >
-              + Vincular Curso Moodle
-            </button>
+
             <button
               type="button"
               onClick={handleBulkMoodleSync}
@@ -422,23 +558,21 @@ export default function AdminDashboardPage() {
                 </>
               ) : (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-                  </svg>
-                  <span>Sincronizar Moodle</span>
+                  <span>🔄</span>
+                  <span>Sync Moodle</span>
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Métricas Globales Rápidas */}
+        {/* Métricas Globales */}
         <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border/80 pt-6 sm:grid-cols-4">
           <div className="rounded-2xl border border-border/50 bg-foreground/[0.02] p-4">
-            <span className="text-xs text-foreground/60">Usuarios Totales</span>
+            <span className="text-xs text-foreground/60">Usuarios en Plataforma</span>
             <p className="mt-1 text-2xl font-extrabold text-foreground">{users.length}</p>
             <span className="text-[11px] text-foreground/50">
-              {users.filter((u) => u.moodle_sync_status === 'sincronizado').length} en Moodle
+              {users.filter((u) => u.moodle_sync_status === 'sincronizado').length} sincronizados en Moodle
             </span>
           </div>
 
@@ -457,21 +591,20 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-border/50 bg-foreground/[0.02] p-4">
-            <span className="text-xs text-foreground/60">Servidor Moodle</span>
-            <p className="mt-1 text-lg font-bold text-emerald-400">En Línea</p>
-            <a
-              href="http://localhost/moodle"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] text-accent hover:underline inline-block mt-0.5"
+            <span className="text-xs text-foreground/60">Servidor Moodle LMS</span>
+            <p className="mt-1 text-base font-bold text-emerald-400">Conectado (auth_userkey)</p>
+            <button
+              type="button"
+              onClick={handleLaunchCampusSSO}
+              className="text-[11px] text-accent hover:underline inline-block mt-0.5 text-left"
             >
-              Abrir campus Moodle ↗
-            </a>
+              Abrir campus con SSO ↗
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Alertas y Notificaciones */}
+      {/* Alertas */}
       {notice && (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-400 flex items-center justify-between">
           <span>{notice}</span>
@@ -497,7 +630,7 @@ export default function AdminDashboardPage() {
           { id: 'cursos', label: '📚 Cursos & Asignación', count: courses.length },
           { id: 'matriculas', label: '🎓 Matrículas & Solicitudes', count: enrollments.filter((e) => e.status === 'pendiente').length || undefined },
           { id: 'programas', label: '🏛️ Programas Académicos', count: programs.length },
-          { id: 'moodle', label: '⚙️ Integración Moodle LMS' },
+          { id: 'moodle', label: '⚙️ Integración Moodle & SSO' },
           { id: 'auditoria', label: '🛡️ Auditoría & Logs', count: auditLogs.length },
         ].map((tab) => (
           <button
@@ -529,42 +662,52 @@ export default function AdminDashboardPage() {
       {/* ========================================================================= */}
       {activeTab === 'usuarios' && (
         <div className="space-y-4">
-          {/* Barra de Filtros */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-            <input
-              type="text"
-              placeholder="Buscar por nombre, correo o usuario Moodle..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              className="rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-xs text-foreground placeholder-foreground/40 sm:col-span-2 focus:border-accent focus:outline-none"
-            />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Barra de Filtros */}
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 flex-1">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, correo o usuario Moodle..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="rounded-xl border border-border bg-foreground/5 px-4 py-2 text-xs text-foreground placeholder-foreground/40 focus:border-accent focus:outline-none"
+              />
 
-            <select
-              value={userRoleFilter}
-              onChange={(e) => setUserRoleFilter(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground focus:border-accent focus:outline-none"
-            >
-              <option value="">Todos los Roles</option>
-              <option value="estudiante">Estudiantes</option>
-              <option value="profesor">Profesores</option>
-              <option value="aspirante">Aspirantes</option>
-              <option value="coordinador">Coordinadores</option>
-              <option value="administrador">Administradores</option>
-              <option value="superadministrador">Superadministradores</option>
-            </select>
+              <select
+                value={userRoleFilter}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
+                className="rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+              >
+                <option value="">Todos los Roles</option>
+                <option value="estudiante">Estudiantes</option>
+                <option value="profesor">Profesores</option>
+                <option value="aspirante">Aspirantes</option>
+                <option value="coordinador">Coordinadores</option>
+                <option value="administrador">Administradores</option>
+                <option value="superadministrador">Superadministradores</option>
+              </select>
 
-            <select
-              value={userStatusFilter}
-              onChange={(e) => setUserStatusFilter(e.target.value)}
-              className="rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground focus:border-accent focus:outline-none"
+              <select
+                value={userStatusFilter}
+                onChange={(e) => setUserStatusFilter(e.target.value)}
+                className="rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+              >
+                <option value="">Todos los Estados</option>
+                <option value="activo">Activo</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="suspendido">Suspendido</option>
+                <option value="inactivo">Inactivo</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowCreateUserModal(true)}
+              className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-accent-strong shrink-0"
             >
-              <option value="">Todos los Estados</option>
-              <option value="activo">Activo</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="suspendido">Suspendido</option>
-              <option value="inactivo">Inactivo</option>
-              <option value="baja">Baja</option>
-            </select>
+              + Crear Usuario
+            </button>
           </div>
 
           {/* Tabla de Usuarios */}
@@ -648,7 +791,6 @@ export default function AdminDashboardPage() {
 
                         <td className="px-4 py-3.5 text-right">
                           <div className="inline-flex items-center gap-1.5">
-                            {/* Botón Asignar Rol */}
                             <button
                               type="button"
                               onClick={() => setSelectedUserForRole(u)}
@@ -658,7 +800,6 @@ export default function AdminDashboardPage() {
                               Roles
                             </button>
 
-                            {/* Botón Cambiar Estado */}
                             <button
                               type="button"
                               onClick={() => {
@@ -671,7 +812,6 @@ export default function AdminDashboardPage() {
                               Estado
                             </button>
 
-                            {/* Sincronizar Moodle */}
                             <button
                               type="button"
                               disabled={actionLoading === `user-sync-${u.id}`}
@@ -682,7 +822,6 @@ export default function AdminDashboardPage() {
                               {actionLoading === `user-sync-${u.id}` ? '...' : 'Sync Moodle'}
                             </button>
 
-                            {/* Asignar Curso */}
                             <button
                               type="button"
                               onClick={() => {
@@ -715,7 +854,7 @@ export default function AdminDashboardPage() {
             <div>
               <h2 className="text-lg font-bold text-foreground">Catálogo de Cursos Vinculados con Moodle</h2>
               <p className="text-xs text-foreground/60">
-                Cada curso en el portal se enlaza directamente a un curso real en Moodle LMS mediante Web Services.
+                Cada curso en el portal se enlaza a un curso real en Moodle LMS. Los accesos cuentan con salto SSO automático.
               </p>
             </div>
             <div className="flex gap-2">
@@ -777,7 +916,7 @@ export default function AdminDashboardPage() {
                       rel="noreferrer"
                       className="text-xs text-accent font-medium hover:underline inline-flex items-center gap-1"
                     >
-                      Ver en Moodle ↗
+                      Abrir Curso en Moodle ↗
                     </a>
                     <button
                       type="button"
@@ -945,27 +1084,36 @@ export default function AdminDashboardPage() {
             <div>
               <h2 className="text-lg font-bold text-foreground">Programas Académicos</h2>
               <p className="text-xs text-foreground/60">
-                Licenciaturas, Maestrías, Diplomados y Certificaciones de IINICIA.
+                Licenciaturas, Maestrías, Diplomados y Certificaciones oficiales de IINICIA.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowCreateProgramModal(true)}
+              className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-accent-strong"
+            >
+              + Nuevo Programa
+            </button>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {programs.map((prog) => (
               <div
                 key={prog.id}
-                className="rounded-2xl border border-border/80 bg-background/50 p-5 shadow-sm"
+                className="rounded-2xl border border-border/80 bg-background/50 p-5 shadow-sm hover:border-accent/40 transition-all flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between">
-                  <span className="rounded-md bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent uppercase">
-                    {prog.type}
-                  </span>
-                  <span className="text-[11px] text-foreground/50 capitalize">{prog.modality}</span>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-md bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent uppercase">
+                      {prog.type}
+                    </span>
+                    <span className="text-[11px] text-foreground/50 capitalize">{prog.modality}</span>
+                  </div>
+                  <h3 className="mt-2.5 font-bold text-foreground text-sm">{prog.name}</h3>
+                  <p className="mt-1 text-xs text-foreground/60 line-clamp-2">{prog.description}</p>
                 </div>
-                <h3 className="mt-2.5 font-bold text-foreground text-sm">{prog.name}</h3>
-                <p className="mt-1 text-xs text-foreground/60 line-clamp-2">{prog.description}</p>
                 <div className="mt-4 border-t border-border/60 pt-3 flex items-center justify-between text-[11px] text-foreground/50">
-                  <span>Código: {prog.code}</span>
+                  <span className="font-mono">Código: {prog.code}</span>
                   <span>{prog.duration_text || `${prog.duration_hours} hrs`}</span>
                 </div>
               </div>
@@ -980,7 +1128,24 @@ export default function AdminDashboardPage() {
       {activeTab === 'moodle' && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-border/80 bg-background/50 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-foreground">Estado de la Integración con Moodle LMS</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Estado de la Integración con Moodle LMS</h2>
+                <p className="text-xs text-foreground/60">
+                  Conexión REST mediante Web Services oficiales y autenticación transparente con plugin <code>auth_userkey</code>.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLaunchCampusSSO}
+                disabled={actionLoading === 'launch-campus'}
+                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-purple-500 transition-all disabled:opacity-50"
+              >
+                {actionLoading === 'launch-campus' ? 'Generando SSO...' : '🚀 Abrir Campus Moodle (SSO Admin)'}
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-xl border border-border/60 bg-foreground/[0.02] p-4">
                 <span className="text-xs text-foreground/60">URL Base</span>
@@ -991,8 +1156,8 @@ export default function AdminDashboardPage() {
                 <p className="mt-1 text-xs font-bold text-emerald-400">Moodle 5.3+ (Build 20261021)</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-foreground/[0.02] p-4">
-                <span className="text-xs text-foreground/60">Protocolo</span>
-                <p className="mt-1 text-xs font-bold text-foreground">REST Web Services Oficiales</p>
+                <span className="text-xs text-foreground/60">Mecanismo SSO</span>
+                <p className="mt-1 text-xs font-bold text-emerald-400">auth_userkey (One-Time Token)</p>
               </div>
             </div>
 
@@ -1002,6 +1167,7 @@ export default function AdminDashboardPage() {
               </h3>
               <div className="mt-2 flex flex-wrap gap-2">
                 {[
+                  'auth_userkey_request_login_url (SSO)',
                   'core_webservice_get_site_info',
                   'core_user_create_users',
                   'core_user_update_users',
@@ -1120,7 +1286,6 @@ export default function AdminDashboardPage() {
                 <p className="font-mono text-xs text-foreground/60">{selectedUserForRole.email}</p>
               </div>
 
-              {/* Roles actuales con botón para retirar */}
               <div>
                 <p className="text-xs font-semibold text-foreground/70 mb-2">Roles Asignados:</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -1149,7 +1314,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Formulario para asignar nuevo rol */}
               <div className="border-t border-border/60 pt-3">
                 <label className="block text-xs font-semibold text-foreground/80 mb-1.5">
                   Asignar Nuevo Rol:
@@ -1267,7 +1431,123 @@ export default function AdminDashboardPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: ASIGNAR CURSO A ALUMNO O PROFESOR                                */}
+      {/* MODAL 3: CREAR NUEVO USUARIO (ADMINISTRATIVO)                             */}
+      {/* ========================================================================= */}
+      {showCreateUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-border bg-background p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h3 className="font-bold text-foreground">Crear Nuevo Usuario</h3>
+              <button
+                type="button"
+                onClick={() => setShowCreateUserModal(false)}
+                className="text-foreground/60 hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="mt-4 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Nombre(s):</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Laura"
+                    value={newFirstName}
+                    onChange={(e) => setNewFirstName(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Apellidos:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Gómez Pérez"
+                    value={newLastName}
+                    onChange={(e) => setNewLastName(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">Correo Electrónico:</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="correo@iinicia.org"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Contraseña Inicial:</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    placeholder="Mínimo 8 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Teléfono (opcional):</label>
+                  <input
+                    type="tel"
+                    placeholder="5500000000"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">Rol Inicial Asignado:</label>
+                <select
+                  value={newInitialRole}
+                  onChange={(e) => setNewInitialRole(Number(e.target.value))}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                >
+                  <option value={5}>Estudiante (student)</option>
+                  <option value={4}>Profesor (editingteacher)</option>
+                  <option value={3}>Coordinador Académico</option>
+                  <option value={2}>Administrador</option>
+                  <option value={7}>Aspirante</option>
+                </select>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2 border-t border-border/60 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUserModal(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-foreground/5"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading === 'create-user'}
+                  className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-strong disabled:opacity-50"
+                >
+                  {actionLoading === 'create-user' ? 'Creando...' : 'Crear Usuario'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 4: ASIGNAR CURSO A ALUMNO O PROFESOR                                */}
       {/* ========================================================================= */}
       {showAssignCourseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -1362,7 +1642,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 4: VINCULAR NUEVO CURSO MOODLE                                      */}
+      {/* MODAL 5: VINCULAR NUEVO CURSO MOODLE                                      */}
       {/* ========================================================================= */}
       {showCreateCourseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -1485,6 +1765,145 @@ export default function AdminDashboardPage() {
                   className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-strong disabled:opacity-50"
                 >
                   {actionLoading === 'create-course' ? 'Guardando...' : 'Crear Vinculación'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 6: CREAR NUEVO PROGRAMA ACADÉMICO                                   */}
+      {/* ========================================================================= */}
+      {showCreateProgramModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-border bg-background p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h3 className="font-bold text-foreground">Crear Programa Académico</h3>
+              <button
+                type="button"
+                onClick={() => setShowCreateProgramModal(false)}
+                className="text-foreground/60 hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProgram} className="mt-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">Nombre del Programa:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Licenciatura en Tecnologías de la Información"
+                  value={newProgName}
+                  onChange={(e) => setNewProgName(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Código Oficial:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: LIC-TI-2026"
+                    value={newProgCode}
+                    onChange={(e) => setNewProgCode(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Slug / URL:</label>
+                  <input
+                    type="text"
+                    placeholder="licenciatura-ti"
+                    value={newProgSlug}
+                    onChange={(e) => setNewProgSlug(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Tipo de Oferta:</label>
+                  <select
+                    value={newProgType}
+                    onChange={(e) => setNewProgType(e.target.value as any)}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  >
+                    <option value="licenciatura">Licenciatura</option>
+                    <option value="maestria">Maestría</option>
+                    <option value="diplomado">Diplomado</option>
+                    <option value="certificacion">Certificación</option>
+                    <option value="curso">Curso Especializado</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Modalidad:</label>
+                  <select
+                    value={newProgModality}
+                    onChange={(e) => setNewProgModality(e.target.value as any)}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  >
+                    <option value="en_linea">En Línea (Online)</option>
+                    <option value="presencial">Presencial</option>
+                    <option value="hibrido">Híbrido</option>
+                    <option value="autogestivo">Autogestivo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Texto de Duración:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 3 años / 6 semestres"
+                    value={newProgDuration}
+                    onChange={(e) => setNewProgDuration(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">Total de Horas:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={newProgHours}
+                    onChange={(e) => setNewProgHours(Number(e.target.value))}
+                    className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">Descripción Breve:</label>
+                <textarea
+                  rows={2}
+                  placeholder="Síntesis del perfil de egreso y objetivos..."
+                  value={newProgDesc}
+                  onChange={(e) => setNewProgDesc(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2 border-t border-border/60 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateProgramModal(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-foreground/5"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading === 'create-program'}
+                  className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-strong disabled:opacity-50"
+                >
+                  {actionLoading === 'create-program' ? 'Guardando...' : 'Crear Programa'}
                 </button>
               </div>
             </form>

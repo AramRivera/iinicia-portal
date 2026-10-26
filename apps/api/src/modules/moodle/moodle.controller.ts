@@ -54,6 +54,24 @@ export class MoodleController {
   }
 
   /**
+   * Genera el enlace de salto seguro SSO al campus principal de Moodle.
+   */
+  @Post('launch')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard)
+  launchCampus(
+    @Req() req: AuthenticatedRequest,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.moodleService.getCampusAccessUrl({
+      userId: req.user.id,
+      ipAddress,
+      userAgent,
+    });
+  }
+
+  /**
    * Genera el enlace de salto seguro al curso de Moodle si el usuario
    * autenticado tiene una matrícula activa autorizada.
    * Registra cada salto en `campus_access_logs`.

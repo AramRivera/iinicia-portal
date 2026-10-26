@@ -14,6 +14,7 @@ describe('MoodleService', () => {
     getUserByUsername: ReturnType<typeof vi.fn>;
     createUser: ReturnType<typeof vi.fn>;
     enrolUser: ReturnType<typeof vi.fn>;
+    requestUserKeyLoginUrl: ReturnType<typeof vi.fn>;
   };
   let supabaseMock: {
     getAdminClient: ReturnType<typeof vi.fn>;
@@ -31,6 +32,7 @@ describe('MoodleService', () => {
       getUserByUsername: vi.fn(),
       createUser: vi.fn(),
       enrolUser: vi.fn(),
+      requestUserKeyLoginUrl: vi.fn(),
     };
 
     configMock = {
@@ -261,7 +263,23 @@ describe('MoodleService', () => {
         eq: vi.fn().mockResolvedValue({ error: null }),
       });
 
+      clientMock.requestUserKeyLoginUrl.mockResolvedValue(
+        'http://localhost/moodle/auth/userkey/login.php?key=dummy-test-key',
+      );
+
       adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { email: 'test@example.com' },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
         if (table === 'enrollment_requests') {
           return { select: selectMock, update: updateMock };
         }
@@ -278,7 +296,7 @@ describe('MoodleService', () => {
         userAgent: 'Mozilla/5.0',
       });
 
-      expect(result.access_url).toBe('http://localhost/moodle/course/view.php?id=3');
+      expect(result.access_url).toContain('http://localhost/moodle/auth/userkey/login.php?key=dummy-test-key&wantsurl=');
       expect(insertMock).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 'usr-1',

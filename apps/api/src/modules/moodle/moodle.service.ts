@@ -422,4 +422,46 @@ export class MoodleService {
       access_url: accessUrl,
     };
   }
+
+  /**
+   * Genera una URL de acceso directo con SSO al campus general de Moodle.
+   */
+  async getCampusAccessUrl(params: {
+    userId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    const admin = this.supabase.getAdminClient();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('id, email, moodle_user_id')
+      .eq('id', params.userId)
+      .maybeSingle();
+
+    if (!profile) {
+      throw new NotFoundException('Perfil de usuario no encontrado.');
+    }
+
+    const moodleBase =
+      this.config.get<string>('MOODLE_BASE_URL') ||
+      this.config.get<string>('MOODLE_URL') ||
+      'http://localhost/moodle';
+    const baseUrl = moodleBase.replace(/\/+$/, '');
+
+    let accessUrl = `${baseUrl}/`;
+
+    if (profile.email) {
+      try {
+        const loginUrl = await this.client.requestUserKeyLoginUrl(profile.email);
+        if (loginUrl) {
+          const sep = loginUrl.includes('?') ? '&' : '?';
+          accessUrl = `${loginUrl}${sep}wantsurl=${encodeURIComponent(baseUrl + '/')}`;
+        }
+      } catch (err: any) {
+        this.logger.warn(`No fue posible generar SSO al campus: ${err?.message}`);
+      }
+    }
+
+    return { access_url: accessUrl };
+  }
 }

@@ -229,6 +229,12 @@ export const moodleApi = {
     return apiFetch<MoodleStatusResponse>('/moodle/status');
   },
 
+  launchCampus: async (): Promise<{ access_url: string }> => {
+    return apiFetch<{ access_url: string }>('/moodle/launch', {
+      method: 'POST',
+    });
+  },
+
   syncAllUsers: async (): Promise<{ total: number; synced: number; failed: number; results: any[] }> => {
     return apiFetch('/moodle/sync/users', {
       method: 'POST',

@@ -521,6 +521,26 @@ paths:
         "200":
           description: Matrícula sincronizada.
 
+  /moodle/launch:
+    post:
+      summary: Salto directo con SSO al campus general de Moodle
+      description: Genera una URL de acceso directo de un solo uso para ingresar a la portada del campus virtual sin pedir credenciales.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Enlace de acceso autorizado mediante token efímero al campus.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_url:
+                    type: string
+                    example: "http://localhost/moodle/auth/userkey/login.php?key=123abc456&wantsurl=http://localhost/moodle/"
+        "401":
+          description: No autenticado.
+
   /moodle/courses/{courseMappingId}/launch:
     post:
       summary: Salto seguro al curso de Moodle desde el portal (Mi IINICIA)
