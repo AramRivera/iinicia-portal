@@ -83,8 +83,9 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    if (res.session?.access_token) {
-      setToken(res.session.access_token);
+    const token = res.session?.access_token || (res as any).access_token;
+    if (token) {
+      setToken(token);
     }
     return res;
   },
@@ -100,8 +101,9 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    if (res.session?.access_token) {
-      setToken(res.session.access_token);
+    const token = res.session?.access_token || (res as any).access_token;
+    if (token) {
+      setToken(token);
     }
     return res;
   },

@@ -109,20 +109,30 @@ export default function LoginPage() {
         {/* Demo Fast Fill Buttons for Testing & Grading */}
         <div className="border-t border-border/80 pt-6">
           <p className="text-center text-xs font-medium text-foreground/60">
-            Cuentas de prueba rápidas:
+            Acceso rápido para pruebas:
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@iinicia.org', 'Admin.2026!')}
               className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
+              title="admin@iinicia.org / Admin.2026!"
             >
-              Superadmin
+              Superadmin (Admin)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('aram@iinicia.org', '123456789')}
+              className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
+              title="aram@iinicia.org / 123456789"
+            >
+              Superadmin (Aram)
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('profesor@iinicia.org', 'Docente.2026!')}
               className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
+              title="profesor@iinicia.org / Docente.2026!"
             >
               Profesor
             </button>
@@ -130,6 +140,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleQuickLogin('estudiante1@iinicia.org', 'Alumno.2026!')}
               className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
+              title="estudiante1@iinicia.org / Alumno.2026!"
             >
               Estudiante
             </button>
@@ -137,9 +148,14 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleQuickLogin('user3@yopmail.com', '123456789')}
               className="rounded-lg border border-border bg-foreground/5 px-2 py-2 text-xs font-medium text-foreground/80 hover:border-accent hover:text-accent transition-colors text-center"
+              title="user3@yopmail.com / 123456789"
             >
               Aspirante
             </button>
+          </div>
+          <div className="mt-3 rounded-lg bg-foreground/5 p-2 text-center text-[11px] text-foreground/60 space-y-0.5">
+            <div><strong>admin@iinicia.org</strong>: <code>Admin.2026!</code></div>
+            <div><strong>aram@iinicia.org</strong>: <code>123456789</code></div>
           </div>
         </div>
 
