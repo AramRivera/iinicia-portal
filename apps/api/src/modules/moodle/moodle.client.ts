@@ -53,6 +53,24 @@ export class MoodleClient {
   }
 
   /**
+   * Solicita una URL con clave temporal de un solo uso para inicio de sesión directo (SSO).
+   * Utiliza la función oficial `auth_userkey_request_login_url`.
+   */
+  async requestUserKeyLoginUrl(email: string): Promise<string | null> {
+    try {
+      const response = await this.callFunction<{ loginurl: string }>(
+        'auth_userkey_request_login_url',
+        {
+          user: { email: email.toLowerCase().trim() },
+        },
+      );
+      return response?.loginurl ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Busca un usuario en Moodle por su correo electrónico.
    * Utiliza la función oficial `core_user_get_users_by_field`.
    */

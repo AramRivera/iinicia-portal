@@ -387,14 +387,39 @@ export class MoodleService {
       .eq('id', enrollment.id);
 
     const moodleBase =
-      this.config.get<string>('MOODLE_URL') || 'http://localhost/moodle';
-    const redirectUrl = `${moodleBase.replace(/\/+$/, '')}/course/view.php?id=${moodleCourseId}`;
+      this.config.get<string>('MOODLE_BASE_URL') ||
+      this.config.get<string>('MOODLE_URL') ||
+      'http://localhost/moodle';
+    const courseUrl = `${moodleBase.replace(/\/+$/, '')}/course/view.php?id=${moodleCourseId}`;
+
+    let accessUrl = courseUrl;
+
+    // Obtener correo del usuario para solicitar token SSO de un solo uso
+    const { data: userProfile } = await admin
+      .from('profiles')
+      .select('email')
+      .eq('id', params.userId)
+      .maybeSingle();
+
+    if (userProfile?.email) {
+      try {
+        const loginUrl = await this.client.requestUserKeyLoginUrl(userProfile.email);
+        if (loginUrl) {
+          const sep = loginUrl.includes('?') ? '&' : '?';
+          accessUrl = `${loginUrl}${sep}wantsurl=${encodeURIComponent(courseUrl)}`;
+        }
+      } catch (err: any) {
+        this.logger.warn(
+          `No fue posible generar SSO one-time key para ${userProfile.email}, usando URL directa: ${err?.message}`,
+        );
+      }
+    }
 
     return {
       course_mapping_id: params.courseMappingId,
       course_name: courseMapping.course_name,
       moodle_course_id: moodleCourseId,
-      access_url: redirectUrl,
+      access_url: accessUrl,
     };
   }
 }
