@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 const linkGroups = [
@@ -57,7 +59,7 @@ export function SiteFooter() {
 
         <div className="mt-14 flex flex-col gap-2 border-t border-border pt-6 text-[12px] text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {new Date().getFullYear()} Instituto de Innovación y Ciencias
+            © 2026 Instituto de Innovación y Ciencias
             Aplicadas. Todos los derechos reservados.
           </p>
           <p>Aprende sin fronteras.</p>

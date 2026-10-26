@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Inicio", href: "/" },
@@ -13,6 +14,10 @@ const navItems = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { user, logout, getDefaultDashboardPath } = useAuth();
+
+  const dashboardPath = user ? getDefaultDashboardPath() : "/login";
+  const primaryRole = user?.roles?.[0] || "aspirante";
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border">
@@ -37,19 +42,40 @@ export function SiteHeader() {
           ))}
         </ul>
 
-        <div className="hidden items-center gap-5 lg:flex">
-          <Link
-            href="/login"
-            className="hover-underline text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
-            href="/registro"
-            className="rounded-full bg-accent px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-accent-strong"
-          >
-            Registrarse
-          </Link>
+        <div className="hidden items-center gap-4 lg:flex">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href={dashboardPath}
+                className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3.5 py-1.5 text-[13px] font-medium text-accent hover:bg-accent/20 transition-colors"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Panel ({primaryRole})</span>
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-[13px] font-medium text-foreground/70 hover:text-red-400 transition-colors"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-5">
+              <Link
+                href="/login"
+                className="hover-underline text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground"
+              >
+                Iniciar sesión
+              </Link>
+              <Link
+                href="/registro"
+                className="rounded-full bg-accent px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-accent-strong"
+              >
+                Registrarse
+              </Link>
+            </div>
+          )}
         </div>
 
         <button
@@ -92,20 +118,44 @@ export function SiteHeader() {
               </li>
             ))}
             <li className="mt-2 flex flex-col gap-2 border-t border-border px-1 pt-3">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="rounded-full border border-border px-4 py-2.5 text-center text-[15px] font-medium text-foreground"
-              >
-                Iniciar sesión
-              </Link>
-              <Link
-                href="/registro"
-                onClick={() => setOpen(false)}
-                className="rounded-full bg-accent px-4 py-2.5 text-center text-[15px] font-semibold text-white"
-              >
-                Registrarse
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href={dashboardPath}
+                    onClick={() => setOpen(false)}
+                    className="rounded-full bg-accent px-4 py-2.5 text-center text-[15px] font-semibold text-white"
+                  >
+                    Mi Panel ({primaryRole})
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      logout();
+                    }}
+                    className="rounded-full border border-red-500/30 px-4 py-2.5 text-center text-[15px] font-medium text-red-400 hover:bg-red-500/10"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="rounded-full border border-border px-4 py-2.5 text-center text-[15px] font-medium text-foreground"
+                  >
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/registro"
+                    onClick={() => setOpen(false)}
+                    className="rounded-full bg-accent px-4 py-2.5 text-center text-[15px] font-semibold text-white"
+                  >
+                    Registrarse
+                  </Link>
+                </>
+              )}
             </li>
           </ul>
         </div>
