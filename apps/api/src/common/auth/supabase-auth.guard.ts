@@ -11,6 +11,7 @@ import { SupabaseService } from '../supabase/supabase.service.js';
 export interface AuthenticatedRequest extends Request {
   accessToken: string;
   user: User;
+  userRoles?: string[];
 }
 
 @Injectable()

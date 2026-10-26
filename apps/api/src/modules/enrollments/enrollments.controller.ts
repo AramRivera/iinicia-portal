@@ -42,12 +42,22 @@ export class EnrollmentsController {
 
   @Post()
   @HttpCode(201)
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   createEnrollmentRequest(
     @Body() dto: CreateEnrollmentRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.enrollmentsService.createEnrollmentRequest(req.user.id, dto);
+    const isStaff =
+      req.userRoles?.includes('superadministrador') ||
+      req.userRoles?.includes('administrador') ||
+      req.userRoles?.includes('coordinador');
+    const targetUserId = isStaff && dto.user_id ? dto.user_id : req.user.id;
+    return this.enrollmentsService.createEnrollmentRequest(
+      targetUserId,
+      dto,
+      req.user.id,
+      Boolean(isStaff && dto.user_id),
+    );
   }
 
   @Patch(':id/status')

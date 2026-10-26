@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
     if (user.roles.includes('superadministrador')) return true;
-    return user.permissions.includes(permission);
+    return Boolean(user.permissions && user.permissions.includes(permission));
   };
 
   const getDefaultDashboardPath = (customRoles?: RoleSlug[]): string => {

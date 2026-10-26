@@ -127,6 +127,20 @@ export const coursesApi = {
     return apiFetch<CourseOffering[]>('/courses/offerings');
   },
 
+  createCourse: async (payload: any): Promise<CourseOffering> => {
+    return apiFetch<CourseOffering>('/courses', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateCourse: async (id: string, payload: any): Promise<CourseOffering> => {
+    return apiFetch<CourseOffering>(`/courses/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
   launchCourse: async (courseMappingId: string): Promise<MoodleLaunchResponse> => {
     return apiFetch<MoodleLaunchResponse>(`/moodle/courses/${courseMappingId}/launch`, {
       method: 'POST',
@@ -136,10 +150,18 @@ export const coursesApi = {
 
 // ----------------- Enrollments API -----------------
 export const enrollmentsApi = {
-  requestEnrollment: async (courseMappingId: string): Promise<EnrollmentRequest> => {
+  requestEnrollment: async (
+    courseMappingId: string,
+    options?: { user_id?: string; moodle_role?: string; notes?: string },
+  ): Promise<EnrollmentRequest> => {
     return apiFetch<EnrollmentRequest>('/enrollments', {
       method: 'POST',
-      body: JSON.stringify({ course_mapping_id: courseMappingId }),
+      body: JSON.stringify({
+        course_mapping_id: courseMappingId,
+        user_id: options?.user_id,
+        moodle_role: options?.moodle_role || 'student',
+        notes: options?.notes,
+      }),
     });
   },
 
@@ -154,18 +176,50 @@ export const enrollmentsApi = {
 
   authorizeEnrollment: async (
     enrollmentId: string,
-    decision: { status: 'autorizada' | 'rechazada'; rejection_reason?: string },
+    decision: { status: 'autorizada' | 'rechazada'; rejection_reason?: string; sync_to_moodle?: boolean },
   ): Promise<any> => {
-    return apiFetch(`/enrollments/${enrollmentId}/authorize`, {
-      method: 'PUT',
+    return apiFetch(`/enrollments/${enrollmentId}/status`, {
+      method: 'PATCH',
       body: JSON.stringify(decision),
     });
   },
 
   retrySync: async (enrollmentId: string): Promise<any> => {
-    return apiFetch(`/moodle/sync/enrollment/${enrollmentId}`, {
+    return apiFetch(`/enrollments/${enrollmentId}/sync`, {
       method: 'POST',
     });
+  },
+};
+
+// ----------------- Roles API -----------------
+export const rolesApi = {
+  getRoles: async (): Promise<any[]> => {
+    return apiFetch<any[]>('/roles');
+  },
+
+  assignRole: async (userId: string, roleId: number): Promise<any> => {
+    return apiFetch(`/roles/users/${userId}`, {
+      method: 'POST',
+      body: JSON.stringify({ role_id: roleId }),
+    });
+  },
+
+  revokeRole: async (userId: string, roleId: number): Promise<any> => {
+    return apiFetch(`/roles/users/${userId}/${roleId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ----------------- Audit API -----------------
+export const auditApi = {
+  getLogs: async (params?: { limit?: number; offset?: number; action?: string }): Promise<any[]> => {
+    const sp = new URLSearchParams();
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.offset) sp.set('offset', String(params.offset));
+    if (params?.action) sp.set('action', params.action);
+    const qs = sp.toString();
+    return apiFetch<any[]>(`/audit${qs ? `?${qs}` : ''}`);
   },
 };
 
@@ -197,6 +251,27 @@ export const programsApi = {
   getProgramBySlugOrId: async (slugOrId: string): Promise<Program> => {
     return apiFetch<Program>(`/programs/${slugOrId}`);
   },
+
+  createProgram: async (payload: any): Promise<Program> => {
+    return apiFetch<Program>('/programs', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateProgram: async (id: string, payload: any): Promise<Program> => {
+    return apiFetch<Program>(`/programs/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  enrollUserInProgram: async (programId: string, payload: { user_id: string; moodle_role?: string }): Promise<any> => {
+    return apiFetch(`/programs/${programId}/enroll-user`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 // ----------------- Users API -----------------
@@ -210,6 +285,10 @@ export const usersApi = {
     if (params?.offset) sp.set('offset', String(params.offset));
     const qs = sp.toString();
     return apiFetch<{ data: UserProfile[]; meta: any }>(`/users${qs ? `?${qs}` : ''}`);
+  },
+
+  getUserById: async (userId: string): Promise<UserProfile> => {
+    return apiFetch<UserProfile>(`/users/${userId}`);
   },
 
   updateStatus: async (userId: string, payload: { status: string; reason?: string }): Promise<any> => {

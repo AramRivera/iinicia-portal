@@ -25,11 +25,13 @@ export interface UserProfile {
   avatar_url?: string | null;
   status: UserStatus;
   roles: RoleSlug[];
-  permissions: string[];
+  active_roles?: RoleSlug[];
+  permissions?: string[];
   moodle_user_id?: number | null;
   moodle_username?: string | null;
   moodle_sync_status?: MoodleSyncStatus;
   moodle_last_sync_at?: string | null;
+  created_at?: string;
 }
 
 export interface AuthSession {
@@ -65,11 +67,62 @@ export interface CourseOffering {
   course_mapping_id: string;
   code: string;
   name: string;
+  portal_course_code?: string;
+  slug?: string;
+  course_name?: string;
+  course_description?: string;
   program_name: string;
+  program_id?: string;
   moodle_course_id: number;
+  moodle_shortname?: string;
+  moodle_course_url?: string;
+  is_active?: boolean;
+  term_or_module?: number;
+  is_mandatory?: boolean;
   credits: number;
   hours_theory: number;
   hours_practice: number;
+  programs?: {
+    code: string;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface RoleItem {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  hierarchy_level: number;
+  default_moodle_archetype: string | null;
+  is_system: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  actor_id: string;
+  target_user_id?: string | null;
+  action: string;
+  entity_name: string;
+  entity_id?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  details?: any;
+  created_at: string;
+}
+
+export interface CreateCoursePayload {
+  program_id?: string;
+  portal_course_code: string;
+  slug: string;
+  course_name: string;
+  course_description?: string;
+  term_or_module?: number;
+  is_mandatory?: boolean;
+  moodle_course_id: number;
+  moodle_shortname: string;
+  is_active?: boolean;
 }
 
 export interface AuthorizedCourse {
@@ -85,6 +138,7 @@ export interface EnrollmentRequest {
   id: string;
   user_id: string;
   course_mapping_id: string;
+  moodle_role?: string;
   status: 'pendiente' | 'autorizada' | 'rechazada' | 'sincronizada' | 'error_sincronizacion';
   moodle_sync_status: MoodleSyncStatus;
   moodle_enrolled_at?: string | null;

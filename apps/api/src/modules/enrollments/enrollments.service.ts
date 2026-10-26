@@ -58,6 +58,8 @@ export class EnrollmentsService {
   async createEnrollmentRequest(
     userId: string,
     dto: CreateEnrollmentRequestDto,
+    actorId?: string,
+    isStaffAssignment: boolean = false,
   ) {
     const admin = this.supabase.getAdminClient();
 
@@ -82,11 +84,13 @@ export class EnrollmentsService {
 
     if (existing) {
       throw new ConflictException(
-        `Ya cuentas con una inscripción en este curso (estado: ${existing.status}).`,
+        `El usuario ya cuenta con una inscripción en este curso (estado: ${existing.status}).`,
       );
     }
 
     const programId = dto.program_id || course.program_id;
+    const initialStatus = isStaffAssignment ? 'autorizada' : 'pendiente';
+    const effectiveActor = actorId || userId;
 
     const { data, error } = await admin
       .from('enrollment_requests')
@@ -95,8 +99,10 @@ export class EnrollmentsService {
         course_mapping_id: dto.course_mapping_id,
         program_id: programId,
         moodle_role: dto.moodle_role || 'student',
-        status: 'pendiente',
-        requested_by: userId,
+        status: initialStatus,
+        requested_by: effectiveActor,
+        authorized_by: isStaffAssignment ? effectiveActor : null,
+        authorized_at: isStaffAssignment ? new Date().toISOString() : null,
         notes: dto.notes ?? null,
       })
       .select()
@@ -110,17 +116,28 @@ export class EnrollmentsService {
     }
 
     await admin.from('audit_logs').insert({
-      actor_id: userId,
+      actor_id: effectiveActor,
       target_user_id: userId,
-      action: 'ENROLLMENT_REQUESTED',
+      action: isStaffAssignment ? 'ENROLLMENT_ASSIGNED_BY_ADMIN' : 'ENROLLMENT_REQUESTED',
       entity_name: 'enrollment_requests',
       entity_id: data.id,
       new_values: {
         course_mapping_id: dto.course_mapping_id,
         course_name: course.course_name,
         moodle_role: dto.moodle_role || 'student',
+        status: initialStatus,
       },
     });
+
+    if (isStaffAssignment) {
+      try {
+        await this.moodleService.syncEnrollment(data.id);
+      } catch (err: any) {
+        this.logger.warn(
+          `Matrícula creada pero falló sincronización inmediata a Moodle: ${err?.message}`,
+        );
+      }
+    }
 
     return data;
   }
