@@ -25,8 +25,35 @@ import type {
   UserProfile,
 } from '@/types';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
+import { CampusShell } from '@/components/campus-tech/CampusShell';
+import {
+  IconPlus,
+  IconRefresh,
+  IconExternalLink,
+  IconCheck,
+  IconAlertTriangle,
+  IconSearch,
+  IconFilter,
+  IconStudents,
+  IconTeachers,
+  IconGroups,
+  IconAttendance,
+  IconGrades,
+  IconAudit,
+  IconSettings,
+  IconClose,
+} from '@/components/campus-tech/Icons';
 
-type AdminTab = 'asignaciones' | 'usuarios' | 'cursos' | 'matriculas' | 'programas' | 'moodle' | 'auditoria';
+type AdminTab =
+  | 'asignaciones'
+  | 'usuarios'
+  | 'docentes'
+  | 'cursos'
+  | 'matriculas'
+  | 'programas'
+  | 'moodle'
+  | 'auditoria'
+  | 'configuracion';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -579,355 +606,202 @@ export default function AdminDashboardPage() {
     );
   }
 
-  return (
-    <div className="mx-auto max-w-7xl xl:max-w-[1540px] px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-      {/* Header Principal - Apple Modern SaaS Style con Botón Hamburguesa */}
-      <div className="rounded-[28px] border border-border/60 bg-surface/75 backdrop-blur-2xl p-5 sm:p-7 shadow-apple transition-all">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start sm:items-center gap-3.5">
-            {/* Botón Hamburguesa Apple Minimalista */}
-            <button
-              type="button"
-              onClick={() => {
-                setSidebarOpen((prev) => !prev);
-                setMobileSidebarOpen((prev) => !prev);
-              }}
-              className="h-10 w-10 shrink-0 rounded-2xl border border-border/80 bg-surface hover:bg-foreground/[0.04] text-foreground flex items-center justify-center transition-all shadow-xs active:scale-[0.95]"
-              title={sidebarOpen ? 'Ocultar / Colapsar menú lateral' : 'Desplegar menú lateral'}
-              aria-label="Alternar menú lateral"
-            >
-              <div className="flex flex-col gap-1 w-4 justify-center items-center">
-                <span
-                  className={`h-0.5 rounded-full bg-foreground transition-all duration-200 ${
-                    sidebarOpen ? 'w-4' : 'w-3'
-                  }`}
-                />
-                <span className="h-0.5 w-4 rounded-full bg-foreground transition-all duration-200" />
-                <span
-                  className={`h-0.5 rounded-full bg-foreground transition-all duration-200 ${
-                    sidebarOpen ? 'w-4' : 'w-2'
-                  }`}
-                />
-              </div>
-            </button>
+  const getTabLabel = (tab: AdminTab) => {
+    switch (tab) {
+      case 'asignaciones':
+        return 'Asignaciones & Cursos';
+      case 'usuarios':
+        return 'Directorio de Estudiantes';
+      case 'docentes':
+        return 'Cuerpo Docente';
+      case 'cursos':
+        return 'Grupos y Asignaturas';
+      case 'matriculas':
+        return 'Solicitudes y Matrículas';
+      case 'programas':
+        return 'Programas Académicos';
+      case 'moodle':
+        return 'Moodle LMS 5.3+';
+      case 'auditoria':
+        return 'Bitácora & Reportes';
+      case 'configuracion':
+        return 'Configuración OS';
+      default:
+        return 'Control Maestro';
+    }
+  };
 
-            <div className="space-y-1">
+  return (
+    <>
+      <CampusShell
+      currentTab={activeTab}
+      onSelectTab={(tabId) => setActiveTab(tabId as AdminTab)}
+      breadcrumbs={['Campus Tech OS', 'Control Maestro', getTabLabel(activeTab)]}
+      counts={{
+        users: users.length,
+        courses: courses.length,
+        enrollments: enrollments.length,
+        programs: programs.length,
+        audit: Array.isArray(auditLogs) ? auditLogs.length : 0,
+      }}
+      onLaunchCampusSSO={handleLaunchCampusSSO}
+    >
+      <div className="space-y-6">
+        {/* Header Principal de Control Maestro - Campus Tech OS */}
+        <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 transition-all shadow-minimal">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="inline-flex items-center gap-1.5 rounded-[4px] bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Moodle LMS 5.3+ Activo (auth_userkey SSO)
                 </span>
-                <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-medium text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                <span className="rounded-[4px] bg-primary/10 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
                   Superadministrador
                 </span>
+                <span className="rounded-[4px] bg-accent-lime/20 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-lime/40">
+                  Campus Tech OS v2.4
+                </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Panel de Control Maestro
               </h1>
-              <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed font-normal">
+              <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
                 Gestión unificada de estudiantes, docentes, materias, roles y salto automático sin contraseñas a Moodle LMS.
               </p>
             </div>
-          </div>
 
-          {/* Botones de acción estilo Apple */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={handleLaunchCampusSSO}
-              disabled={actionLoading === 'launch-campus'}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-foreground text-background font-medium px-4 py-2.5 text-xs shadow-xs hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-              title="Abrir Moodle como Administrador con sesión iniciada al instante"
-            >
-              {actionLoading === 'launch-campus' ? (
-                <>
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                  <span>Iniciando SSO...</span>
-                </>
-              ) : (
-                <>
-                  <span>🚀</span>
-                  <span>Entrar al Campus (SSO)</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowCreateUserModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-border/80 bg-surface hover:bg-foreground/[0.04] px-3.5 py-2.5 text-xs font-medium text-foreground transition-all shadow-xs active:scale-[0.98]"
-            >
-              <span>+</span>
-              <span>Nuevo Usuario</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowAssignCourseModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-accent hover:bg-accent-strong text-white px-4 py-2.5 text-xs font-medium transition-all shadow-xs active:scale-[0.98]"
-            >
-              <span>+</span>
-              <span>Asignar Curso</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleBulkMoodleSync}
-              disabled={actionLoading === 'bulk-sync'}
-              className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-border/80 bg-surface hover:bg-foreground/[0.04] px-3.5 py-2.5 text-xs font-medium text-muted hover:text-foreground transition-all shadow-xs disabled:opacity-50 active:scale-[0.98]"
-            >
-              {actionLoading === 'bulk-sync' ? (
-                <>
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-                  <span>Sincronizando...</span>
-                </>
-              ) : (
-                <>
-                  <span>🔄</span>
-                  <span>Sync Moodle</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Apple Bento Grid de Métricas */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 border-t border-border/50 pt-5">
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
-            <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Usuarios Registrados</span>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{users.length}</p>
-            <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              {users.filter((u) => u.moodle_sync_status === 'sincronizado').length} en Moodle LMS
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
-            <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Cursos Vinculados</span>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{courses.length}</p>
-            <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              Catálogo activo oficial
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
-            <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Solicitudes Matrícula</span>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{enrollments.length}</p>
-            <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              {enrollments.filter((e) => e.status === 'pendiente').length} pendientes
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
-            <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Campus Virtual</span>
-            <p className="mt-1 text-base font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Conectado
-            </p>
-            <button
-              type="button"
-              onClick={handleLaunchCampusSSO}
-              className="text-[11px] text-accent hover:underline inline-block mt-1 font-medium text-left"
-            >
-              Abrir campus con SSO ↗
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Alertas Apple Style */}
-      {notice && (
-        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 backdrop-blur-xl p-4 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
-            <span>✓</span>
-            <span>{notice}</span>
-          </div>
-          <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 backdrop-blur-xl p-4 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2">
-            <span>⚠️</span>
-            <span>{error}</span>
-          </div>
-          <button type="button" onClick={() => setError(null)} className="text-xs opacity-70 hover:opacity-100">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* CUERPO PRINCIPAL CON MENÚ LATERAL REDESPLEGABLE Y CONTENIDO DINÁMICO      */}
-      {/* ========================================================================= */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* MENÚ LATERAL DESKTOP (COLLAPSIBLE / REDESPLEGABLE) */}
-        <aside
-          className={`hidden lg:block shrink-0 transition-all duration-300 ease-in-out ${
-            sidebarOpen ? 'w-64 xl:w-72' : 'w-18'
-          }`}
-        >
-          <div className="sticky top-6 rounded-[28px] border border-border/60 bg-surface/80 backdrop-blur-2xl p-3 shadow-apple space-y-4">
-            {/* Encabezado del Menú Lateral */}
-            <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/40">
-              {sidebarOpen ? (
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-                  Navegación Maestro
-                </span>
-              ) : (
-                <span className="text-[11px] font-semibold text-muted mx-auto">⌘</span>
-              )}
+            {/* Acciones Rápidas */}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="h-7 w-7 rounded-xl bg-foreground/[0.03] hover:bg-foreground/[0.08] text-muted hover:text-foreground flex items-center justify-center text-[10px] transition-colors"
-                title={sidebarOpen ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
+                onClick={handleLaunchCampusSSO}
+                disabled={actionLoading === 'launch-campus'}
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50"
+                title="Abrir Moodle como Administrador con sesión iniciada al instante"
               >
-                {sidebarOpen ? '◀' : '▶'}
+                {actionLoading === 'launch-campus' ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Iniciando SSO...</span>
+                  </>
+                ) : (
+                  <>
+                    <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
+                    <span>Entrar al Campus (SSO)</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateUserModal(true)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] border border-border bg-surface hover:bg-surface-muted px-3 py-2 text-xs font-medium text-foreground transition-all shadow-minimal"
+              >
+                <IconPlus className="w-3.5 h-3.5 text-primary" />
+                <span>Nuevo Usuario</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAssignCourseModal(true)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white hover:bg-primary/90 px-3 py-2 text-xs font-semibold transition-all shadow-minimal"
+              >
+                <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
+                <span>Asignar Curso</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBulkMoodleSync}
+                disabled={actionLoading === 'bulk-sync'}
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] border border-border bg-surface hover:bg-surface-muted px-3 py-2 text-xs font-medium text-muted hover:text-foreground transition-all shadow-minimal disabled:opacity-50"
+              >
+                {actionLoading === 'bulk-sync' ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                    <span>Sincronizando...</span>
+                  </>
+                ) : (
+                  <>
+                    <IconRefresh className="w-3.5 h-3.5" />
+                    <span>Sync Moodle</span>
+                  </>
+                )}
               </button>
             </div>
-
-            {/* Lista de Navegación Vertical */}
-            <nav className="space-y-1">
-              {navItems.map((item) => {
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-3 w-full rounded-2xl px-3 py-2.5 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
-                      isActive
-                        ? 'bg-accent text-white shadow-xs font-semibold'
-                        : 'text-foreground/80 hover:bg-foreground/[0.04] hover:text-foreground'
-                    } ${!sidebarOpen ? 'justify-center px-0' : ''}`}
-                    title={item.label}
-                  >
-                    <span className="text-base shrink-0">{item.icon}</span>
-                    {sidebarOpen && (
-                      <>
-                        <span className="truncate text-left text-xs">{item.label}</span>
-                        {item.count !== undefined && (
-                          <span
-                            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                              isActive
-                                ? 'bg-white/25 text-white'
-                                : 'bg-foreground/[0.06] text-muted'
-                            }`}
-                          >
-                            {item.count}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Widget Inferior del Menú Lateral */}
-            {sidebarOpen && (
-              <div className="pt-3 border-t border-border/40 space-y-2 px-1">
-                <div className="rounded-2xl border border-border/50 bg-foreground/[0.02] p-3 text-[11px] text-muted space-y-1">
-                  <span className="font-semibold text-foreground block">Campus Virtual</span>
-                  <p className="text-[10px] text-muted leading-tight">
-                    Moodle 5.3+ conectado con autenticación SSO directa.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLaunchCampusSSO}
-                  className="w-full rounded-xl border border-border/80 bg-surface hover:bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground flex items-center justify-center gap-1.5 transition-all shadow-xs"
-                >
-                  <span>🚀</span>
-                  <span>Abrir Moodle SSO</span>
-                </button>
-              </div>
-            )}
           </div>
-        </aside>
 
-        {/* DRAWER MÓVIL (OFF-CANVAS REDESPLEGABLE) */}
-        {mobileSidebarOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-              onClick={() => setMobileSidebarOpen(false)}
-            />
-            <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-surface/95 dark:bg-surface/90 backdrop-blur-2xl p-5 border-r border-border/80 shadow-2xl flex flex-col justify-between animate-in slide-in-from-left duration-200">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-border/40">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎛️</span>
-                    <span className="font-semibold text-sm text-foreground">Navegación Maestro</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMobileSidebarOpen(false)}
-                    className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-                  >
-                    ✕
-                  </button>
-                </div>
+          {/* Operational Metrics Grid */}
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 border-t border-border pt-4">
+            <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5 hover:bg-surface-muted/60 transition-colors">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Usuarios Registrados</span>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{users.length}</p>
+              <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {users.filter((u) => u.moodle_sync_status === 'sincronizado').length} en Moodle LMS
+              </span>
+            </div>
 
-                <nav className="space-y-1">
-                  {navItems.map((item) => {
-                    const isActive = activeTab === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          setActiveTab(item.id);
-                          setMobileSidebarOpen(false);
-                        }}
-                        className={`flex items-center gap-3 w-full rounded-2xl px-3.5 py-2.5 text-xs font-medium transition-all ${
-                          isActive
-                            ? 'bg-accent text-white shadow-xs font-semibold'
-                            : 'text-foreground/80 hover:bg-foreground/[0.04] hover:text-foreground'
-                        }`}
-                      >
-                        <span className="text-base shrink-0">{item.icon}</span>
-                        <span className="truncate text-left">{item.label}</span>
-                        {item.count !== undefined && (
-                          <span
-                            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                              isActive ? 'bg-white/20 text-white' : 'bg-foreground/[0.05] text-muted'
-                            }`}
-                          >
-                            {item.count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
+            <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5 hover:bg-surface-muted/60 transition-colors">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Cursos Vinculados</span>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{courses.length}</p>
+              <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                Catálogo activo oficial
+              </span>
+            </div>
 
-              <div className="pt-4 border-t border-border/40">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileSidebarOpen(false);
-                    handleLaunchCampusSSO();
-                  }}
-                  className="w-full rounded-2xl bg-foreground text-background font-medium px-4 py-2.5 text-xs shadow-xs hover:opacity-90 transition-all flex items-center justify-center gap-2"
-                >
-                  <span>🚀</span>
-                  <span>Entrar al Campus (SSO)</span>
-                </button>
-              </div>
-            </aside>
+            <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5 hover:bg-surface-muted/60 transition-colors">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Solicitudes Matrícula</span>
+              <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{enrollments.length}</p>
+              <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {enrollments.filter((e) => e.status === 'pendiente').length} pendientes
+              </span>
+            </div>
+
+            <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5 hover:bg-surface-muted/60 transition-colors">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Campus Virtual</span>
+              <p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Conectado
+              </p>
+              <button
+                type="button"
+                onClick={handleLaunchCampusSSO}
+                className="text-[11px] text-primary hover:underline inline-block mt-1 font-medium text-left"
+              >
+                Abrir campus con SSO ↗
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Alertas Operativas */}
+        {notice && (
+          <div className="rounded-[8px] border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center justify-between shadow-minimal">
+            <div className="flex items-center gap-2">
+              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{notice}</span>
+            </div>
+            <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100">
+              ✕
+            </button>
           </div>
         )}
 
-        {/* CONTENEDOR PRINCIPAL DE CONTENIDO DINÁMICO */}
-        <main className="flex-1 min-w-0 w-full space-y-6">
+        {error && (
+          <div className="rounded-[8px] border border-rose-500/25 bg-rose-500/10 p-3.5 text-xs font-medium text-rose-700 dark:text-rose-400 flex items-center justify-between shadow-minimal">
+            <div className="flex items-center gap-2">
+              <IconAlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button type="button" onClick={() => setError(null)} className="text-xs opacity-70 hover:opacity-100">
+              ✕
+            </button>
+          </div>
+        )}
 
       {/* ========================================================================= */}
       {/* PESTAÑA PRINCIPAL: ASIGNACIÓN DE CURSOS Y ROLES (FILTRADO AVANZADO)       */}
@@ -1950,8 +1824,185 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
-        </main>
-      </div>
+
+      {/* ========================================================================= */}
+      {/* PESTAÑA: CUERPO DOCENTE                                                   */}
+      {/* ========================================================================= */}
+      {activeTab === 'docentes' && (
+        <div className="space-y-4">
+          <div className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+                  <IconTeachers className="w-5 h-5 text-primary" />
+                  <span>Cuerpo Docente y Titulares de Asignatura</span>
+                </h2>
+                <p className="mt-0.5 text-xs text-muted">
+                  Profesores registrados con permisos de edición y gestión de grupos en Moodle LMS.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUserModal(true)}
+                  className="rounded-[6px] bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 flex items-center gap-1.5 transition-all active:scale-[0.98]"
+                >
+                  <IconPlus className="w-3.5 h-3.5" />
+                  <span>Registrar Profesor</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[10px] border border-border bg-surface overflow-hidden shadow-minimal">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-surface-muted/60 text-muted font-medium border-b border-border">
+                  <tr>
+                    <th className="px-5 py-3.5">Profesor / Titular</th>
+                    <th className="px-5 py-3.5">Identificador & Usuario</th>
+                    <th className="px-5 py-3.5">Estado en Portal</th>
+                    <th className="px-5 py-3.5">Moodle LMS</th>
+                    <th className="px-5 py-3.5 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {users
+                    .filter((u) => {
+                      const userRoles = (u.active_roles || u.roles || []) as string[];
+                      return userRoles.includes('teacher');
+                    })
+                    .map((prof) => (
+                      <tr key={prof.id} className="hover:bg-surface-muted/30 transition-colors">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-[6px] bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                              {prof.first_name?.[0] || 'P'}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground text-xs">
+                                Prof. {prof.first_name} {prof.last_name}
+                              </p>
+                              <p className="text-[11px] text-muted">{prof.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 font-mono text-[11px] text-muted">
+                          {prof.moodle_username || prof.email.split('@')[0]}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-[4px] px-2 py-0.5 text-[11px] font-medium border ${
+                              prof.status === 'activo'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                            }`}
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            {prof.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <MoodleSyncBadge status={prof.moodle_sync_status} moodleId={prof.moodle_user_id} />
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => openAssignModalForUser(prof)}
+                            className="rounded-[6px] border border-border bg-surface hover:bg-surface-muted px-2.5 py-1 text-[11px] font-medium text-foreground transition-all shadow-minimal"
+                          >
+                            Asignar Materia
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  {users.filter((u) => ((u.active_roles || u.roles || []) as string[]).includes('teacher')).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-8 text-center text-muted">
+                        No hay profesores registrados con el rol de docente aún.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PESTAÑA: CONFIGURACIÓN OS                                                 */}
+      {/* ========================================================================= */}
+      {activeTab === 'configuracion' && (
+        <div className="space-y-4">
+          <div className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
+            <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+              <IconSettings className="w-5 h-5 text-primary" />
+              <span>Configuración del Sistema Campus Tech OS</span>
+            </h2>
+            <p className="mt-0.5 text-xs text-muted">
+              Parámetros de entorno institucional, sincronización y arquitectura.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-[10px] border border-border bg-surface p-5 space-y-3 shadow-minimal">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Infraestructura & Stack</span>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Frontend Framework</span>
+                  <span className="font-mono font-medium text-foreground">Next.js 16.4 (App Router)</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Backend API</span>
+                  <span className="font-mono font-medium text-foreground">NestJS (Modular REST)</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Base de Datos</span>
+                  <span className="font-mono font-medium text-foreground">PostgreSQL 17 / Supabase</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">LMS Core</span>
+                  <span className="font-mono font-medium text-foreground">Moodle 5.3+ (Web Services REST)</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-muted">SSO Provider</span>
+                  <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400">auth_userkey (Sin contraseñas)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[10px] border border-border bg-surface p-5 space-y-3 shadow-minimal">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Diseño & Tokens</span>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Sistema de Diseño</span>
+                  <span className="font-medium text-foreground">Campus Tech OS</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Color Primario</span>
+                  <span className="font-mono text-primary font-bold">#2457F5 (Electric Blue)</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Acento de Marca</span>
+                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#D5F36A (Acid Lime)</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-border/50">
+                  <span className="text-muted">Radios de Componente</span>
+                  <span className="font-mono text-foreground">Controles: 6px | Superficies: 10px | Paneles: 14px</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-muted">Tema Actual</span>
+                  <span className="font-mono text-foreground">Soporte Dinámico Claro & Oscuro</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+        </div>
+      </CampusShell>
 
       {/* ========================================================================= */}
       {/* MODAL 1: GESTIÓN DE ROLES                                                 */}
@@ -2657,6 +2708,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
