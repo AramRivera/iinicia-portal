@@ -34,6 +34,8 @@ export default function AdminDashboardPage() {
 
   // Estados de pestañas y carga
   const [activeTab, setActiveTab] = useState<AdminTab>('asignaciones');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -543,6 +545,24 @@ export default function AdminDashboardPage() {
     setRoleToAssign(5);
   };
 
+  const navItems = useMemo<{ id: AdminTab; label: string; icon: string; count?: number }[]>(
+    () => [
+      { id: 'asignaciones', label: 'Asignación Cursos & Roles', icon: '🎯', count: users.length },
+      { id: 'usuarios', label: 'Directorio de Usuarios', icon: '👥', count: users.length },
+      { id: 'cursos', label: 'Catálogo de Cursos', icon: '📚', count: courses.length },
+      {
+        id: 'matriculas',
+        label: 'Matrículas & Solicitudes',
+        icon: '🎓',
+        count: enrollments.filter((e) => e.status === 'pendiente').length || undefined,
+      },
+      { id: 'programas', label: 'Programas Académicos', icon: '🏛️', count: programs.length },
+      { id: 'moodle', label: 'Integración LMS Moodle', icon: '⚙️' },
+      { id: 'auditoria', label: 'Auditoría & Logs', icon: '🛡️', count: auditLogs.length },
+    ],
+    [users.length, courses.length, enrollments, programs.length, auditLogs.length],
+  );
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -555,26 +575,54 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-7">
-      {/* Header Principal - Apple Modern SaaS Style */}
-      <div className="rounded-[28px] border border-border/60 bg-surface/75 backdrop-blur-2xl p-6 sm:p-8 shadow-apple transition-all">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Moodle LMS 5.3+ Activo (auth_userkey SSO)
-              </span>
-              <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-medium text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                Superadministrador
-              </span>
+    <div className="mx-auto max-w-7xl xl:max-w-[1540px] px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      {/* Header Principal - Apple Modern SaaS Style con Botón Hamburguesa */}
+      <div className="rounded-[28px] border border-border/60 bg-surface/75 backdrop-blur-2xl p-5 sm:p-7 shadow-apple transition-all">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start sm:items-center gap-3.5">
+            {/* Botón Hamburguesa Apple Minimalista */}
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarOpen((prev) => !prev);
+                setMobileSidebarOpen((prev) => !prev);
+              }}
+              className="h-10 w-10 shrink-0 rounded-2xl border border-border/80 bg-surface hover:bg-foreground/[0.04] text-foreground flex items-center justify-center transition-all shadow-xs active:scale-[0.95]"
+              title={sidebarOpen ? 'Ocultar / Colapsar menú lateral' : 'Desplegar menú lateral'}
+              aria-label="Alternar menú lateral"
+            >
+              <div className="flex flex-col gap-1 w-4 justify-center items-center">
+                <span
+                  className={`h-0.5 rounded-full bg-foreground transition-all duration-200 ${
+                    sidebarOpen ? 'w-4' : 'w-3'
+                  }`}
+                />
+                <span className="h-0.5 w-4 rounded-full bg-foreground transition-all duration-200" />
+                <span
+                  className={`h-0.5 rounded-full bg-foreground transition-all duration-200 ${
+                    sidebarOpen ? 'w-4' : 'w-2'
+                  }`}
+                />
+              </div>
+            </button>
+
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Moodle LMS 5.3+ Activo (auth_userkey SSO)
+                </span>
+                <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-medium text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  Superadministrador
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                Panel de Control Maestro
+              </h1>
+              <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed font-normal">
+                Gestión unificada de estudiantes, docentes, materias, roles y salto automático sin contraseñas a Moodle LMS.
+              </p>
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Panel de Control Maestro
-            </h1>
-            <p className="text-sm text-muted max-w-2xl leading-relaxed font-normal">
-              Gestión unificada de estudiantes, docentes, materias, roles y salto automático sin contraseñas a Moodle LMS.
-            </p>
           </div>
 
           {/* Botones de acción estilo Apple */}
@@ -639,37 +687,37 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Apple Bento Grid de Métricas */}
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 border-t border-border/50 pt-6">
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4.5 hover:bg-foreground/[0.025] transition-colors">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 border-t border-border/50 pt-5">
+          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
             <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Usuarios Registrados</span>
-            <p className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{users.length}</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{users.length}</p>
             <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               {users.filter((u) => u.moodle_sync_status === 'sincronizado').length} en Moodle LMS
             </span>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4.5 hover:bg-foreground/[0.025] transition-colors">
+          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
             <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Cursos Vinculados</span>
-            <p className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{courses.length}</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{courses.length}</p>
             <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               Catálogo activo oficial
             </span>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4.5 hover:bg-foreground/[0.025] transition-colors">
-            <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Solicitudes de Matrícula</span>
-            <p className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{enrollments.length}</p>
+          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
+            <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Solicitudes Matrícula</span>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{enrollments.length}</p>
             <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
               {enrollments.filter((e) => e.status === 'pendiente').length} pendientes
             </span>
           </div>
 
-          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4.5 hover:bg-foreground/[0.025] transition-colors">
+          <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-4 hover:bg-foreground/[0.025] transition-colors">
             <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Campus Virtual</span>
-            <p className="mt-1 text-base sm:text-lg font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <p className="mt-1 text-base font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               Conectado
             </p>
@@ -709,40 +757,172 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Navegación por Pestañas - Apple Segmented Control */}
-      <div className="p-1.5 bg-foreground/[0.035] dark:bg-foreground/[0.06] rounded-2xl border border-border/40 backdrop-blur-xl inline-flex flex-wrap gap-1 shadow-xs">
-        {[
-          { id: 'asignaciones', label: '🎯 Asignación Cursos & Roles', count: users.length },
-          { id: 'usuarios', label: '👥 Directorio de Usuarios', count: users.length },
-          { id: 'cursos', label: '📚 Catálogo de Cursos', count: courses.length },
-          { id: 'matriculas', label: '🎓 Matrículas & Solicitudes', count: enrollments.filter((e) => e.status === 'pendiente').length || undefined },
-          { id: 'programas', label: '🏛️ Programas Académicos', count: programs.length },
-          { id: 'moodle', label: '⚙️ Integración LMS Moodle' },
-          { id: 'auditoria', label: '🛡️ Auditoría & Logs', count: auditLogs.length },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id as AdminTab)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs transition-all duration-200 active:scale-[0.98] ${
-              activeTab === tab.id
-                ? 'bg-surface text-foreground font-semibold shadow-xs ring-1 ring-border/60'
-                : 'text-muted hover:text-foreground hover:bg-foreground/[0.02] font-medium'
-            }`}
-          >
-            <span>{tab.label}</span>
-            {tab.count !== undefined && (
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  activeTab === tab.id ? 'bg-foreground/[0.08] text-foreground' : 'bg-foreground/[0.04] text-muted'
-                }`}
+      {/* ========================================================================= */}
+      {/* CUERPO PRINCIPAL CON MENÚ LATERAL REDESPLEGABLE Y CONTENIDO DINÁMICO      */}
+      {/* ========================================================================= */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* MENÚ LATERAL DESKTOP (COLLAPSIBLE / REDESPLEGABLE) */}
+        <aside
+          className={`hidden lg:block shrink-0 transition-all duration-300 ease-in-out ${
+            sidebarOpen ? 'w-64 xl:w-72' : 'w-18'
+          }`}
+        >
+          <div className="sticky top-6 rounded-[28px] border border-border/60 bg-surface/80 backdrop-blur-2xl p-3 shadow-apple space-y-4">
+            {/* Encabezado del Menú Lateral */}
+            <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/40">
+              {sidebarOpen ? (
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  Navegación Maestro
+                </span>
+              ) : (
+                <span className="text-[11px] font-semibold text-muted mx-auto">⌘</span>
+              )}
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="h-7 w-7 rounded-xl bg-foreground/[0.03] hover:bg-foreground/[0.08] text-muted hover:text-foreground flex items-center justify-center text-[10px] transition-colors"
+                title={sidebarOpen ? 'Colapsar menú lateral' : 'Expandir menú lateral'}
               >
-                {tab.count}
-              </span>
+                {sidebarOpen ? '◀' : '▶'}
+              </button>
+            </div>
+
+            {/* Lista de Navegación Vertical */}
+            <nav className="space-y-1">
+              {navItems.map((item) => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex items-center gap-3 w-full rounded-2xl px-3 py-2.5 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
+                      isActive
+                        ? 'bg-accent text-white shadow-xs font-semibold'
+                        : 'text-foreground/80 hover:bg-foreground/[0.04] hover:text-foreground'
+                    } ${!sidebarOpen ? 'justify-center px-0' : ''}`}
+                    title={item.label}
+                  >
+                    <span className="text-base shrink-0">{item.icon}</span>
+                    {sidebarOpen && (
+                      <>
+                        <span className="truncate text-left text-xs">{item.label}</span>
+                        {item.count !== undefined && (
+                          <span
+                            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              isActive
+                                ? 'bg-white/25 text-white'
+                                : 'bg-foreground/[0.06] text-muted'
+                            }`}
+                          >
+                            {item.count}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Widget Inferior del Menú Lateral */}
+            {sidebarOpen && (
+              <div className="pt-3 border-t border-border/40 space-y-2 px-1">
+                <div className="rounded-2xl border border-border/50 bg-foreground/[0.02] p-3 text-[11px] text-muted space-y-1">
+                  <span className="font-semibold text-foreground block">Campus Virtual</span>
+                  <p className="text-[10px] text-muted leading-tight">
+                    Moodle 5.3+ conectado con autenticación SSO directa.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLaunchCampusSSO}
+                  className="w-full rounded-xl border border-border/80 bg-surface hover:bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                >
+                  <span>🚀</span>
+                  <span>Abrir Moodle SSO</span>
+                </button>
+              </div>
             )}
-          </button>
-        ))}
-      </div>
+          </div>
+        </aside>
+
+        {/* DRAWER MÓVIL (OFF-CANVAS REDESPLEGABLE) */}
+        {mobileSidebarOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+            <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-surface/95 dark:bg-surface/90 backdrop-blur-2xl p-5 border-r border-border/80 shadow-2xl flex flex-col justify-between animate-in slide-in-from-left duration-200">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-border/40">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎛️</span>
+                    <span className="font-semibold text-sm text-foreground">Navegación Maestro</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileSidebarOpen(false)}
+                    className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <nav className="space-y-1">
+                  {navItems.map((item) => {
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          setMobileSidebarOpen(false);
+                        }}
+                        className={`flex items-center gap-3 w-full rounded-2xl px-3.5 py-2.5 text-xs font-medium transition-all ${
+                          isActive
+                            ? 'bg-accent text-white shadow-xs font-semibold'
+                            : 'text-foreground/80 hover:bg-foreground/[0.04] hover:text-foreground'
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        <span className="truncate text-left">{item.label}</span>
+                        {item.count !== undefined && (
+                          <span
+                            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              isActive ? 'bg-white/20 text-white' : 'bg-foreground/[0.05] text-muted'
+                            }`}
+                          >
+                            {item.count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              <div className="pt-4 border-t border-border/40">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileSidebarOpen(false);
+                    handleLaunchCampusSSO();
+                  }}
+                  className="w-full rounded-2xl bg-foreground text-background font-medium px-4 py-2.5 text-xs shadow-xs hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                >
+                  <span>🚀</span>
+                  <span>Entrar al Campus (SSO)</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* CONTENEDOR PRINCIPAL DE CONTENIDO DINÁMICO */}
+        <main className="flex-1 min-w-0 w-full space-y-6">
 
       {/* ========================================================================= */}
       {/* PESTAÑA PRINCIPAL: ASIGNACIÓN DE CURSOS Y ROLES (FILTRADO AVANZADO)       */}
@@ -1765,6 +1945,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+        </main>
+      </div>
 
       {/* ========================================================================= */}
       {/* MODAL 1: GESTIÓN DE ROLES                                                 */}
