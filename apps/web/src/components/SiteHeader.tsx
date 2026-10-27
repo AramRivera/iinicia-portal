@@ -31,9 +31,6 @@ export function SiteHeader() {
             <span className="text-[16px] font-bold tracking-tight text-foreground">
               IINICIA
             </span>
-            <span className="hidden sm:inline-block rounded-[4px] bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-primary">
-              TECH OS
-            </span>
           </div>
         </Link>
 

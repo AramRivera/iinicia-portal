@@ -42,7 +42,7 @@ export default function LoginPage() {
         <div className="text-center">
           <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-[11px] font-mono font-semibold text-primary border border-primary/20">
             <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-            <span>Campus Tech OS • Autenticación</span>
+            <span>Campus Virtual • Autenticación</span>
           </div>
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
             Iniciar sesión

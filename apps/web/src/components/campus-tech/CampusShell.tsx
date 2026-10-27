@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { CampusTopBar } from './CampusTopBar';
 import { CampusSidebar, type SidebarSection } from './CampusSidebar';
+import { IconMenu } from './Icons';
 
 interface CampusShellProps {
   currentTab: string;
@@ -23,7 +24,7 @@ interface CampusShellProps {
 export function CampusShell({
   currentTab,
   onSelectTab,
-  breadcrumbs = ['Campus Tech OS', 'Control Maestro'],
+  breadcrumbs = ['IINICIA', 'Control Maestro'],
   counts,
   onLaunchCampusSSO,
   customSections,
@@ -34,7 +35,7 @@ export function CampusShell({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-150">
-      {/* TopBar with Global Search, Theme Switch, Period Badge */}
+      {/* TopBar with Global Search, Theme Switch */}
       <CampusTopBar
         breadcrumbs={breadcrumbs}
         onOpenSearch={() => {}}
@@ -64,10 +65,10 @@ export function CampusShell({
               onClick={() => setMobileSidebarOpen(true)}
               className="flex items-center gap-2 text-xs font-medium text-foreground bg-surface-muted px-2.5 py-1.5 rounded-[6px] border border-border"
             >
-              <span>☰</span>
+              <IconMenu className="w-3.5 h-3.5" />
               <span>Menú Campus</span>
             </button>
-            <span className="text-xs text-muted font-medium">Campus Tech OS</span>
+            <span className="text-xs text-muted font-medium">IINICIA</span>
           </div>
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">

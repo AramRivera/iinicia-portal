@@ -20,7 +20,7 @@ interface CampusTopBarProps {
 }
 
 export function CampusTopBar({
-  breadcrumbs = ['Campus Tech OS', 'Control Maestro'],
+  breadcrumbs = ['IINICIA', 'Panel de Control'],
   onOpenSearch,
   onLaunchMoodleSSO,
   moodleActive = true,
@@ -63,34 +63,18 @@ export function CampusTopBar({
           </kbd>
         </button>
 
-        {/* Period Badge */}
-        <div className="hidden xl:flex items-center gap-1.5 rounded-[6px] border border-border/80 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-medium text-foreground">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span>Periodo 2026-A</span>
-        </div>
-
         {/* Moodle Quick SSO Action */}
         {onLaunchMoodleSSO && (
           <button
             type="button"
             onClick={onLaunchMoodleSSO}
-            className="flex items-center gap-1.5 rounded-[6px] bg-primary text-white hover:bg-accent-strong px-2.5 py-1.5 text-xs font-medium transition-all shadow-minimal"
+            className="flex items-center gap-1.5 rounded-[6px] bg-primary text-white hover:bg-primary/90 px-2.5 py-1.5 text-xs font-medium transition-all shadow-minimal"
             title="Abrir Moodle LMS con sesión iniciada (auth_userkey)"
           >
             <IconMoodle className="w-3.5 h-3.5 text-accent-lime" />
             <span className="hidden sm:inline">Aula Moodle</span>
           </button>
         )}
-
-        {/* Notifications Icon Button */}
-        <button
-          type="button"
-          className="relative h-8 w-8 rounded-[6px] border border-border bg-surface hover:bg-surface-muted text-muted hover:text-foreground flex items-center justify-center transition-all"
-          title="Notificaciones académicas"
-        >
-          <IconAnnouncements className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-        </button>
 
         {/* Theme Switcher Button */}
         <button

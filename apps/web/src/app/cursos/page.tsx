@@ -124,7 +124,7 @@ export default function CursosPage() {
                     <div className="flex items-center gap-2">
                       {alreadyEnrolled && (
                         <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/30">
-                          ✓ Matriculado
+                          Matriculado
                         </span>
                       )}
                       <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/20">

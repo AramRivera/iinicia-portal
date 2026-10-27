@@ -16,6 +16,7 @@ import {
   IconAlertTriangle,
   IconPlus,
   IconExternalLink,
+  IconClose,
 } from '@/components/campus-tech/Icons';
 
 export default function EstudianteDashboardPage() {
@@ -65,7 +66,7 @@ export default function EstudianteDashboardPage() {
 
     try {
       await enrollmentsApi.requestEnrollment(courseMappingId);
-      setNotice(`¡Te has inscrito exitosamente a "${courseName}"! Ya está disponible en tus materias activas.`);
+      setNotice(`Te has inscrito exitosamente a "${courseName}". Ya está disponible en tus materias activas.`);
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error al inscribirse en el curso.');
@@ -84,7 +85,7 @@ export default function EstudianteDashboardPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-xs font-medium text-muted">Cargando tu aula virtual Campus Tech OS...</p>
+          <p className="text-xs font-medium text-muted">Cargando tu aula virtual...</p>
         </div>
       </div>
     );
@@ -94,23 +95,20 @@ export default function EstudianteDashboardPage() {
     <CampusShell
       currentTab="cursos"
       onSelectTab={() => {}}
-      breadcrumbs={['Campus Tech OS', 'Portal Estudiante', 'Mis Materias']}
+      breadcrumbs={['IINICIA', 'Portal Estudiante', 'Mis Materias']}
       counts={{
         courses: courses.length,
         enrollments: enrollments.length,
       }}
     >
       <div className="space-y-6">
-        {/* Header Estudiante - Campus Tech OS */}
+        {/* Header Estudiante */}
         <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal transition-all">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
                   Estudiante Regular
-                </span>
-                <span className="rounded-[4px] bg-accent-lime/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-lime/40">
-                  Periodo 2026-A
                 </span>
                 <MoodleSyncBadge
                   status={user?.moodle_sync_status}
@@ -178,8 +176,8 @@ export default function EstudianteDashboardPage() {
               <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{notice}</span>
             </div>
-            <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100">
-              ✕
+            <button type="button" onClick={() => setNotice(null)} className="text-xs text-muted hover:text-foreground">
+              <IconClose className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
@@ -190,8 +188,8 @@ export default function EstudianteDashboardPage() {
               <IconAlertTriangle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
-            <button type="button" onClick={() => setError(null)} className="text-xs opacity-70 hover:opacity-100">
-              ✕
+            <button type="button" onClick={() => setError(null)} className="text-xs text-muted hover:text-foreground">
+              <IconClose className="w-3.5 h-3.5" />
             </button>
           </div>
         )}

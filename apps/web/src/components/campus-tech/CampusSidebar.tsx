@@ -84,12 +84,12 @@ export function CampusSidebar({
               id: 'materias',
               label: 'Mis Asignaturas',
               icon: <IconGroups className="w-4 h-4 shrink-0" />,
-              href: '/dashboard/docente',
+              badge: counts.courses,
             },
             {
-              id: 'horarios',
-              label: 'Horarios de Clase',
-              icon: <IconSchedule className="w-4 h-4 shrink-0" />,
+              id: 'estudiantes',
+              label: 'Alumnos y Grupos',
+              icon: <IconStudents className="w-4 h-4 shrink-0" />,
             },
             {
               id: 'calificaciones',
@@ -108,8 +108,8 @@ export function CampusSidebar({
               onClick: onLaunchCampusSSO,
             },
             {
-              id: 'configuracion',
-              label: 'Ajustes del Perfil',
+              id: 'perfil',
+              label: 'Perfil y Credenciales',
               icon: <IconSettings className="w-4 h-4 shrink-0" />,
             },
           ],
@@ -321,20 +321,20 @@ export function CampusSidebar({
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
               <div className="h-6 w-6 rounded-[6px] bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0 ring-1 ring-primary/40">
-                <span className="text-accent-lime font-mono text-[11px]">C</span>
+                <span className="text-accent-lime font-mono text-[11px]">I</span>
               </div>
               <div className="leading-none truncate">
                 <span className="font-semibold text-xs tracking-tight text-foreground block">
-                  Campus Tech OS
+                  IINICIA
                 </span>
-                <span className="text-[10px] text-muted font-mono">
-                  v2.4 • IINICIA
+                <span className="text-[10px] text-muted">
+                  Portal Académico
                 </span>
               </div>
             </div>
           ) : (
             <div className="mx-auto h-6 w-6 rounded-[6px] bg-primary flex items-center justify-center text-accent-lime font-bold text-xs">
-              C
+              I
             </div>
           )}
 
@@ -352,20 +352,8 @@ export function CampusSidebar({
           </button>
         </div>
 
-        {/* Campus & Period Selector Pill (when expanded) */}
-        {!collapsed && (
-          <div className="px-3 py-2 border-b border-border/60 bg-surface-muted/30">
-            <div className="flex items-center justify-between rounded-[6px] border border-border/80 bg-surface px-2.5 py-1.5 text-[11px]">
-              <span className="font-medium text-foreground truncate">Campus Central</span>
-              <span className="rounded bg-primary/10 px-1.5 py-0.2 font-mono text-[10px] text-primary font-bold">
-                2026-A
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Navigation list */}
-        <div className="flex-1 overflow-y-auto px-2">
+        <div className="flex-1 overflow-y-auto px-2 pt-2">
           {renderNavList()}
         </div>
 
@@ -406,7 +394,7 @@ export function CampusSidebar({
                   className="text-xs text-muted hover:text-danger p-1"
                   title="Cerrar sesión"
                 >
-                  ✕
+                  <IconClose className="w-3.5 h-3.5" />
                 </button>
               </>
             ) : (
@@ -416,7 +404,7 @@ export function CampusSidebar({
                 className="h-6 w-6 text-muted hover:text-danger text-xs flex items-center justify-center"
                 title="Cerrar sesión"
               >
-                ✕
+                <IconClose className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -435,9 +423,9 @@ export function CampusSidebar({
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-[6px] bg-primary flex items-center justify-center text-accent-lime font-bold text-xs">
-                    C
+                    I
                   </div>
-                  <span className="font-semibold text-sm text-foreground">Campus Tech OS</span>
+                  <span className="font-semibold text-sm text-foreground">IINICIA Portal</span>
                 </div>
                 <button
                   type="button"

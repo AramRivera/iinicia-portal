@@ -7,11 +7,11 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata: Metadata = {
   title: {
-    default: "Campus Tech OS — IINICIA Instituto de Innovación",
-    template: "%s | Campus Tech OS",
+    default: "IINICIA — Instituto de Innovación",
+    template: "%s | IINICIA",
   },
   description:
-    "Plataforma de gestión universitaria y académica Campus Tech OS para estudiantes, docentes y administradores.",
+    "Plataforma de gestión universitaria y académica para estudiantes, docentes y administradores de IINICIA.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

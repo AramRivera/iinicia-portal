@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
 
     try {
       await rolesApi.assignRole(selectedUserForRole.id, Number(roleToAssign));
-      setNotice(`✓ Rol asignado con éxito a ${selectedUserForRole.email}.`);
+      setNotice(`Rol asignado con éxito a ${selectedUserForRole.email}.`);
       setSelectedUserForRole(null);
       await loadData();
     } catch (err: any) {
@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
 
     try {
       await rolesApi.revokeRole(userId, roleId);
-      setNotice(`✓ Rol "${roleName}" retirado exitosamente.`);
+      setNotice(`Rol "${roleName}" retirado exitosamente.`);
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error al retirar rol.');
@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
         status: newStatus,
         reason: statusReason || undefined,
       });
-      setNotice(`✓ Estado de ${selectedUserForStatus.email} actualizado a "${newStatus}".`);
+      setNotice(`Estado de ${selectedUserForStatus.email} actualizado a "${newStatus}".`);
       setSelectedUserForStatus(null);
       setStatusReason('');
       await loadData();
@@ -286,7 +286,7 @@ export default function AdminDashboardPage() {
       });
       setNotice(
         status === 'autorizada'
-          ? '✓ Matrícula autorizada y sincronizada con Moodle LMS.'
+          ? 'Matrícula autorizada y sincronizada con Moodle LMS.'
           : 'Solicitud rechazada.',
       );
       await loadData();
@@ -306,7 +306,7 @@ export default function AdminDashboardPage() {
       const res = await enrollmentsApi.retrySync(enrollmentId);
       setNotice(
         res.success
-          ? '✓ Sincronización con Moodle ejecutada exitosamente.'
+          ? 'Sincronización con Moodle ejecutada exitosamente.'
           : 'La sincronización devolvió un aviso.',
       );
       await loadData();
@@ -335,7 +335,7 @@ export default function AdminDashboardPage() {
         moodle_role: assignMoodleRole,
         notes: 'Asignado directamente desde el panel de Superadministrador',
       });
-      setNotice('✓ Curso asignado y matriculado en Moodle LMS exitosamente.');
+      setNotice('Curso asignado y matriculado en Moodle LMS exitosamente.');
       setShowAssignCourseModal(false);
       setAssignTargetUserId('');
       setAssignCourseId('');
@@ -372,7 +372,7 @@ export default function AdminDashboardPage() {
         is_active: true,
       });
 
-      setNotice(`✓ Curso "${newCourseName}" vinculado exitosamente con Moodle (ID #${newMoodleCourseId}).`);
+      setNotice(`Curso "${newCourseName}" vinculado exitosamente con Moodle (ID #${newMoodleCourseId}).`);
       setShowCreateCourseModal(false);
       setNewCourseName('');
       setNewCourseCode('');
@@ -411,7 +411,7 @@ export default function AdminDashboardPage() {
         await rolesApi.assignRole(res.id, Number(newInitialRole));
       }
 
-      setNotice(`✓ Usuario "${newEmail}" creado exitosamente.`);
+      setNotice(`Usuario "${newEmail}" creado exitosamente.`);
       setShowCreateUserModal(false);
       setNewFirstName('');
       setNewLastName('');
@@ -451,7 +451,7 @@ export default function AdminDashboardPage() {
         is_active: true,
       });
 
-      setNotice(`✓ Programa académico "${newProgName}" creado exitosamente.`);
+      setNotice(`Programa académico "${newProgName}" creado exitosamente.`);
       setShowCreateProgramModal(false);
       setNewProgCode('');
       setNewProgName('');
@@ -474,7 +474,7 @@ export default function AdminDashboardPage() {
     try {
       const res = await moodleApi.launchCampus();
       window.open(res.access_url, '_blank', 'noopener,noreferrer');
-      setNotice('✓ Sesión iniciada con éxito en Moodle vía SSO (abierta en nueva pestaña).');
+      setNotice('Sesión iniciada con éxito en Moodle vía SSO (abierta en nueva pestaña).');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión SSO en Moodle.');
     } finally {
@@ -490,7 +490,7 @@ export default function AdminDashboardPage() {
     try {
       const res = await moodleApi.syncAllUsers();
       setNotice(
-        `✓ Sincronización masiva finalizada: ${res.synced} usuarios vinculados en Moodle LMS (${res.failed} errores).`,
+        `Sincronización masiva finalizada: ${res.synced} usuarios vinculados en Moodle LMS (${res.failed} errores).`,
       );
       await loadData();
     } catch (err: any) {
@@ -507,7 +507,7 @@ export default function AdminDashboardPage() {
 
     try {
       await moodleApi.syncUser(userId);
-      setNotice('✓ Usuario sincronizado con éxito en Moodle LMS.');
+      setNotice('Usuario sincronizado con éxito en Moodle LMS.');
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error al sincronizar usuario con Moodle.');
@@ -577,24 +577,6 @@ export default function AdminDashboardPage() {
     setRoleToAssign(5);
   };
 
-  const navItems = useMemo<{ id: AdminTab; label: string; icon: string; count?: number }[]>(
-    () => [
-      { id: 'asignaciones', label: 'Asignación Cursos & Roles', icon: '🎯', count: users.length },
-      { id: 'usuarios', label: 'Directorio de Usuarios', icon: '👥', count: users.length },
-      { id: 'cursos', label: 'Catálogo de Cursos', icon: '📚', count: courses.length },
-      {
-        id: 'matriculas',
-        label: 'Matrículas & Solicitudes',
-        icon: '🎓',
-        count: enrollments.filter((e) => e.status === 'pendiente').length || undefined,
-      },
-      { id: 'programas', label: 'Programas Académicos', icon: '🏛️', count: programs.length },
-      { id: 'moodle', label: 'Integración LMS Moodle', icon: '⚙️' },
-      { id: 'auditoria', label: 'Auditoría & Logs', icon: '🛡️', count: Array.isArray(auditLogs) ? auditLogs.length : 0 },
-    ],
-    [users.length, courses.length, enrollments, programs.length, auditLogs],
-  );
-
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -636,7 +618,7 @@ export default function AdminDashboardPage() {
       <CampusShell
       currentTab={activeTab}
       onSelectTab={(tabId) => setActiveTab(tabId as AdminTab)}
-      breadcrumbs={['Campus Tech OS', 'Control Maestro', getTabLabel(activeTab)]}
+      breadcrumbs={['IINICIA', 'Control Maestro', getTabLabel(activeTab)]}
       counts={{
         users: users.length,
         courses: courses.length,
@@ -647,7 +629,7 @@ export default function AdminDashboardPage() {
       onLaunchCampusSSO={handleLaunchCampusSSO}
     >
       <div className="space-y-6">
-        {/* Header Principal de Control Maestro - Campus Tech OS */}
+        {/* Header Principal de Control Maestro */}
         <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 transition-all shadow-minimal">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5">
@@ -658,9 +640,6 @@ export default function AdminDashboardPage() {
                 </span>
                 <span className="rounded-[4px] bg-primary/10 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
                   Superadministrador
-                </span>
-                <span className="rounded-[4px] bg-accent-lime/20 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-lime/40">
-                  Campus Tech OS v2.4
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
@@ -785,9 +764,7 @@ export default function AdminDashboardPage() {
               <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{notice}</span>
             </div>
-            <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100">
-              ✕
-            </button>
+            <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100"><IconClose className="w-3.5 h-3.5" /></button>
           </div>
         )}
 
@@ -797,9 +774,7 @@ export default function AdminDashboardPage() {
               <IconAlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>{error}</span>
             </div>
-            <button type="button" onClick={() => setError(null)} className="text-xs opacity-70 hover:opacity-100">
-              ✕
-            </button>
+            <button type="button" onClick={() => setError(null)} className="text-xs opacity-70 hover:opacity-100"><IconClose className="w-3.5 h-3.5" /></button>
           </div>
         )}
 
@@ -813,7 +788,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <span>🎯</span>
+                  <IconGroups className="w-5 h-5 text-primary" />
                   <span>Tabla Maestra de Asignación de Cursos y Roles</span>
                 </h2>
                 <p className="mt-0.5 text-xs text-muted">
@@ -853,9 +828,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => setAssignSearch('')}
                     className="absolute right-3 top-2.5 text-xs text-muted hover:text-foreground"
-                  >
-                    ✕
-                  </button>
+                  ><IconClose className="w-3.5 h-3.5" /></button>
                 )}
               </div>
 
@@ -983,7 +956,7 @@ export default function AdminDashboardPage() {
                                 className="rounded-full border border-border/80 bg-surface px-2.5 py-0.5 text-[11px] font-medium text-accent hover:bg-foreground/[0.04] transition-colors"
                                 title="Agregar o revocar roles de este usuario"
                               >
-                                ✎ Roles
+                                Roles
                               </button>
                             </div>
                           </td>
@@ -1069,7 +1042,7 @@ export default function AdminDashboardPage() {
                                   className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all"
                                   title="Crear cuenta de este usuario en Moodle"
                                 >
-                                  ⚡ Moodle
+                                  Sync Moodle
                                 </button>
                               )}
                             </div>
@@ -1095,7 +1068,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <span>👥</span>
+                  <IconStudents className="w-5 h-5 text-primary" />
                   <span>Directorio de Usuarios y Accesos</span>
                 </h2>
                 <p className="mt-0.5 text-xs text-muted">
@@ -1128,9 +1101,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => setUserSearch('')}
                     className="absolute right-3 top-2.5 text-xs text-muted hover:text-foreground"
-                  >
-                    ✕
-                  </button>
+                  ><IconClose className="w-3.5 h-3.5" /></button>
                 )}
               </div>
 
@@ -1307,7 +1278,7 @@ export default function AdminDashboardPage() {
                                   className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all disabled:opacity-50"
                                   title="Sincronizar a Moodle"
                                 >
-                                  {actionLoading === `user-sync-${u.id}` ? '...' : '⚡ Moodle'}
+                                  {actionLoading === `user-sync-${u.id}` ? '...' : 'Sync Moodle'}
                                 </button>
                               )}
 
@@ -1344,7 +1315,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <span>📚</span>
+                  <IconGroups className="w-5 h-5 text-primary" />
                   <span>Catálogo de Cursos Vinculados con Moodle</span>
                 </h2>
                 <p className="mt-0.5 text-xs text-muted">
@@ -1400,7 +1371,7 @@ export default function AdminDashboardPage() {
                     </p>
                     {course.programs?.name && (
                       <p className="mt-1.5 text-[11px] text-muted/80 flex items-center gap-1">
-                        <span>🏛️</span>
+                        <IconGrades className="w-5 h-5 text-primary" />
                         <span>{course.programs.name}</span>
                       </p>
                     )}
@@ -1442,7 +1413,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <span>🎓</span>
+                  <IconAttendance className="w-5 h-5 text-primary" />
                   <span>Solicitudes y Autorizaciones de Matrícula</span>
                 </h2>
                 <p className="mt-0.5 text-xs text-muted">
@@ -1599,7 +1570,7 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-                  <span>🏛️</span>
+                  <IconGrades className="w-5 h-5 text-primary" />
                   <span>Programas Académicos Oficiales</span>
                 </h2>
                 <p className="mt-0.5 text-xs text-muted">
@@ -1678,7 +1649,7 @@ export default function AdminDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <span>🚀</span>
+                    <IconExternalLink className="w-4 h-4 text-accent-lime" />
                     <span>Abrir Campus con SSO Admin</span>
                   </>
                 )}
@@ -1755,7 +1726,7 @@ export default function AdminDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <span>🔄</span>
+                    <IconRefresh className="w-4 h-4 text-primary" />
                     <span>Sincronización Masiva</span>
                   </>
                 )}
@@ -1772,7 +1743,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-4">
           <div className="rounded-[24px] border border-border/60 bg-surface/75 backdrop-blur-xl p-5 shadow-xs">
             <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
-              <span>🛡️</span>
+              <IconAudit className="w-5 h-5 text-primary" />
               <span>Bitácora Inmutable de Auditoría</span>
             </h2>
             <p className="mt-0.5 text-xs text-muted">
@@ -1939,7 +1910,7 @@ export default function AdminDashboardPage() {
           <div className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
             <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
               <IconSettings className="w-5 h-5 text-primary" />
-              <span>Configuración del Sistema Campus Tech OS</span>
+              <span>Configuración del Sistema IINICIA</span>
             </h2>
             <p className="mt-0.5 text-xs text-muted">
               Parámetros de entorno institucional, sincronización y arquitectura.
@@ -1978,7 +1949,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Sistema de Diseño</span>
-                  <span className="font-medium text-foreground">Campus Tech OS</span>
+                  <span className="font-medium text-foreground">IINICIA</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Color Primario</span>
@@ -2016,9 +1987,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setSelectedUserForRole(null)}
                 className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-              >
-                ✕
-              </button>
+              ><IconClose className="w-3.5 h-3.5" /></button>
             </div>
 
             <div className="mt-5 space-y-4">
@@ -2109,9 +2078,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setSelectedUserForStatus(null)}
                 className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-              >
-                ✕
-              </button>
+              ><IconClose className="w-3.5 h-3.5" /></button>
             </div>
 
             <div className="mt-5 space-y-4">
@@ -2186,9 +2153,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setShowCreateUserModal(false)}
                 className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-              >
-                ✕
-              </button>
+              ><IconClose className="w-3.5 h-3.5" /></button>
             </div>
 
             <form onSubmit={handleCreateUser} className="mt-5 space-y-4">
@@ -2302,9 +2267,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setShowAssignCourseModal(false)}
                 className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-              >
-                ✕
-              </button>
+              ><IconClose className="w-3.5 h-3.5" /></button>
             </div>
 
             <form onSubmit={handleDirectCourseAssignment} className="mt-5 space-y-4">
@@ -2316,7 +2279,7 @@ export default function AdminDashboardPage() {
                   <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                        ✓ Usuario Seleccionado
+                        Usuario Seleccionado
                       </span>
                       <p className="font-semibold text-foreground text-xs mt-0.5">
                         {users.find((u) => u.id === assignTargetUserId)?.first_name}{' '}
@@ -2451,9 +2414,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setShowCreateCourseModal(false)}
                 className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-              >
-                ✕
-              </button>
+              ><IconClose className="w-3.5 h-3.5" /></button>
             </div>
 
             <form onSubmit={handleCreateCourseMapping} className="mt-5 space-y-4">
@@ -2582,9 +2543,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setShowCreateProgramModal(false)}
                 className="h-8 w-8 rounded-full bg-foreground/[0.05] hover:bg-foreground/[0.1] text-foreground/70 flex items-center justify-center transition-colors text-xs"
-              >
-                ✕
-              </button>
+              ><IconClose className="w-3.5 h-3.5" /></button>
             </div>
 
             <form onSubmit={handleCreateProgram} className="mt-5 space-y-4">

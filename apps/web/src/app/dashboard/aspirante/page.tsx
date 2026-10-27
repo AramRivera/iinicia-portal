@@ -82,7 +82,7 @@ export default function AspiranteDashboardPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-xs font-medium text-muted">Cargando portal de admisiones Campus Tech OS...</p>
+          <p className="text-xs font-medium text-muted">Cargando portal de admisiones...</p>
         </div>
       </div>
     );
@@ -92,7 +92,7 @@ export default function AspiranteDashboardPage() {
     <CampusShell
       currentTab="ofertas"
       onSelectTab={() => {}}
-      breadcrumbs={['Campus Tech OS', 'Portal de Admisiones', 'Oferta Académica']}
+      breadcrumbs={['IINICIA', 'Portal de Admisiones', 'Oferta Académica']}
       counts={{
         enrollments: enrollments.length,
       }}
@@ -250,9 +250,10 @@ export default function AspiranteDashboardPage() {
                     {already ? (
                       <button
                         disabled
-                        className="w-full rounded-[6px] border border-border bg-surface-muted py-2 text-xs font-medium text-muted cursor-not-allowed"
+                        className="w-full rounded-[6px] border border-border bg-surface-muted py-2 text-xs font-medium text-muted cursor-not-allowed flex items-center justify-center gap-1.5"
                       >
-                        ✓ Solicitud registrada previamente
+                        <IconCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Solicitud registrada previamente</span>
                       </button>
                     ) : (
                       <button
