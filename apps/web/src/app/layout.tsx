@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PortalThemeProvider } from "@/components/PortalThemeProvider";
+import { PortalAuthProvider } from "@/components/PortalAuthProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -56,12 +57,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
 
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <PortalThemeProvider>
-          <SiteHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
-          <SiteFooter />
-        </PortalThemeProvider>
-      </body>
+  <PortalThemeProvider>
+    <PortalAuthProvider>
+      <SiteHeader />
+      <main className="flex flex-1 flex-col">{children}</main>
+      <SiteFooter />
+    </PortalAuthProvider>
+  </PortalThemeProvider>
+</body>
     </html>
   );
 }

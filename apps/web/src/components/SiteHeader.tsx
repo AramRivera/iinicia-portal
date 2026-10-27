@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { usePortalTheme } from "@/components/PortalThemeProvider";
+import { usePortalAuth } from "@/components/PortalAuthProvider";
+
 
 const navItems = [
   { label: "Inicio", href: "/" },
@@ -18,6 +20,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { theme, toggleTheme } = usePortalTheme();
+  const { session, loading, logout } = usePortalAuth();
 
   // La portada ya incluye su propio encabezado (modales y modo ambiente).
   // Evitamos duplicarlo; el encabezado global aparece en las demás rutas.
@@ -49,12 +52,48 @@ export function SiteHeader() {
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 xl:flex">
-          <Link href="/login" className="portal-global-nav-link rounded-lg px-4 py-2.5 text-sm font-semibold">Iniciar sesión</Link>
-          <Link href="/registro" className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm">
-            Crear cuenta <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
+        
+<div className="hidden items-center gap-3 xl:flex">
+  {loading ? (
+    <span className="text-sm opacity-60">
+      Comprobando sesión...
+    </span>
+  ) : session ? (
+    <>
+      <Link
+        href="/estudiante"
+        className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm"
+      >
+        Mi IINICIA
+      </Link>
+
+      <button
+        type="button"
+        onClick={logout}
+        className="portal-global-nav-link rounded-lg border px-4 py-2.5 text-sm font-semibold"
+      >
+        Cerrar sesión
+      </button>
+    </>
+  ) : (
+    <>
+      <Link
+        href="/login"
+        className="portal-global-nav-link rounded-lg px-4 py-2.5 text-sm font-semibold"
+      >
+        Iniciar sesión
+      </Link>
+
+      <Link
+        href="/registro"
+        className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm"
+      >
+        Crear cuenta <span aria-hidden="true">↗</span>
+      </Link>
+    </>
+  )}
+</div>
+
 
         <button
           type="button"
@@ -83,10 +122,54 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-3">
-            <Link href="/login" onClick={() => setOpen(false)} className="portal-global-theme-toggle rounded-lg border px-3 py-3 text-center text-sm font-semibold">Iniciar sesión</Link>
-            <Link href="/registro" onClick={() => setOpen(false)} className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold">Crear cuenta</Link>
-          </div>
+          
+<div className="mt-2 grid grid-cols-2 gap-2 border-t pt-3">
+  {loading ? (
+    <span className="col-span-2 py-3 text-center text-sm opacity-60">
+      Comprobando sesión...
+    </span>
+  ) : session ? (
+    <>
+      <Link
+        href="/estudiante"
+        onClick={() => setOpen(false)}
+        className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold"
+      >
+        Mi IINICIA
+      </Link>
+
+      <button
+        type="button"
+        onClick={() => {
+          logout();
+          setOpen(false);
+        }}
+        className="portal-global-theme-toggle rounded-lg border px-3 py-3 text-center text-sm font-semibold"
+      >
+        Cerrar sesión
+      </button>
+    </>
+  ) : (
+    <>
+      <Link
+        href="/login"
+        onClick={() => setOpen(false)}
+        className="portal-global-theme-toggle rounded-lg border px-3 py-3 text-center text-sm font-semibold"
+      >
+        Iniciar sesión
+      </Link>
+
+      <Link
+        href="/registro"
+        onClick={() => setOpen(false)}
+        className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold"
+      >
+        Crear cuenta
+      </Link>
+    </>
+  )}
+</div>
+
         </nav>
       )}
     </header>
