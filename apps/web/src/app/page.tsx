@@ -263,6 +263,7 @@ export default function Page() {
     sessionVersion.current += 1;
     closeAuth();
     forgetSession();
+    window.dispatchEvent(new Event("iinicia:session-changed"));
     setPortalSession(null);
     setMenuOpen(false);
     setNotice("Cerraste la sesión en este portal.");
@@ -437,6 +438,7 @@ export default function Page() {
       try {
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({ accessToken: data.access_token, expiresAt }));
       } catch { /* Si el almacenamiento está bloqueado, conservar la sesión solo en memoria. */ }
+      window.dispatchEvent(new Event("iinicia:session-changed"));
       form.reset(); setShowPassword(false); setAuthOpen(false);
       setNotice(`Bienvenido${profile.first_name ? `, ${profile.first_name}` : ""}. Tu sesión está iniciada.`);
       window.requestAnimationFrame(() => document.getElementById("mi-iinicia")?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -654,7 +656,7 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
 
           <div className="hidden items-center gap-3 xl:flex">
             {sessionRestoring ? <span role="status" className="text-xs text-slate-600">Comprobando sesión…</span> : portalSession ? <>
-              <button type="button" onClick={() => goTo("mi-iinicia")} className="portal-account-link">Mi IINICIA</button>
+              <button type="button" onClick={() => window.location.assign("/estudiante")} className="portal-account-link">Mi IINICIA</button>
               <button type="button" onClick={closePortalSession} className="rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-900">Cerrar sesión</button>
             </> : <>
               <button type="button" onClick={() => openAuth("login")} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:text-slate-900">Iniciar sesión</button>
@@ -700,7 +702,7 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
               {sessionRestoring ? <p role="status">Comprobando sesión…</p> : portalSession ? <>
-                <button type="button" onClick={() => goTo("mi-iinicia")} className="portal-account-link">Mi IINICIA</button>
+                <button type="button" onClick={() => window.location.assign("/estudiante")} className="portal-account-link">Mi IINICIA</button>
                 <button type="button" onClick={closePortalSession} className="rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900">Cerrar sesión</button>
               </> : <>
                 <button type="button" onClick={() => openAuth("login")} className="rounded-lg border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-900">Iniciar sesión</button>
