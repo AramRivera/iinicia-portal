@@ -178,12 +178,12 @@ export interface Program {
   code: string;
   slug: string;
   name: string;
-  short_description: string;
+  short_description?: string;
   description: string;
-  type: 'licenciatura' | 'maestria' | 'diplomado' | 'curso';
+  type: 'licenciatura' | 'maestria' | 'diplomado' | 'curso' | 'certificacion';
   modality: 'en_linea' | 'presencial' | 'hibrido' | 'autogestivo';
   duration_text: string;
   duration_hours: number;
-  is_featured: boolean;
+  is_featured?: boolean;
   is_active: boolean;
 }

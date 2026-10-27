@@ -79,6 +79,12 @@ export default function LoginPage() {
               <label className="block text-xs font-medium text-foreground">
                 Contraseña
               </label>
+              <Link
+                href="/recuperar-password"
+                className="text-[11px] text-muted hover:text-primary transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
             <input
               type="password"

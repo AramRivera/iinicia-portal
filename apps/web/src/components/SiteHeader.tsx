@@ -9,9 +9,11 @@ import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
 const navItems = [
   { label: "Inicio", href: "/" },
   { label: "Cursos", href: "/cursos" },
-  { label: "Certificaciones", href: "/certificaciones" },
   { label: "Diplomados", href: "/diplomados" },
-  { label: "Universidad IINICIA", href: "/universidad" },
+  { label: "Certificaciones", href: "/certificaciones" },
+  { label: "Admisiones", href: "/admisiones" },
+  { label: "Universidad", href: "/universidad" },
+  { label: "Contacto", href: "/contacto" },
 ];
 
 export function SiteHeader() {
@@ -20,7 +22,14 @@ export function SiteHeader() {
   const { theme, toggleTheme } = useTheme();
 
   const dashboardPath = user ? getDefaultDashboardPath() : "/login";
-  const primaryRole = user?.roles?.[0] || "aspirante";
+  const primaryRole =
+    user?.roles?.find((r) => r === "superadministrador") ||
+    user?.roles?.find((r) => r === "administrador") ||
+    user?.roles?.find((r) => r === "coordinador") ||
+    user?.roles?.find((r) => r === "profesor") ||
+    user?.roles?.find((r) => r === "estudiante") ||
+    user?.roles?.[0] ||
+    "aspirante";
 
   return (
     <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-border transition-colors">

@@ -98,7 +98,7 @@ export default function AspiranteDashboardPage() {
       }}
     >
       <div className="space-y-6">
-        {/* Header Aspirante - Campus Tech OS */}
+        {/* Header Aspirante */}
         <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal transition-all">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">

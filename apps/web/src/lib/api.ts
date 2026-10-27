@@ -251,8 +251,9 @@ export const moodleApi = {
 
 // ----------------- Programs API -----------------
 export const programsApi = {
-  getPrograms: async (): Promise<Program[]> => {
-    return apiFetch<Program[]>('/programs');
+  getPrograms: async (type?: string): Promise<Program[]> => {
+    const qs = type ? `?type=${type}` : '';
+    return apiFetch<Program[]>(`/programs${qs}`);
   },
 
   getProgramBySlugOrId: async (slugOrId: string): Promise<Program> => {
