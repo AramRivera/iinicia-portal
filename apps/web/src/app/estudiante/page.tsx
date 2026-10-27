@@ -6,9 +6,10 @@ import { usePortalAuth } from "@/components/PortalAuthProvider";
 
 const sections = [
   {
-    icon: "📚",
-    title: "Mis cursos",
-    description: "Consulta los cursos en los que estás inscrito.",
+  icon: "📚",
+  title: "Mis cursos",
+  description: "Consulta los cursos en los que estás inscrito.",
+  href: "/estudiante/cursos",
   },
   {
     icon: "📝",
@@ -144,9 +145,19 @@ export default function EstudiantePage() {
                 {section.description}
               </p>
 
-              <p className="mt-5 text-xs font-semibold text-lime-600">
-                Integración en preparación
-              </p>
+              {section.href ? (
+  <Link
+    href={section.href}
+    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-lime-300 px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-lime-400"
+  >
+    Ver mis cursos
+    <span aria-hidden="true">→</span>
+  </Link>
+) : (
+  <p className="mt-5 text-xs font-semibold text-lime-600">
+    Integración en preparación
+  </p>
+)}
             </article>
           ))}
         </div>
