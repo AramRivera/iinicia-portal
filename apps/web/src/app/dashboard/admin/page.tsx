@@ -194,8 +194,14 @@ export default function AdminDashboardPage() {
         `${u.first_name} ${u.last_name}`.toLowerCase().includes(userSearch.toLowerCase()) ||
         (u.moodle_username && u.moodle_username.toLowerCase().includes(userSearch.toLowerCase()));
 
-      const userRoles = ((u.active_roles || u.roles || []) as string[]);
-      const matchesRole = userRoleFilter === '' || userRoles.includes(userRoleFilter);
+      const userRoles = ((u.active_roles || u.roles || []) as string[]).map((r) => r.toLowerCase());
+      const matchesRole =
+        userRoleFilter === '' ||
+        (userRoleFilter === 'profesor'
+          ? userRoles.some((r) => ['profesor', 'teacher', 'docente', 'editingteacher'].includes(r))
+          : userRoleFilter === 'estudiante'
+          ? userRoles.some((r) => ['estudiante', 'student'].includes(r))
+          : userRoles.includes(userRoleFilter.toLowerCase()));
 
       const matchesStatus = userStatusFilter === '' || u.status === userStatusFilter;
 
@@ -420,19 +426,16 @@ export default function AdminDashboardPage() {
     setError(null);
 
     try {
-      const res = await authApi.register({
+      await usersApi.createUser({
         email: newEmail.trim(),
         password: newPassword,
         first_name: newFirstName.trim(),
         last_name: newLastName.trim(),
         phone: newPhone.trim() || undefined,
+        role_id: Number(newInitialRole),
       });
 
-      if (Number(newInitialRole) !== 7) {
-        await rolesApi.assignRole(res.id, Number(newInitialRole));
-      }
-
-      setNotice(`Usuario "${newEmail}" creado exitosamente.`);
+      setNotice(`Usuario "${newEmail}" creado exitosamente con su rol asignado.`);
       setShowCreateUserModal(false);
       setNewFirstName('');
       setNewLastName('');
@@ -557,10 +560,14 @@ export default function AdminDashboardPage() {
 
       const matchesQuery = !q || fullName.includes(q) || email.includes(q) || username.includes(q);
 
-      const userRoles = (u.active_roles || u.roles || []) as string[];
+      const userRoles = ((u.active_roles || u.roles || []) as string[]).map((r) => r.toLowerCase());
       const matchesRole =
         !assignRoleFilter ||
-        userRoles.some((r) => r.toLowerCase().includes(assignRoleFilter.toLowerCase()));
+        (assignRoleFilter === 'profesor'
+          ? userRoles.some((r) => ['profesor', 'teacher', 'docente', 'editingteacher'].includes(r))
+          : assignRoleFilter === 'estudiante'
+          ? userRoles.some((r) => ['estudiante', 'student'].includes(r))
+          : userRoles.some((r) => r.includes(assignRoleFilter.toLowerCase())));
 
       const userEnrs = userEnrollmentsMap[u.id] || [];
       const matchesCourse =
@@ -1400,7 +1407,7 @@ export default function AdminDashboardPage() {
 
                   <div className="mt-6 border-t border-border/40 pt-4 flex items-center justify-between gap-2">
                     <a
-                      href={`http://localhost/moodle/course/view.php?id=${course.moodle_course_id}`}
+                      href={`${process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle'}/course/view.php?id=${course.moodle_course_id}`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-xs text-accent font-medium hover:underline inline-flex items-center gap-1"
@@ -1697,7 +1704,7 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 border-t border-border/40 pt-6">
               <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-5">
                 <span className="text-[11px] font-medium tracking-wide uppercase text-muted">URL del Campus</span>
-                <p className="mt-1 font-mono text-sm font-semibold text-foreground">http://localhost/moodle</p>
+                <p className="mt-1 font-mono text-sm font-semibold text-foreground">{process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle'}</p>
                 <span className="text-[11px] text-muted mt-1 block">Acceso local y de intranet</span>
               </div>
               <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-5">
@@ -1878,8 +1885,8 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-border">
                   {users
                     .filter((u) => {
-                      const userRoles = (u.active_roles || u.roles || []) as string[];
-                      return userRoles.includes('teacher');
+                      const userRoles = ((u.active_roles || u.roles || []) as string[]).map((r) => r.toLowerCase());
+                      return userRoles.some((r) => ['profesor', 'teacher', 'docente', 'editingteacher'].includes(r));
                     })
                     .map((prof) => (
                       <tr key={prof.id} className="hover:bg-surface-muted/30 transition-colors">
@@ -1925,7 +1932,10 @@ export default function AdminDashboardPage() {
                         </td>
                       </tr>
                     ))}
-                  {users.filter((u) => ((u.active_roles || u.roles || []) as string[]).includes('teacher')).length === 0 && (
+                  {users.filter((u) => {
+                    const userRoles = ((u.active_roles || u.roles || []) as string[]).map((r) => r.toLowerCase());
+                    return userRoles.some((r) => ['profesor', 'teacher', 'docente', 'editingteacher'].includes(r));
+                  }).length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-5 py-8 text-center text-muted">
                         No hay profesores registrados con el rol de docente aún.

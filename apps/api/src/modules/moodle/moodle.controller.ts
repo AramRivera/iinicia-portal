@@ -6,6 +6,7 @@ import {
   Ip,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -91,5 +92,47 @@ export class MoodleController {
       ipAddress,
       userAgent,
     });
+  }
+
+  /**
+   * Obtiene la estructura de temas y módulos de un curso en Moodle.
+   */
+  @Get('courses/:courseId/contents')
+  @UseGuards(SupabaseAuthGuard)
+  getCourseContents(@Param('courseId') courseId: string) {
+    return this.moodleService.getCourseContents(Number(courseId));
+  }
+
+  /**
+   * Lista los participantes matriculados en un curso de Moodle.
+   */
+  @Get('courses/:courseId/participants')
+  @UseGuards(SupabaseAuthGuard)
+  getCourseParticipants(@Param('courseId') courseId: string) {
+    return this.moodleService.getCourseParticipants(Number(courseId));
+  }
+
+  /**
+   * Obtiene el progreso y calificaciones de un usuario en un curso de Moodle.
+   */
+  @Get('courses/:courseId/progress')
+  @UseGuards(SupabaseAuthGuard)
+  getCourseProgress(
+    @Param('courseId') courseId: string,
+    @Query('moodle_user_id') moodleUserId?: string,
+  ) {
+    return this.moodleService.getUserCourseProgress(
+      Number(courseId),
+      Number(moodleUserId || 0),
+    );
+  }
+
+  /**
+   * Resumen analítico global de un curso (docentes y administradores).
+   */
+  @Get('courses/:courseId/teacher-overview')
+  @UseGuards(SupabaseAuthGuard)
+  getCourseTeacherOverview(@Param('courseId') courseId: string) {
+    return this.moodleService.getCourseTeacherOverview(Number(courseId));
   }
 }

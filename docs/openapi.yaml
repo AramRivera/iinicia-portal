@@ -387,6 +387,37 @@ paths:
         "201":
           description: Solicitud registrada en estado 'pendiente'.
 
+  /enrollments/{id}:
+    delete:
+      summary: Desasignar curso o dar de baja matrícula
+      description: Permite al estudiante darse de baja de su curso o al personal docente/administrativo revocar una matrícula. Desmatricula al usuario de Moodle LMS vía Web Services oficiales (enrol_manual_unenrol_users).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Identificador UUID de la matrícula
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Matrícula revocada y desasignada exitosamente en el portal y en Moodle LMS.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        "403":
+          description: No autorizado para dar de baja esta matrícula.
+        "404":
+          description: Matrícula no encontrada.
+
   /enrollments/{id}/status:
     patch:
       summary: Autorizar o rechazar inscripción

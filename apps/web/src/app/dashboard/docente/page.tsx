@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { coursesApi, moodleApi, enrollmentsApi } from '@/lib/api';
+import { coursesApi, moodleApi, enrollmentsApi, usersApi } from '@/lib/api';
 import type { AuthorizedCourse, EnrollmentRequest } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
@@ -43,7 +43,7 @@ interface GradeTarget {
 
 export default function DocenteDashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TeacherTab>('materias');
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
@@ -61,9 +61,17 @@ export default function DocenteDashboardPage() {
   const [tempGrade, setTempGrade] = useState('');
   const [tempGradeFeedback, setTempGradeFeedback] = useState('');
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<AuthorizedCourse | null>(null);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    bio: '',
+  });
 
-  // Calificaciones locales temporales para feedback inmediato
+  // Calificaciones y notas locales de seguimiento pedagógico
   const [studentGrades, setStudentGrades] = useState<Record<string, { grade: string; notes: string }>>({});
+  const [moodleCourseOverviews, setMoodleCourseOverviews] = useState<Record<number, any>>({});
 
   const loadTeacherData = async () => {
     try {
@@ -75,6 +83,24 @@ export default function DocenteDashboardPage() {
       ]);
       setCourses(coursesData);
       setEnrollments(enrollmentsData);
+
+      // Cargar resumen de Moodle para cada curso
+      if (coursesData.length > 0) {
+        const overviews: Record<number, any> = {};
+        await Promise.all(
+          coursesData.map(async (c) => {
+            if (c.moodle_course_id) {
+              try {
+                const ov = await moodleApi.getCourseTeacherOverview(c.moodle_course_id);
+                if (ov) overviews[c.moodle_course_id] = ov;
+              } catch {
+                // Silencioso
+              }
+            }
+          }),
+        );
+        setMoodleCourseOverviews(overviews);
+      }
     } catch (err: any) {
       setError(err.message || 'No fue posible cargar tus asignaturas.');
     } finally {
@@ -103,6 +129,59 @@ export default function DocenteDashboardPage() {
       setNotice('Sesión docente iniciada en Moodle LMS vía SSO en una nueva pestaña.');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión SSO en Moodle.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLaunchCourseSSO = async (courseMappingId: string) => {
+    setActionLoading(`launch-${courseMappingId}`);
+    setNotice(null);
+    setError(null);
+
+    try {
+      const res = await coursesApi.launchCourse(courseMappingId);
+      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      setError(err.message || 'Error al acceder al aula de Moodle.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleOpenGradebook = (moodleCourseId: number) => {
+    const base = process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle';
+    window.open(`${base}/grade/report/grader/index.php?id=${moodleCourseId}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenEditProfile = () => {
+    setProfileForm({
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
+      phone: user?.phone || '',
+      bio: (user as any)?.bio || '',
+    });
+    setEditProfileOpen(true);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading('save-profile');
+    setNotice(null);
+    setError(null);
+
+    try {
+      await usersApi.updateOwnProfile({
+        first_name: profileForm.first_name.trim(),
+        last_name: profileForm.last_name.trim(),
+        phone: profileForm.phone.trim(),
+        bio: profileForm.bio.trim(),
+      });
+      await refreshUser();
+      setNotice('Tus credenciales y datos de perfil docente han sido actualizados con éxito.');
+      setEditProfileOpen(false);
+    } catch (err: any) {
+      setError(err.message || 'No fue posible actualizar tu perfil docente.');
     } finally {
       setActionLoading(null);
     }
@@ -420,7 +499,8 @@ export default function DocenteDashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {filteredCourses.map((course) => {
+                {filteredCourses.map((course, index) => {
+                  const courseKey = course.course_mapping_id || `teacher-course-${index}`;
                   const studentCount = enrollments.filter(
                     (e) =>
                       e.course_mapping_id === course.course_mapping_id &&
@@ -430,7 +510,7 @@ export default function DocenteDashboardPage() {
 
                   return (
                     <div
-                      key={course.course_mapping_id}
+                      key={courseKey}
                       className="flex flex-col justify-between rounded-[10px] border border-border bg-surface p-5 shadow-minimal hover:border-primary/40 transition-all"
                     >
                       <div>
@@ -439,7 +519,11 @@ export default function DocenteDashboardPage() {
                             {course.course_code}
                           </span>
                           <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted border border-border">
-                            {studentCount} estudiante(s) inscrito(s)
+                            {(() => {
+                              const ov = moodleCourseOverviews[course.moodle_course_id];
+                              const count = ov?.total_students != null ? ov.total_students : studentCount;
+                              return `${count} alumno(s) Moodle`;
+                            })()}
                           </span>
                         </div>
 
@@ -451,10 +535,28 @@ export default function DocenteDashboardPage() {
                           Moodle ID: #{course.moodle_course_id} • Rol: Docente Titular
                         </p>
 
+                        {/* Indicadores en vivo de Moodle */}
+                        {(() => {
+                          const ov = moodleCourseOverviews[course.moodle_course_id];
+                          if (!ov) return null;
+                          return (
+                            <div className="mt-3 grid grid-cols-2 gap-2 rounded-[6px] bg-surface-muted/30 p-2 text-[10px] text-muted border border-border/50 font-mono">
+                              <div>
+                                <span>Actividades: </span>
+                                <strong className="text-foreground">{ov.total_activities ?? 0}</strong>
+                              </div>
+                              <div>
+                                <span>Secciones: </span>
+                                <strong className="text-foreground">{ov.total_sections ?? 0}</strong>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* Accesos rápidos docentes de Moodle */}
                         <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
                           <a
-                            href={`http://localhost/moodle/grade/report/grader/index.php?id=${course.moodle_course_id}`}
+                            href={`${process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle'}/grade/report/grader/index.php?id=${course.moodle_course_id}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 rounded-[4px] border border-border bg-surface-muted/40 hover:bg-surface-muted px-2.5 py-1 text-muted hover:text-foreground transition-all"
@@ -645,22 +747,48 @@ export default function DocenteDashboardPage() {
                     <span>Libro de Calificaciones y Evaluaciones</span>
                   </h2>
                   <p className="text-xs text-muted mt-0.5">
-                    Registra evaluaciones parciales o asienta la nota final de tus alumnos antes del cierre de actas en Moodle.
+                    El libro de calificaciones oficial y las actas académicas se asientan directamente en Moodle LMS.
                   </p>
                 </div>
 
-                <select
-                  value={selectedCourseFilter}
-                  onChange={(e) => setSelectedCourseFilter(e.target.value)}
-                  className="rounded-[6px] border border-border bg-surface-muted/40 px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none transition-all"
-                >
-                  <option value="">Todas mis asignaturas</option>
-                  {courses.map((c) => (
-                    <option key={c.course_mapping_id} value={c.course_mapping_id}>
-                      {c.course_code} - {c.course_name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <select
+                    value={selectedCourseFilter}
+                    onChange={(e) => setSelectedCourseFilter(e.target.value)}
+                    className="rounded-[6px] border border-border bg-surface-muted/40 px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none transition-all"
+                  >
+                    <option value="">Todas mis asignaturas</option>
+                    {courses.map((c) => (
+                      <option key={c.course_mapping_id} value={c.course_mapping_id}>
+                        {c.course_code} - {c.course_name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {courses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = selectedCourseFilter
+                          ? courses.find((c) => c.course_mapping_id === selectedCourseFilter)
+                          : courses[0];
+                        if (target?.moodle_course_id) {
+                          handleOpenGradebook(target.moodle_course_id);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
+                    >
+                      <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
+                      <span>Abrir Calificador en Moodle ↗</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-[8px] bg-surface-muted/50 border border-border/70 p-3 text-xs text-muted leading-relaxed">
+                <p>
+                  <strong className="text-foreground">Lineamiento académico oficial:</strong> Las calificaciones finales, ponderaciones de rúbricas y actas se administran de manera centralizada en Moodle LMS para validez escolar. En esta vista puedes dar seguimiento preliminar a tus estudiantes o ingresar directamente al calificador de cada asignatura.
+                </p>
               </div>
             </div>
 
@@ -675,9 +803,9 @@ export default function DocenteDashboardPage() {
                     <tr>
                       <th className="px-5 py-3.5">Estudiante</th>
                       <th className="px-5 py-3.5">Materia</th>
-                      <th className="px-5 py-3.5">Calificación Portal</th>
-                      <th className="px-5 py-3.5">Estado Académico</th>
-                      <th className="px-5 py-3.5 text-right">Acción</th>
+                      <th className="px-5 py-3.5">Estado Moodle</th>
+                      <th className="px-5 py-3.5">Seguimiento Formativo</th>
+                      <th className="px-5 py-3.5 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -688,8 +816,9 @@ export default function DocenteDashboardPage() {
                           : 'Estudiante Registrado';
                       const courseName =
                         enr.course_mappings?.courses?.name || 'Materia';
+                      const moodleCourseId = enr.course_mappings?.moodle_course_id;
+                      const courseMappingId = enr.course_mapping_id;
                       const localData = studentGrades[enr.id];
-                      const displayGrade = localData?.grade || 'Sin evaluar';
                       const isPassing = localData ? parseFloat(localData.grade) >= 6 : null;
 
                       return (
@@ -705,48 +834,65 @@ export default function DocenteDashboardPage() {
                           <td className="px-5 py-3.5 font-medium text-foreground">
                             {courseName}
                           </td>
+                          <td className="px-5 py-3.5">
+                            <MoodleSyncBadge
+                              status={enr.moodle_sync_status}
+                              moodleId={enr.profiles?.moodle_user_id}
+                            />
+                          </td>
                           <td className="px-5 py-3.5 font-mono text-xs">
                             {localData ? (
-                              <span className="font-bold text-foreground bg-surface-muted px-2 py-0.5 rounded-[4px] border border-border">
-                                {localData.grade} / 10
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-foreground bg-surface-muted px-2 py-0.5 rounded-[4px] border border-border">
+                                  {localData.grade} / 10
+                                </span>
+                                <span className={`text-[10px] font-semibold ${isPassing ? 'text-emerald-600' : 'text-danger'}`}>
+                                  {isPassing ? 'Aprobado' : 'Reprobado'}
+                                </span>
+                              </div>
                             ) : (
-                              <span className="text-muted">Pendiente de calificar</span>
-                            )}
-                          </td>
-                          <td className="px-5 py-3.5">
-                            {isPassing === null ? (
-                              <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[10px] font-mono text-muted border border-border">
-                                Cursando
-                              </span>
-                            ) : isPassing ? (
-                              <span className="rounded-[4px] bg-emerald-500/10 px-2 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
-                                Aprobado
-                              </span>
-                            ) : (
-                              <span className="rounded-[4px] bg-danger/10 px-2 py-0.5 text-[10px] font-mono text-danger font-semibold border border-danger/20">
-                                Reprobado
-                              </span>
+                              <span className="text-muted text-[11px]">En evaluación en Moodle</span>
                             )}
                           </td>
                           <td className="px-5 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setGradeTarget({
-                                  enrollmentId: enr.id,
-                                  studentName,
-                                  courseName,
-                                  currentGrade: localData?.grade || '',
-                                  status: isPassing === null ? 'Cursando' : isPassing ? 'Aprobado' : 'Reprobado',
-                                });
-                                setTempGrade(localData?.grade || '');
-                                setTempGradeFeedback(localData?.notes || '');
-                              }}
-                              className="rounded-[4px] border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-all"
-                            >
-                              Evaluar Alumno
-                            </button>
+                            <div className="inline-flex items-center gap-2">
+                              {courseMappingId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleLaunchCourseSSO(courseMappingId)}
+                                  disabled={actionLoading === `launch-${courseMappingId}`}
+                                  className="rounded-[4px] border border-border bg-surface-muted/40 hover:bg-surface-muted px-2 py-1 text-[11px] font-medium text-foreground transition-all"
+                                >
+                                  Aula SSO ↗
+                                </button>
+                              )}
+                              {moodleCourseId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenGradebook(moodleCourseId)}
+                                  className="rounded-[4px] border border-border bg-surface-muted/40 hover:bg-surface-muted px-2 py-1 text-[11px] font-medium text-primary transition-all"
+                                >
+                                  Calificador ↗
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setGradeTarget({
+                                    enrollmentId: enr.id,
+                                    studentName,
+                                    courseName,
+                                    currentGrade: localData?.grade || '',
+                                    status: isPassing === null ? 'Cursando' : isPassing ? 'Aprobado' : 'Reprobado',
+                                  });
+                                  setTempGrade(localData?.grade || '');
+                                  setTempGradeFeedback(localData?.notes || '');
+                                }}
+                                className="rounded-[4px] border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-all"
+                              >
+                                Nota Rápida
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -763,14 +909,24 @@ export default function DocenteDashboardPage() {
         {/* ========================================================================= */}
         {activeTab === 'perfil' && (
           <div className="space-y-4">
-            <div className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
-              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <IconSettings className="w-5 h-5 text-primary" />
-                <span>Perfil Institucional y Credenciales Docentes</span>
-              </h2>
-              <p className="text-xs text-muted mt-0.5">
-                Datos de identidad académica registrados en IINICIA y vinculación con el campus virtual.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
+              <div>
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <IconSettings className="w-5 h-5 text-primary" />
+                  <span>Perfil Institucional y Credenciales Docentes</span>
+                </h2>
+                <p className="text-xs text-muted mt-0.5">
+                  Datos de identidad académica registrados en IINICIA y vinculación con el campus virtual.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenEditProfile}
+                className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-[6px] border border-border bg-surface-muted/50 hover:bg-surface-muted px-3 py-1.5 text-xs font-semibold text-foreground transition-all"
+              >
+                <IconSettings className="w-3.5 h-3.5 text-primary" />
+                <span>Editar Información</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -790,8 +946,12 @@ export default function DocenteDashboardPage() {
                     <span className="font-mono text-foreground">{user?.email}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
+                    <span className="text-muted">Teléfono de Contacto</span>
+                    <span className="font-mono text-foreground">{user?.phone || 'No registrado'}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-muted">Rol Académico</span>
-                    <span className="font-medium text-primary">Profesor Titular</span>
+                    <span className="font-medium text-primary">Docente Titular / Profesor</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Estado en Portal</span>
@@ -810,7 +970,7 @@ export default function DocenteDashboardPage() {
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-muted">Usuario en Moodle</span>
                     <span className="font-mono text-foreground">
-                      {user?.moodle_username || 'profesor'}
+                      {user?.moodle_username || user?.email?.split('@')[0] || 'docente'}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
@@ -964,6 +1124,97 @@ export default function DocenteDashboardPage() {
                     className="rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
                   >
                     Guardar Calificación
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: EDITAR INFORMACIÓN DE PERFIL DOCENTE */}
+        {editProfileOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md rounded-[14px] border border-border bg-surface p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <IconSettings className="w-5 h-5 text-primary" />
+                  <h3 className="text-base font-bold text-foreground">
+                    Editar Datos del Docente
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditProfileOpen(false)}
+                  className="text-muted hover:text-foreground"
+                >
+                  <IconClose className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-muted font-medium mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileForm.first_name}
+                    onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                    className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3 py-2 text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-muted font-medium mb-1">Apellidos</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileForm.last_name}
+                    onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                    className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3 py-2 text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-muted font-medium mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    placeholder="Ej. +52 55 1234 5678"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3 py-2 text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-muted font-medium mb-1">Semblanza académica o síntesis curricular</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Grados académicos, líneas de investigación o áreas de especialidad..."
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                    className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3 py-2 text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-border">
+                  <button
+                    type="button"
+                    onClick={() => setEditProfileOpen(false)}
+                    disabled={actionLoading === 'save-profile'}
+                    className="rounded-[6px] border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading === 'save-profile'}
+                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-all disabled:opacity-50"
+                  >
+                    {actionLoading === 'save-profile' ? (
+                      <span>Guardando...</span>
+                    ) : (
+                      <>
+                        <IconCheck className="w-3.5 h-3.5" />
+                        <span>Guardar Cambios</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

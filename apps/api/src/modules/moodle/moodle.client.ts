@@ -14,12 +14,55 @@ import type {
 @Injectable()
 export class MoodleClient {
   private readonly logger = new Logger(MoodleClient.name);
+  private canonicalBaseUrl: string | null = null;
 
   constructor(private readonly config: ConfigService) {}
 
   private getBaseUrl(): string {
-    const url = this.config.get<string>('MOODLE_URL') || 'http://localhost/moodle';
+    if (this.canonicalBaseUrl) return this.canonicalBaseUrl;
+    const url =
+      this.config.get<string>('MOODLE_URL') ||
+      this.config.get<string>('MOODLE_BASE_URL') ||
+      'http://192.168.191.171/moodle';
     return url.replace(/\/+$/, '');
+  }
+
+  /**
+   * Resuelve la URL canónica de Moodle (siguiendo redirecciones si Moodle está configurado con IP específica).
+   */
+  async getEffectiveBaseUrl(): Promise<string> {
+    if (this.canonicalBaseUrl) {
+      return this.canonicalBaseUrl;
+    }
+
+    const token = this.getToken();
+    const configuredUrl = (
+      this.config.get<string>('MOODLE_URL') ||
+      this.config.get<string>('MOODLE_BASE_URL') ||
+      'http://192.168.191.171/moodle'
+    ).replace(/\/+$/, '');
+
+    if (!token) {
+      return configuredUrl;
+    }
+
+    try {
+      // Petición GET que sigue redirecciones HTTP de forma nativa para obtener el siteurl canónico
+      const pingUrl = `${configuredUrl}/webservice/rest/server.php?wstoken=${token}&wsfunction=core_webservice_get_site_info&moodlewsrestformat=json`;
+      const res = await fetch(pingUrl, { method: 'GET' });
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (data && typeof data.siteurl === 'string' && data.siteurl.startsWith('http')) {
+          const canonical = data.siteurl.replace(/\/+$/, '');
+          this.canonicalBaseUrl = canonical;
+          return canonical;
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn(`No fue posible auto-descubrir siteurl de Moodle: ${err?.message}`);
+    }
+
+    return configuredUrl;
   }
 
   private getToken(): string {
@@ -65,7 +108,8 @@ export class MoodleClient {
         },
       );
       return response?.loginurl ?? null;
-    } catch {
+    } catch (err: any) {
+      this.logger.warn(`Error al solicitar loginurl con auth_userkey para ${email}: ${err?.message}`);
       return null;
     }
   }
@@ -218,7 +262,6 @@ export class MoodleClient {
         {
           userid: params.userId,
           courseid: params.courseId,
-          roleid: params.roleId,
         },
       ],
     });
@@ -256,6 +299,68 @@ export class MoodleClient {
   }
 
   /**
+   * Obtiene las secciones, actividades y recursos de un curso (`core_course_get_contents`).
+   */
+  async getCourseContents(courseId: number): Promise<any[]> {
+    try {
+      const contents = await this.callFunction<any[]>('core_course_get_contents', {
+        courseid: courseId,
+      });
+      return Array.isArray(contents) ? contents : [];
+    } catch (err: any) {
+      this.logger.warn(`No fue posible obtener contenidos del curso #${courseId}: ${err.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene la lista de usuarios matriculados en un curso de Moodle (`core_enrol_get_enrolled_users`).
+   */
+  async getCourseEnrolledUsers(courseId: number): Promise<any[]> {
+    try {
+      const users = await this.callFunction<any[]>('core_enrol_get_enrolled_users', {
+        courseid: courseId,
+      });
+      return Array.isArray(users) ? users : [];
+    } catch (err: any) {
+      this.logger.warn(`No fue posible obtener usuarios matriculados del curso #${courseId}: ${err.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene las calificaciones de un usuario en un curso (`gradereport_user_get_grade_items`).
+   */
+  async getUserCourseGrades(courseId: number, moodleUserId: number): Promise<any | null> {
+    try {
+      const res = await this.callFunction<any>('gradereport_user_get_grade_items', {
+        courseid: courseId,
+        userid: moodleUserId,
+      });
+      return res?.usergrades?.[0] || null;
+    } catch (err: any) {
+      this.logger.warn(`No fue posible obtener calificaciones de usuario #${moodleUserId} en curso #${courseId}: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Obtiene el estado de compleción de un curso para un usuario (`core_completion_get_course_completion_status`).
+   */
+  async getCourseCompletionStatus(courseId: number, moodleUserId: number): Promise<any | null> {
+    try {
+      const status = await this.callFunction<any>('core_completion_get_course_completion_status', {
+        courseid: courseId,
+        userid: moodleUserId,
+      });
+      return status?.completionstatus || null;
+    } catch (err: any) {
+      // Si el curso no tiene criterios de terminación configurados en Moodle, no se considera error crítico
+      return null;
+    }
+  }
+
+  /**
    * Ejecuta una petición HTTP a `server.php` de Moodle Web Services.
    */
   private async callFunction<T>(
@@ -263,7 +368,7 @@ export class MoodleClient {
     params: Record<string, any> = {},
   ): Promise<T> {
     const token = this.getToken();
-    const baseUrl = this.getBaseUrl();
+    const baseUrl = await this.getEffectiveBaseUrl();
 
     if (!token) {
       throw new ServiceUnavailableException(

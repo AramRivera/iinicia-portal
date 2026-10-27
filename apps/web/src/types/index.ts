@@ -169,6 +169,7 @@ export interface EnrollmentRequest {
     email: string;
     first_name: string;
     last_name: string;
+    moodle_user_id?: number | null;
   };
 }
 

@@ -58,14 +58,15 @@ Cuando una persona se registraba públicamente en `/registro`, Supabase Auth y e
 
 2. **Portal Docente (`/dashboard/docente`):**
    - **Directorio de Alumnos:** Lista de estudiantes con nombre, correo, fecha y estado de sincronización. Botón **"Desasignar"** para dar de baja a un alumno del grupo con confirmación modal.
-   - **Libro de Calificaciones:** Registro de notas parciales y retroalimentación preliminar antes del cierre de actas en Moodle.
-   - **Mis Asignaturas:** Conteo en tiempo real de alumnos inscritos y enlace directo a calificador y participantes.
+   - **Libro de Calificaciones y Actas:** Conforme al modelo académico de IINICIA (ALCANCE.md Sección 10), las actas y calificaciones oficiales se gestionan en Moodle LMS. El portal incluye botón de salto directo al **Calificador Oficial de Moodle** (`grade/report/grader/index.php`) y permite registrar notas formativas de seguimiento pedagógico.
+   - **Mis Asignaturas:** Conteo en tiempo real de alumnos inscritos, enlace directo al calificador y botón de acceso seguro al aula virtual.
+   - **Perfil Docente Editable:** Modal interactivo para actualizar nombre, apellidos, teléfono de contacto y semblanza académica mediante `PATCH /users/me/profile`.
 
 3. **Portal Estudiante (`/dashboard/estudiante`):**
-   - **Mis Materias Activas:** Fichas con barra de avance didáctico (%), botón SSO de acceso a Moodle, modal interactivo de temario/sílabo y botón **"Dar de baja materia"** para desasignarse con confirmación.
+   - **Mis Materias Activas:** Fichas con barra de avance didáctico real, botón SSO de acceso a Moodle, modal interactivo de temario/sílabo y botón **"Dar de baja materia"** para desasignarse con confirmación.
    - **Catálogo e Inscripción:** Explorador de materias ofertadas con inscripción en 1 clic y matriculación inmediata a Moodle LMS.
-   - **Kárdex y Avance Curricular:** Historial con promedio general, créditos SATCA acumulados y estatus de acreditación.
-   - **Expediente Escolar:** Matrícula oficial, correo y estatus de documentación.
+   - **Kárdex y Avance Curricular:** Panel de métricas Bento (Materias Inscritas, Acreditadas, Promedio Parcial en escala oficial 0 a 10 y Créditos SATCA acumulados) junto con la tabla de estatus académico y enlaces SSO a cada aula.
+   - **Expediente Escolar Editable:** Matrícula oficial, estatus escolar, correo, teléfono y modal para editar información personal (`PATCH /users/me/profile`).
 
 4. **Panel de Asignaciones Dedicado (`/dashboard/admin/asignaciones`):**
    - Tabla interactiva con filtro instantáneo por nombre o correo.
@@ -75,7 +76,21 @@ Cuando una persona se registraba públicamente en `/registro`, Supabase Auth y e
 
 ---
 
-## 4. Identidad Visual Institucional
+## 4. Arquitectura de Single Sign-On (SSO) con Moodle LMS
+
+1. **Auto-descubrimiento de URL Canónica (`MoodleClient.getEffectiveBaseUrl`):**
+   - Consulta `core_webservice_get_site_info` mediante GET para resolver de forma transparente la URL canónica de Moodle (`$CFG->wwwroot`), previniendo errores de redirección HTTP 303 que corrompen las llamadas REST en instalaciones alojadas en IPs o dominios locales específicos.
+
+2. **Pre-sincronización Just-In-Time (JIT):**
+   - Si un usuario registrado aún no posee `moodle_user_id`, el backend invoca automáticamente `syncUser` antes de solicitar la llave de un solo uso, garantizando que el usuario exista en Moodle para evitar el error `User is not exist`.
+
+3. **Autenticación Efímera con `auth_userkey`:**
+   - La API solicita una llave temporal a Moodle Web Services (`auth_userkey_request_login_url`) parametrizando el correo del usuario y el parámetro `wantsurl`.
+   - Moodle responde con una URL protegida (`/auth/userkey/login.php?key=...&wantsurl=...`) que al abrirse en el navegador establece la cookie `MoodleSession` y redirige al usuario directamente al aula sin requerir credenciales manuales.
+
+---
+
+## 5. Identidad Visual Institucional (Campus Tech OS)
 
 - **Tokens Compartidos:**
   - Color Primario: `#2457F5` (Azul eléctrico institucional).
@@ -88,7 +103,7 @@ Cuando una persona se registraba públicamente en `/registro`, Supabase Auth y e
 
 ---
 
-## 4. Pruebas y Validación Técnica
+## 6. Pruebas y Validación Técnica
 
-- **Backend NestJS:** 55 pruebas unitarias automatizadas (`npm test --prefix apps/api`).
-- **Frontend Next.js:** Compilación de producción validada sin errores de TypeScript ni Turbopack (`npm run build --prefix apps/web`).
+- **Backend NestJS:** 59 pruebas unitarias automatizadas (`npm test --prefix apps/api`) en 13 suites de prueba aprobadas al 100%.
+- **Frontend Next.js:** Compilación de producción validada sin errores de TypeScript ni Turbopack (`npm run build --prefix apps/web`) generando 19 rutas de forma estática.

@@ -253,6 +253,23 @@ export const moodleApi = {
       method: 'POST',
     });
   },
+
+  getCourseContents: async (courseId: number): Promise<any[]> => {
+    return apiFetch<any[]>(`/moodle/courses/${courseId}/contents`);
+  },
+
+  getCourseParticipants: async (courseId: number): Promise<any[]> => {
+    return apiFetch<any[]>(`/moodle/courses/${courseId}/participants`);
+  },
+
+  getCourseProgress: async (courseId: number, moodleUserId?: number): Promise<any> => {
+    const qs = moodleUserId ? `?moodle_user_id=${moodleUserId}` : '';
+    return apiFetch<any>(`/moodle/courses/${courseId}/progress${qs}`);
+  },
+
+  getCourseTeacherOverview: async (courseId: number): Promise<any> => {
+    return apiFetch<any>(`/moodle/courses/${courseId}/teacher-overview`);
+  },
 };
 
 // ----------------- Programs API -----------------
@@ -308,6 +325,33 @@ export const usersApi = {
   updateStatus: async (userId: string, payload: { status: string; reason?: string }): Promise<any> => {
     return apiFetch(`/users/${userId}/status`, {
       method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateOwnProfile: async (payload: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    avatar_url?: string;
+    bio?: string;
+  }): Promise<{ message: string; profile: UserProfile }> => {
+    return apiFetch<{ message: string; profile: UserProfile }>('/users/me/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  createUser: async (payload: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+    role_id: number;
+  }): Promise<UserProfile> => {
+    return apiFetch<UserProfile>('/users', {
+      method: 'POST',
       body: JSON.stringify(payload),
     });
   },

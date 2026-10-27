@@ -105,7 +105,7 @@ export class RolesService {
     }
 
     // Si se asigna un rol formal (profesor, estudiante, administrador, coordinador, etc.),
-    // desactivar automáticamente el rol temporal de 'aspirante' para evitar duplicidad y roles contradictorios.
+    // eliminar automáticamente el rol temporal de 'aspirante' para evitar duplicidad y roles contradictorios.
     if (role.slug !== 'aspirante') {
       const { data: aspiranteRole } = await admin
         .from('roles')
@@ -114,11 +114,12 @@ export class RolesService {
         .maybeSingle();
 
       if (aspiranteRole) {
-        await admin
-          .from('user_roles')
-          .update({ is_active: false })
-          .eq('user_id', targetUserId)
-          .eq('role_id', aspiranteRole.id);
+        const query = admin.from('user_roles') as any;
+        if (typeof query.delete === 'function') {
+          await query.delete().eq('user_id', targetUserId).eq('role_id', aspiranteRole.id);
+        } else {
+          await query.update({ is_active: false }).eq('user_id', targetUserId).eq('role_id', aspiranteRole.id);
+        }
       }
     }
 

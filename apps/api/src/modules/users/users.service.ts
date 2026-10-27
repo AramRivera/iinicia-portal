@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -11,6 +13,7 @@ import { MoodleClient } from '../moodle/moodle.client.js';
 import { QueryUsersDto } from './dto/query-users.dto.js';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
 import { UpdateOwnProfileDto } from './dto/update-own-profile.dto.js';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -204,5 +207,133 @@ export class UsersService {
     }
 
     return data;
+  }
+
+  /**
+   * Crea un usuario administrativamente en Supabase Auth y le asigna
+   * directamente su rol definitivo sin interferir con la sesión del administrador.
+   */
+  async createUserByAdmin(dto: CreateUserAdminDto, actorId: string) {
+    const admin = this.supabase.getAdminClient();
+
+    // 1. Validar existencia del rol
+    const { data: role, error: roleError } = await admin
+      .from('roles')
+      .select('id, slug, name')
+      .eq('id', dto.role_id)
+      .maybeSingle();
+
+    if (roleError || !role) {
+      throw new NotFoundException('El rol inicial especificado no existe.');
+    }
+
+    // 2. Crear identidad en Supabase Auth
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
+      email: dto.email.trim().toLowerCase(),
+      password: dto.password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: dto.first_name.trim(),
+        last_name: dto.last_name.trim(),
+        phone: dto.phone?.trim() || null,
+      },
+    });
+
+    if (authError || !authData.user) {
+      const msg = authError?.message?.toLowerCase() || '';
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
+        throw new ConflictException('El correo electrónico ya se encuentra registrado.');
+      }
+      throw new BadRequestException(
+        authError?.message || 'No fue posible registrar al usuario en el servicio de identidad.',
+      );
+    }
+
+    const newUserId = authData.user.id;
+
+    // 3. Limpiar cualquier rol de 'aspirante' que el trigger haya asignado automáticamente si el rol elegido no es aspirante
+    if (role.slug !== 'aspirante') {
+      const { data: aspRole } = await admin
+        .from('roles')
+        .select('id')
+        .eq('slug', 'aspirante')
+        .maybeSingle();
+
+      if (aspRole) {
+        await admin
+          .from('user_roles')
+          .delete()
+          .eq('user_id', newUserId)
+          .eq('role_id', aspRole.id);
+      }
+    }
+
+    // 4. Asignar el rol elegido como único rol activo
+    await admin.from('user_roles').upsert(
+      {
+        user_id: newUserId,
+        role_id: role.id,
+        assigned_by: actorId,
+        is_active: true,
+        assigned_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,role_id' },
+    );
+
+    // 5. Sincronización proactiva con Moodle LMS
+    let moodleUser: any = null;
+    try {
+      const safeUsername = dto.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+      moodleUser = await this.moodleClient.createUser({
+        username: safeUsername,
+        password: dto.password,
+        firstname: dto.first_name.trim(),
+        lastname: dto.last_name.trim(),
+        email: dto.email.trim().toLowerCase(),
+      });
+
+      if (moodleUser) {
+        await admin
+          .from('profiles')
+          .update({
+            moodle_user_id: moodleUser.id,
+            moodle_username: moodleUser.username,
+            moodle_sync_status: 'sincronizado',
+            moodle_last_sync_at: new Date().toISOString(),
+          })
+          .eq('id', newUserId);
+      }
+    } catch (moodleErr: any) {
+      this.logger.warn(`Usuario creado pero fallo sincronización inicial Moodle: ${moodleErr.message}`);
+    }
+
+    // 6. Registro en bitácora de auditoría
+    await admin.from('audit_logs').insert({
+      actor_id: actorId,
+      target_user_id: newUserId,
+      action: 'USER_CREATED_BY_ADMIN',
+      entity_name: 'profiles',
+      entity_id: newUserId,
+      new_values: {
+        email: dto.email,
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        assigned_role: role.slug,
+        moodle_user_id: moodleUser?.id ?? null,
+      },
+    });
+
+    // 7. Retornar perfil consolidado
+    const { data: createdProfile } = await admin
+      .from('v_user_complete_profile')
+      .select('*')
+      .eq('id', newUserId)
+      .maybeSingle();
+
+    return createdProfile || {
+      id: newUserId,
+      email: dto.email,
+      active_roles: [role.slug],
+    };
   }
 }

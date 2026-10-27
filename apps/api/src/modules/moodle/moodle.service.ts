@@ -386,23 +386,26 @@ export class MoodleService {
       .update({ last_moodle_access_at: new Date().toISOString() })
       .eq('id', enrollment.id);
 
-    const moodleBase =
-      this.config.get<string>('MOODLE_BASE_URL') ||
-      this.config.get<string>('MOODLE_URL') ||
-      'http://localhost/moodle';
-    const courseUrl = `${moodleBase.replace(/\/+$/, '')}/course/view.php?id=${moodleCourseId}`;
+    const moodleBase = await this.client.getEffectiveBaseUrl();
+    const courseUrl = `${moodleBase}/course/view.php?id=${moodleCourseId}`;
 
     let accessUrl = courseUrl;
 
     // Obtener correo del usuario para solicitar token SSO de un solo uso
     const { data: userProfile } = await admin
       .from('profiles')
-      .select('email')
+      .select('id, email, moodle_user_id')
       .eq('id', params.userId)
       .maybeSingle();
 
     if (userProfile?.email) {
       try {
+        // Asegurar que el usuario exista en Moodle antes de solicitar el SSO
+        if (!userProfile.moodle_user_id) {
+          const syncRes = await this.syncUser(params.userId);
+          userProfile.moodle_user_id = syncRes.moodle_user_id;
+        }
+
         const loginUrl = await this.client.requestUserKeyLoginUrl(userProfile.email);
         if (loginUrl) {
           const sep = loginUrl.includes('?') ? '&' : '?';
@@ -442,16 +445,19 @@ export class MoodleService {
       throw new NotFoundException('Perfil de usuario no encontrado.');
     }
 
-    const moodleBase =
-      this.config.get<string>('MOODLE_BASE_URL') ||
-      this.config.get<string>('MOODLE_URL') ||
-      'http://localhost/moodle';
+    const moodleBase = await this.client.getEffectiveBaseUrl();
     const baseUrl = moodleBase.replace(/\/+$/, '');
 
     let accessUrl = `${baseUrl}/`;
 
     if (profile.email) {
       try {
+        // Asegurar que el usuario exista en Moodle antes de solicitar el SSO
+        if (!profile.moodle_user_id) {
+          const syncRes = await this.syncUser(params.userId);
+          profile.moodle_user_id = syncRes.moodle_user_id;
+        }
+
         const loginUrl = await this.client.requestUserKeyLoginUrl(profile.email);
         if (loginUrl) {
           const sep = loginUrl.includes('?') ? '&' : '?';
@@ -500,5 +506,118 @@ export class MoodleService {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Obtiene la estructura de contenidos (secciones y módulos) de un curso en Moodle.
+   */
+  async getCourseContents(courseId: number) {
+    return this.client.getCourseContents(courseId);
+  }
+
+  /**
+   * Obtiene los participantes matriculados en un curso en Moodle.
+   */
+  async getCourseParticipants(courseId: number) {
+    const rawUsers = await this.client.getCourseEnrolledUsers(courseId);
+    return rawUsers.map((u: any) => ({
+      id: u.id,
+      username: u.username,
+      fullname: u.fullname || `${u.firstname} ${u.lastname}`,
+      email: u.email,
+      roles: (u.roles || []).map((r: any) => r.shortname || r.name),
+      lastaccess: u.lastaccess ? new Date(u.lastaccess * 1000).toISOString() : null,
+      lastcourseaccess: u.lastcourseaccess ? new Date(u.lastcourseaccess * 1000).toISOString() : null,
+    }));
+  }
+
+  /**
+   * Obtiene las calificaciones y progreso de un usuario en un curso de Moodle.
+   */
+  async getUserCourseProgress(courseId: number, moodleUserId: number) {
+    const [gradesData, completionData, contents] = await Promise.all([
+      this.client.getUserCourseGrades(courseId, moodleUserId),
+      this.client.getCourseCompletionStatus(courseId, moodleUserId),
+      this.client.getCourseContents(courseId),
+    ]);
+
+    let totalModules = 0;
+    if (Array.isArray(contents)) {
+      contents.forEach((sec: any) => {
+        if (Array.isArray(sec.modules)) {
+          totalModules += sec.modules.length;
+        }
+      });
+    }
+
+    const courseGrade = gradesData?.gradeitems?.find((g: any) => g.itemtype === 'course');
+    const rawGrade = courseGrade?.graderaw != null ? Number(courseGrade.graderaw) : null;
+    const formattedGrade = courseGrade?.gradeformatted ?? '-';
+    let percentage = courseGrade?.percentageformatted ? parseFloat(courseGrade.percentageformatted) : null;
+
+    if (percentage == null && rawGrade != null && courseGrade?.grademax) {
+      percentage = Math.round((rawGrade / courseGrade.grademax) * 100);
+    }
+
+    return {
+      course_id: courseId,
+      moodle_user_id: moodleUserId,
+      total_modules: totalModules,
+      grade_raw: rawGrade,
+      grade_formatted: formattedGrade,
+      percentage: percentage ?? (completionData?.completed ? 100 : 0),
+      is_completed: completionData?.completed === true,
+      completion_status: completionData,
+      grade_items: gradesData?.gradeitems || [],
+    };
+  }
+
+  /**
+   * Resumen analítico global de un curso para docentes y administradores.
+   */
+  async getCourseTeacherOverview(courseId: number) {
+    const [course, enrolled, contents] = await Promise.all([
+      this.client.getCourseById(courseId),
+      this.client.getCourseEnrolledUsers(courseId),
+      this.client.getCourseContents(courseId),
+    ]);
+
+    let totalActivities = 0;
+    if (Array.isArray(contents)) {
+      contents.forEach((sec: any) => {
+        if (Array.isArray(sec.modules)) {
+          totalActivities += sec.modules.length;
+        }
+      });
+    }
+
+    const students = enrolled.filter((u: any) =>
+      (u.roles || []).some((r: any) => r.shortname === 'student')
+    );
+    const teachers = enrolled.filter((u: any) =>
+      (u.roles || []).some((r: any) => r.shortname === 'editingteacher' || r.shortname === 'teacher')
+    );
+
+    return {
+      course: course || { id: courseId },
+      total_enrolled: enrolled.length,
+      total_students: students.length,
+      total_teachers: teachers.length,
+      total_sections: Array.isArray(contents) ? contents.length : 0,
+      total_activities: totalActivities,
+      students: students.map((s: any) => ({
+        id: s.id,
+        username: s.username,
+        fullname: s.fullname || `${s.firstname} ${s.lastname}`,
+        email: s.email,
+        lastaccess: s.lastaccess ? new Date(s.lastaccess * 1000).toISOString() : null,
+      })),
+      teachers: teachers.map((t: any) => ({
+        id: t.id,
+        username: t.username,
+        fullname: t.fullname || `${t.firstname} ${t.lastname}`,
+        email: t.email,
+      })),
+    };
   }
 }

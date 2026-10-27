@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   Patch,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -19,6 +20,7 @@ import { UsersService } from './users.service.js';
 import { QueryUsersDto } from './dto/query-users.dto.js';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
 import { UpdateOwnProfileDto } from './dto/update-own-profile.dto.js';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto.js';
 
 @Controller('users')
 export class UsersController {
@@ -37,6 +39,22 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.usersService.findUsers(query, req.accessToken);
+  }
+
+  /**
+   * Creación administrativa de usuario con asignación directa de rol.
+   * No altera ni suplanta la sesión del administrador.
+   */
+  @Post()
+  @HttpCode(201)
+  @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('superadministrador', 'administrador')
+  @RequirePermissions('users.manage')
+  createUser(
+    @Body() dto: CreateUserAdminDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.usersService.createUserByAdmin(dto, req.user.id);
   }
 
   /**

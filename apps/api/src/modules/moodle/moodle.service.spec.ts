@@ -14,7 +14,9 @@ describe('MoodleService', () => {
     getUserByUsername: ReturnType<typeof vi.fn>;
     createUser: ReturnType<typeof vi.fn>;
     enrolUser: ReturnType<typeof vi.fn>;
+    unenrolUser?: ReturnType<typeof vi.fn>;
     requestUserKeyLoginUrl: ReturnType<typeof vi.fn>;
+    getEffectiveBaseUrl: ReturnType<typeof vi.fn>;
   };
   let supabaseMock: {
     getAdminClient: ReturnType<typeof vi.fn>;
@@ -34,6 +36,7 @@ describe('MoodleService', () => {
       enrolUser: vi.fn(),
       unenrolUser: vi.fn(),
       requestUserKeyLoginUrl: vi.fn(),
+      getEffectiveBaseUrl: vi.fn().mockResolvedValue('http://localhost/moodle'),
     };
 
     configMock = {
@@ -274,7 +277,7 @@ describe('MoodleService', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 maybeSingle: vi.fn().mockResolvedValue({
-                  data: { email: 'test@example.com' },
+                  data: { id: 'usr-1', email: 'test@example.com', moodle_user_id: 10 },
                   error: null,
                 }),
               }),
