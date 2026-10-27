@@ -21,6 +21,9 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { theme, toggleTheme } = usePortalTheme();
   const { session, loading, logout } = usePortalAuth();
+  const accountHref = session?.profile.roles.some((role) =>
+    ["administrador", "superadministrador"].includes(role)
+  ) ? "/admin" : "/estudiante";
 
   // La portada ya incluye su propio encabezado (modales y modo ambiente).
   // Evitamos duplicarlo; el encabezado global aparece en las demás rutas.
@@ -61,7 +64,7 @@ export function SiteHeader() {
   ) : session ? (
     <>
       <Link
-        href="/estudiante"
+        href={accountHref}
         className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm"
       >
         Mi IINICIA
@@ -131,7 +134,7 @@ export function SiteHeader() {
   ) : session ? (
     <>
       <Link
-        href="/estudiante"
+        href={accountHref}
         onClick={() => setOpen(false)}
         className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold"
       >

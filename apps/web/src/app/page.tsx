@@ -199,6 +199,9 @@ export default function Page() {
   const [authError, setAuthError] = useState("");
   const [sessionRestoring, setSessionRestoring] = useState(true);
   const [portalSession, setPortalSession] = useState<PortalSession | null>(null);
+  const accountHref = portalSession?.profile.roles.some((role) =>
+    ["administrador", "superadministrador"].includes(role)
+  ) ? "/admin" : "/estudiante";
   const authRequest = useRef<AbortController | null>(null);
   const sessionVersion = useRef(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -656,7 +659,7 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
 
           <div className="hidden items-center gap-3 xl:flex">
             {sessionRestoring ? <span role="status" className="text-xs text-slate-600">Comprobando sesión…</span> : portalSession ? <>
-              <button type="button" onClick={() => window.location.assign("/estudiante")} className="portal-account-link">Mi IINICIA</button>
+              <button type="button" onClick={() => window.location.assign(accountHref)} className="portal-account-link">Mi IINICIA</button>
               <button type="button" onClick={closePortalSession} className="rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-900">Cerrar sesión</button>
             </> : <>
               <button type="button" onClick={() => openAuth("login")} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:text-slate-900">Iniciar sesión</button>
@@ -702,7 +705,7 @@ body:has(.academic-site) > header, body:has(.academic-site) > footer { display: 
             ))}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
               {sessionRestoring ? <p role="status">Comprobando sesión…</p> : portalSession ? <>
-                <button type="button" onClick={() => window.location.assign("/estudiante")} className="portal-account-link">Mi IINICIA</button>
+                <button type="button" onClick={() => window.location.assign(accountHref)} className="portal-account-link">Mi IINICIA</button>
                 <button type="button" onClick={closePortalSession} className="rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-900">Cerrar sesión</button>
               </> : <>
                 <button type="button" onClick={() => openAuth("login")} className="rounded-lg border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-900">Iniciar sesión</button>
