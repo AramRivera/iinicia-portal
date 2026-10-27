@@ -125,13 +125,18 @@ export default function AdminDashboardPage() {
         ]);
 
       setMoodleStatus(statusRes);
-      setUsers(usersRes.data || []);
-      setRoles(rolesRes || []);
-      setCourses(coursesRes || []);
+      setUsers(Array.isArray(usersRes?.data) ? usersRes.data : Array.isArray(usersRes) ? usersRes : []);
+      setRoles(Array.isArray(rolesRes) ? rolesRes : (rolesRes as any)?.data || []);
+      setCourses(Array.isArray(coursesRes) ? coursesRes : (coursesRes as any)?.data || []);
       const enrollList = Array.isArray(enrollRes) ? enrollRes : ((enrollRes as any)?.data || []);
       setEnrollments(enrollList);
-      setPrograms(progRes || []);
-      setAuditLogs(auditRes || []);
+      setPrograms(Array.isArray(progRes) ? progRes : (progRes as any)?.data || []);
+      const auditList = Array.isArray(auditRes)
+        ? auditRes
+        : Array.isArray((auditRes as any)?.data)
+        ? (auditRes as any).data
+        : [];
+      setAuditLogs(auditList);
     } catch (err: any) {
       setError(err.message || 'Error al cargar los módulos administrativos.');
     } finally {
@@ -558,9 +563,9 @@ export default function AdminDashboardPage() {
       },
       { id: 'programas', label: 'Programas Académicos', icon: '🏛️', count: programs.length },
       { id: 'moodle', label: 'Integración LMS Moodle', icon: '⚙️' },
-      { id: 'auditoria', label: 'Auditoría & Logs', icon: '🛡️', count: auditLogs.length },
+      { id: 'auditoria', label: 'Auditoría & Logs', icon: '🛡️', count: Array.isArray(auditLogs) ? auditLogs.length : 0 },
     ],
-    [users.length, courses.length, enrollments, programs.length, auditLogs.length],
+    [users.length, courses.length, enrollments, programs.length, auditLogs],
   );
 
   if (authLoading || loading) {
@@ -1913,14 +1918,14 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
-                  {auditLogs.length === 0 ? (
+                  {!Array.isArray(auditLogs) || auditLogs.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-8 text-center text-muted">
                         No hay registros de auditoría acumulados.
                       </td>
                     </tr>
                   ) : (
-                    auditLogs.map((log) => (
+                    (Array.isArray(auditLogs) ? auditLogs : []).map((log) => (
                       <tr key={log.id} className="hover:bg-foreground/[0.015] transition-colors">
                         <td className="px-6 py-4 font-mono text-xs text-muted whitespace-nowrap">
                           {new Date(log.created_at).toLocaleString()}

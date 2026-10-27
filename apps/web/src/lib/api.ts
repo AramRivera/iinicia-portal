@@ -214,13 +214,13 @@ export const rolesApi = {
 
 // ----------------- Audit API -----------------
 export const auditApi = {
-  getLogs: async (params?: { limit?: number; offset?: number; action?: string }): Promise<any[]> => {
+  getLogs: async (params?: { limit?: number; offset?: number; action?: string }): Promise<any> => {
     const sp = new URLSearchParams();
     if (params?.limit) sp.set('limit', String(params.limit));
     if (params?.offset) sp.set('offset', String(params.offset));
     if (params?.action) sp.set('action', params.action);
     const qs = sp.toString();
-    return apiFetch<any[]>(`/audit${qs ? `?${qs}` : ''}`);
+    return apiFetch<any>(`/audit${qs ? `?${qs}` : ''}`);
   },
 };
 
