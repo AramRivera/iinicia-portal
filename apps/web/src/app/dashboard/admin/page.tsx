@@ -347,6 +347,27 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Acciones: Desasignar curso de usuario
+  const handleDeleteEnrollment = async (enrollmentId: string, studentName: string, courseName: string) => {
+    if (!window.confirm(`¿Estás seguro de que deseas desasignar a ${studentName} del curso "${courseName}"? Esta acción revocará su matrícula en Moodle LMS.`)) {
+      return;
+    }
+
+    setActionLoading(`delete-enr-${enrollmentId}`);
+    setNotice(null);
+    setError(null);
+
+    try {
+      await enrollmentsApi.deleteEnrollment(enrollmentId);
+      setNotice(`Matrícula desasignada exitosamente para ${studentName}.`);
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Error al desasignar matrícula.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Acciones: Crear nuevo mapeo de curso
   const handleCreateCourseMapping = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1548,6 +1569,22 @@ export default function AdminDashboardPage() {
                                   {actionLoading === `sync-enr-${enr.id}` ? 'Sincronizando...' : 'Reintentar Moodle'}
                                 </button>
                               )}
+
+                              <button
+                                type="button"
+                                disabled={actionLoading === `delete-enr-${enr.id}`}
+                                onClick={() =>
+                                  handleDeleteEnrollment(
+                                    enr.id,
+                                    studentName,
+                                    enr.course_mappings?.course_name || 'Curso',
+                                  )
+                                }
+                                className="rounded-[6px] border border-rose-500/20 bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all disabled:opacity-50"
+                                title="Desasignar curso al usuario"
+                              >
+                                {actionLoading === `delete-enr-${enr.id}` ? '...' : 'Desasignar'}
+                              </button>
                             </div>
                           </td>
                         </tr>

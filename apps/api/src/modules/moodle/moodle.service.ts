@@ -464,4 +464,41 @@ export class MoodleService {
 
     return { access_url: accessUrl };
   }
+
+  /**
+   * Desmatricula a un usuario de un curso en Moodle LMS.
+   */
+  async unenrolStudent(enrollmentId: string) {
+    const admin = this.supabase.getAdminClient();
+
+    const { data: enrollment, error } = await admin
+      .from('enrollment_requests')
+      .select('*, course_mappings!course_mapping_id (*), profiles!user_id (*)')
+      .eq('id', enrollmentId)
+      .maybeSingle();
+
+    if (error || !enrollment) {
+      throw new NotFoundException('Solicitud de inscripción no encontrada.');
+    }
+
+    const courseMapping = (enrollment as any).course_mappings;
+    const profile = (enrollment as any).profiles;
+
+    if (profile?.moodle_user_id && courseMapping?.moodle_course_id) {
+      try {
+        const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
+        const roleId = MOODLE_ROLE_IDS[moodleRole] ?? MOODLE_ROLE_IDS.student;
+
+        await this.client.unenrolUser({
+          userId: Number(profile.moodle_user_id),
+          courseId: Number(courseMapping.moodle_course_id),
+          roleId,
+        });
+      } catch (err: any) {
+        this.logger.warn(`Advertencia al desmatricular en Moodle (${enrollmentId}): ${err?.message}`);
+      }
+    }
+
+    return { success: true };
+  }
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   HttpCode,
@@ -81,5 +82,16 @@ export class EnrollmentsController {
   @RequirePermissions('moodle.sync.execute')
   syncToMoodle(@Param('id') id: string) {
     return this.enrollmentsService.syncToMoodle(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard)
+  async deleteEnrollment(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
+    return this.enrollmentsService.deleteEnrollment(id, req.user.id, isStaff);
   }
 }

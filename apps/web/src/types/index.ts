@@ -132,6 +132,17 @@ export interface AuthorizedCourse {
   moodle_course_id: number;
   enrollment_status: 'autorizada' | 'sincronizada';
   role_in_course: 'student' | 'teacher';
+  enrollment_id?: string;
+  moodle_role?: string;
+  course_description?: string;
+  thumbnail_url?: string;
+  portal_course_code?: string;
+  program_name?: string;
+  program_slug?: string;
+  cached_progress?: number | null;
+  cached_final_grade?: number | null;
+  cached_completed?: boolean | null;
+  synced_to_moodle_at?: string | null;
 }
 
 export interface EnrollmentRequest {

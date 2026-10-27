@@ -190,6 +190,12 @@ export const enrollmentsApi = {
       method: 'POST',
     });
   },
+
+  deleteEnrollment: async (enrollmentId: string): Promise<any> => {
+    return apiFetch(`/enrollments/${enrollmentId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // ----------------- Roles API -----------------

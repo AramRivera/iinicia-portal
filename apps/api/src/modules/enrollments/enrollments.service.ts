@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -294,5 +295,71 @@ export class EnrollmentsService {
    */
   async syncToMoodle(enrollmentId: string) {
     return this.moodleService.syncEnrollment(enrollmentId);
+  }
+
+  /**
+   * Elimina / desasigna una matrícula de un curso:
+   * - Si es staff (admin/coordinador), puede desasignar cualquier curso a cualquier usuario.
+   * - Si es alumno o profesor, puede dar de baja su propio curso.
+   * - Llama a Moodle unenrolStudent para desmatricular en el aula virtual.
+   * - Elimina el registro de enrollment_requests y registra la acción en audit_logs.
+   */
+  async deleteEnrollment(enrollmentId: string, actorId: string, isStaff: boolean) {
+    const admin = this.supabase.getAdminClient();
+
+    const { data: enrollment, error } = await admin
+      .from('enrollment_requests')
+      .select('*, course_mappings!course_mapping_id (*), profiles!user_id (*)')
+      .eq('id', enrollmentId)
+      .maybeSingle();
+
+    if (error || !enrollment) {
+      throw new NotFoundException('Matrícula o solicitud no encontrada.');
+    }
+
+    if (!isStaff && enrollment.user_id !== actorId) {
+      throw new ForbiddenException(
+        'No posees autorización para desasignar esta matrícula.',
+      );
+    }
+
+    // Desmatricular en Moodle LMS
+    try {
+      await this.moodleService.unenrolStudent(enrollmentId);
+    } catch (err: any) {
+      this.logger.warn(`Error al desmatricular en Moodle: ${err?.message}`);
+    }
+
+    // Eliminar de enrollment_requests
+    const { error: deleteError } = await admin
+      .from('enrollment_requests')
+      .delete()
+      .eq('id', enrollmentId);
+
+    if (deleteError) {
+      this.logger.error(`Error al eliminar matrícula: ${deleteError.message}`);
+      throw new InternalServerErrorException('No fue posible desasignar la matrícula.');
+    }
+
+    // Registrar en auditoría
+    const courseMapping = (enrollment as any).course_mappings;
+    await admin.from('audit_logs').insert({
+      actor_id: actorId,
+      target_user_id: enrollment.user_id,
+      action: isStaff ? 'ENROLLMENT_UNASSIGNED_BY_ADMIN' : 'ENROLLMENT_DROPPED_BY_STUDENT',
+      entity_name: 'enrollment_requests',
+      entity_id: enrollmentId,
+      old_values: {
+        course_mapping_id: enrollment.course_mapping_id,
+        course_name: courseMapping?.course_name,
+        moodle_role: enrollment.moodle_role,
+        status: enrollment.status,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Matrícula desasignada y dada de baja exitosamente.',
+    };
   }
 }

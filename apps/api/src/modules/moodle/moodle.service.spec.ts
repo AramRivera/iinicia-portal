@@ -32,6 +32,7 @@ describe('MoodleService', () => {
       getUserByUsername: vi.fn(),
       createUser: vi.fn(),
       enrolUser: vi.fn(),
+      unenrolUser: vi.fn(),
       requestUserKeyLoginUrl: vi.fn(),
     };
 
@@ -339,6 +340,33 @@ describe('MoodleService', () => {
           succeeded: false,
         }),
       );
+    });
+  });
+
+  describe('unenrolStudent', () => {
+    it('calls moodle client unenrolUser when moodle ids are present', async () => {
+      const enrollment = {
+        id: 'enr-1',
+        moodle_role: 'student',
+        profiles: { moodle_user_id: 12 },
+        course_mappings: { moodle_course_id: 4 },
+      };
+
+      adminClientMock.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: enrollment, error: null }),
+          }),
+        }),
+      });
+
+      const res = await service.unenrolStudent('enr-1');
+      expect(res.success).toBe(true);
+      expect(clientMock.unenrolUser).toHaveBeenCalledWith({
+        userId: 12,
+        courseId: 4,
+        roleId: 5,
+      });
     });
   });
 });

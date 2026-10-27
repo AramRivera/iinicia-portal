@@ -144,13 +144,13 @@ export function CampusSidebar({
           items: [
             {
               id: 'moodle',
-              label: 'Moodle LMS 5.3+',
+              label: 'Aula Virtual Moodle',
               icon: <IconMoodle className="w-4 h-4 shrink-0" />,
               onClick: onLaunchCampusSSO,
             },
             {
-              id: 'configuracion',
-              label: 'Mi Perfil',
+              id: 'perfil',
+              label: 'Expediente y Perfil',
               icon: <IconSettings className="w-4 h-4 shrink-0" />,
             },
           ],

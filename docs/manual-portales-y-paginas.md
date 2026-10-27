@@ -48,7 +48,34 @@ Cuando una persona se registraba públicamente en `/registro`, Supabase Auth y e
 
 ---
 
-## 3. Identidad Visual Institucional
+## 3. Desasignación y Gestión Operativa de Cursos
+
+### Funcionalidad de Desasignación (Unenrollment)
+1. **Endpoint Backend `DELETE /enrollments/:id`:**
+   - Permite al personal administrativo (superadministrador, administrador, coordinador), a los profesores titulares y a los estudiantes autorizados revocar o dar de baja una matrícula.
+   - Invoca el Web Service oficial de Moodle LMS `enrol_manual_unenrol_users` a través de `MoodleClient.unenrolUser`, eliminando el acceso del usuario al aula remota.
+   - Remueve el registro en `enrollment_requests` y asienta el evento de auditoría en `audit_logs` (`ENROLLMENT_UNASSIGNED_BY_ADMIN` o `ENROLLMENT_DROPPED_BY_STUDENT`).
+
+2. **Portal Docente (`/dashboard/docente`):**
+   - **Directorio de Alumnos:** Lista de estudiantes con nombre, correo, fecha y estado de sincronización. Botón **"Desasignar"** para dar de baja a un alumno del grupo con confirmación modal.
+   - **Libro de Calificaciones:** Registro de notas parciales y retroalimentación preliminar antes del cierre de actas en Moodle.
+   - **Mis Asignaturas:** Conteo en tiempo real de alumnos inscritos y enlace directo a calificador y participantes.
+
+3. **Portal Estudiante (`/dashboard/estudiante`):**
+   - **Mis Materias Activas:** Fichas con barra de avance didáctico (%), botón SSO de acceso a Moodle, modal interactivo de temario/sílabo y botón **"Dar de baja materia"** para desasignarse con confirmación.
+   - **Catálogo e Inscripción:** Explorador de materias ofertadas con inscripción en 1 clic y matriculación inmediata a Moodle LMS.
+   - **Kárdex y Avance Curricular:** Historial con promedio general, créditos SATCA acumulados y estatus de acreditación.
+   - **Expediente Escolar:** Matrícula oficial, correo y estatus de documentación.
+
+4. **Panel de Asignaciones Dedicado (`/dashboard/admin/asignaciones`):**
+   - Tabla interactiva con filtro instantáneo por nombre o correo.
+   - Asignación de materias con rol `student` o `teacher`.
+   - Desasignación directa con un clic en la insignia del curso.
+   - Asignación y cambio de roles de usuario.
+
+---
+
+## 4. Identidad Visual Institucional
 
 - **Tokens Compartidos:**
   - Color Primario: `#2457F5` (Azul eléctrico institucional).
