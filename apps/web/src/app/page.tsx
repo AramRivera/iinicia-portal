@@ -2,18 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { coursesApi, enrollmentsApi, programsApi } from '@/lib/api';
+import { contactApi, coursesApi, enrollmentsApi, programsApi } from '@/lib/api';
 import type { CourseOffering, AuthorizedCourse, Program } from '@/types';
 import {
-  IconStudents,
-  IconTeachers,
   IconGroups,
   IconAudit,
   IconGrades,
   IconCheck,
-  IconClock,
-  IconExternalLink,
   IconSearch,
   IconShield,
   IconBookOpen,
@@ -23,6 +20,7 @@ import {
 
 export default function HomePage() {
   const { user } = useAuth();
+  const router = useRouter();
 
   // Courses state
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
@@ -111,7 +109,7 @@ export default function HomePage() {
 
   const handleEnroll = async (courseMappingId: string, courseName: string) => {
     if (!user) {
-      window.location.href = '/login';
+      router.push('/login');
       return;
     }
 
@@ -125,14 +123,18 @@ export default function HomePage() {
       
       const authorized = await coursesApi.getAuthorizedCourses().catch(() => []);
       setMyCourses(authorized);
-    } catch (err: any) {
-      setEnrollError(err.message || 'No fue posible completar la inscripción.');
+    } catch (err: unknown) {
+      setEnrollError(
+        err instanceof Error
+          ? err.message
+          : 'No fue posible completar la inscripción.',
+      );
     } finally {
       setEnrollingId(null);
     }
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactError(null);
 
@@ -142,14 +144,35 @@ export default function HomePage() {
     }
 
     setContactSubmitting(true);
-    setTimeout(() => {
-      setContactSubmitting(false);
+    const contactDepartments: Record<string, string> = {
+      admisiones: 'Admisiones y Convocatorias',
+      soporte: 'Soporte Campus Virtual Moodle',
+      escolar: 'Servicios Escolares y Certificados',
+      vinculacion: 'Rectoría y Vinculación',
+    };
+
+    try {
+      await contactApi.submitMessage({
+        full_name: contactName.trim(),
+        email: contactEmail.trim(),
+        phone: contactPhone.trim() || undefined,
+        subject: `Contacto web: ${contactDepartments[contactArea] ?? 'IINICIA'}`,
+        message: contactMessage.trim(),
+      });
       setContactSuccess(true);
       setContactName('');
       setContactEmail('');
       setContactPhone('');
       setContactMessage('');
-    }, 500);
+    } catch (err: unknown) {
+      setContactError(
+        err instanceof Error
+          ? err.message
+          : 'No fue posible enviar tu mensaje. Inténtalo de nuevo.',
+      );
+    } finally {
+      setContactSubmitting(false);
+    }
   };
 
   const filteredCourses = offerings.filter((c) =>
@@ -183,7 +206,7 @@ export default function HomePage() {
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/registro"
-              className="rounded-[6px] bg-primary px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
+              className="rounded-[6px] bg-primary-action px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
             >
               Comienza ahora
             </Link>
@@ -490,7 +513,7 @@ export default function HomePage() {
                           </span>
                           <Link
                             href="/dashboard/estudiante"
-                            className="rounded-[4px] bg-primary text-white px-2 py-1 text-[11px] font-medium hover:bg-primary/90"
+                            className="rounded-[4px] bg-primary-action text-white px-2 py-1 text-[11px] font-medium hover:bg-primary-action/90"
                           >
                             Entrar
                           </Link>
@@ -500,7 +523,7 @@ export default function HomePage() {
                           type="button"
                           onClick={() => handleEnroll(course.course_mapping_id || course.id, course.name)}
                           disabled={enrollingId === (course.course_mapping_id || course.id)}
-                          className="rounded-[6px] bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 transition-all disabled:opacity-50"
+                          className="rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
                         >
                           {enrollingId === (course.course_mapping_id || course.id) ? 'Inscribiendo...' : user ? 'Inscribirme' : 'Inscribirse'}
                         </button>
@@ -570,7 +593,7 @@ export default function HomePage() {
                   </div>
                   <Link
                     href="/registro"
-                    className="rounded-[6px] bg-primary px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 transition-all"
+                    className="rounded-[6px] bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all"
                   >
                     Postularme
                   </Link>
@@ -657,7 +680,7 @@ export default function HomePage() {
                 className="relative rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-2.5"
               >
                 <div className="flex items-center justify-between">
-                  <span className="rounded-[4px] bg-primary px-2 py-0.5 text-xs font-mono font-bold text-white">
+                  <span className="rounded-[4px] bg-primary-action px-2 py-0.5 text-xs font-mono font-bold text-white">
                     {paso.numero}
                   </span>
                   <span className="text-[11px] font-mono text-muted">{paso.tiempo}</span>
@@ -677,7 +700,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/registro"
-                className="rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-all shrink-0 text-center"
+                className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all shrink-0 text-center"
               >
                 Crear cuenta de aspirante
               </Link>
@@ -831,7 +854,7 @@ export default function HomePage() {
                     <button
                       type="submit"
                       disabled={contactSubmitting}
-                      className="w-full rounded-[6px] bg-primary py-2.5 text-xs font-semibold text-white hover:bg-primary/90 transition-all disabled:opacity-50"
+                      className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
                     >
                       {contactSubmitting ? 'Enviando...' : 'Enviar mensaje'}
                     </button>

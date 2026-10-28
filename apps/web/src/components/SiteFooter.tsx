@@ -52,7 +52,7 @@ export function SiteFooter() {
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="grid h-6 w-6 place-items-center rounded-[4px] bg-primary text-white text-xs font-bold">
+              <span className="grid h-6 w-6 place-items-center rounded-[4px] bg-primary-action text-white text-xs font-bold">
                 I
               </span>
               <p className="text-[17px] font-semibold tracking-tight text-foreground">

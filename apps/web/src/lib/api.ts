@@ -166,7 +166,8 @@ export const enrollmentsApi = {
   },
 
   getMyEnrollments: async (): Promise<EnrollmentRequest[]> => {
-    return apiFetch<EnrollmentRequest[]>('/enrollments/my');
+    // La API filtra las solicitudes del usuario autenticado en GET /enrollments.
+    return apiFetch<EnrollmentRequest[]>('/enrollments');
   },
 
   getAllEnrollments: async (status?: string): Promise<EnrollmentRequest[]> => {
@@ -196,6 +197,28 @@ export const enrollmentsApi = {
       method: 'DELETE',
     });
   },
+};
+
+export interface ContactMessagePayload {
+  full_name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+}
+
+export interface ContactMessageResponse {
+  success: boolean;
+  message_id: string;
+  submitted_at: string;
+}
+
+export const contactApi = {
+  submitMessage: (payload: ContactMessagePayload): Promise<ContactMessageResponse> =>
+    apiFetch<ContactMessageResponse>('/contact', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
 // ----------------- Roles API -----------------

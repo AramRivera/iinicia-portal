@@ -9,6 +9,11 @@ import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
 import {
+  closeMoodleLaunchWindow,
+  navigateMoodleLaunchWindow,
+  openMoodleLaunchWindow,
+} from '@/lib/moodle-window';
+import {
   IconTeachers,
   IconGroups,
   IconStudents,
@@ -78,8 +83,8 @@ export default function DocenteDashboardPage() {
       setLoading(true);
       setError(null);
       const [coursesData, enrollmentsData] = await Promise.all([
-        coursesApi.getAuthorizedCourses().catch(() => []),
-        enrollmentsApi.getAllEnrollments().catch(() => []),
+        coursesApi.getAuthorizedCourses(),
+        enrollmentsApi.getAllEnrollments(),
       ]);
       setCourses(coursesData);
       setEnrollments(enrollmentsData);
@@ -119,15 +124,21 @@ export default function DocenteDashboardPage() {
   }, [user, authLoading, router]);
 
   const handleLaunchCampusSSO = async () => {
+    const launchWindow = openMoodleLaunchWindow();
+    if (!launchWindow) {
+      setError('Permite las ventanas emergentes para abrir Moodle.');
+      return;
+    }
     setActionLoading('launch-campus');
     setNotice(null);
     setError(null);
 
     try {
       const res = await moodleApi.launchCampus();
-      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+      navigateMoodleLaunchWindow(launchWindow, res.access_url);
       setNotice('Sesión docente iniciada en Moodle LMS vía SSO en una nueva pestaña.');
     } catch (err: any) {
+      closeMoodleLaunchWindow(launchWindow);
       setError(err.message || 'Error al iniciar sesión SSO en Moodle.');
     } finally {
       setActionLoading(null);
@@ -135,14 +146,20 @@ export default function DocenteDashboardPage() {
   };
 
   const handleLaunchCourseSSO = async (courseMappingId: string) => {
+    const launchWindow = openMoodleLaunchWindow();
+    if (!launchWindow) {
+      setError('Permite las ventanas emergentes para abrir Moodle.');
+      return;
+    }
     setActionLoading(`launch-${courseMappingId}`);
     setNotice(null);
     setError(null);
 
     try {
       const res = await coursesApi.launchCourse(courseMappingId);
-      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+      navigateMoodleLaunchWindow(launchWindow, res.access_url);
     } catch (err: any) {
+      closeMoodleLaunchWindow(launchWindow);
       setError(err.message || 'Error al acceder al aula de Moodle.');
     } finally {
       setActionLoading(null);
@@ -359,7 +376,7 @@ export default function DocenteDashboardPage() {
                 type="button"
                 onClick={handleLaunchCampusSSO}
                 disabled={actionLoading === 'launch-campus'}
-                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary-action/90 active:scale-[0.98] transition-all disabled:opacity-50"
                 title="Abrir Moodle como Profesor con sesión iniciada al instante"
               >
                 {actionLoading === 'launch-campus' ? (
@@ -776,7 +793,7 @@ export default function DocenteDashboardPage() {
                           handleOpenGradebook(target.moodle_course_id);
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
+                      className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
                     >
                       <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
                       <span>Abrir Calificador en Moodle ↗</span>
@@ -1121,7 +1138,7 @@ export default function DocenteDashboardPage() {
                   </button>
                   <button
                     type="submit"
-                    className="rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
                   >
                     Guardar Calificación
                   </button>
@@ -1205,7 +1222,7 @@ export default function DocenteDashboardPage() {
                   <button
                     type="submit"
                     disabled={actionLoading === 'save-profile'}
-                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
                   >
                     {actionLoading === 'save-profile' ? (
                       <span>Guardando...</span>

@@ -109,7 +109,7 @@ export function SiteHeader() {
                 >
                   {item.label}
                   {isActive && (
-                    <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />
+                    <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary-action rounded-full" />
                   )}
                 </Link>
               </li>
@@ -159,7 +159,7 @@ export function SiteHeader() {
               </Link>
               <Link
                 href="/registro"
-                className="rounded-[6px] bg-primary px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-primary/90 shadow-minimal"
+                className="rounded-[6px] bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-primary-action/90 shadow-minimal"
               >
                 Registrarse
               </Link>
@@ -235,7 +235,7 @@ export function SiteHeader() {
                   <Link
                     href={dashboardPath}
                     onClick={() => setOpen(false)}
-                    className="rounded-[6px] bg-primary px-4 py-2 text-center text-xs font-semibold text-white"
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-center text-xs font-semibold text-white"
                   >
                     Ir al Panel ({primaryRole})
                   </Link>
@@ -262,7 +262,7 @@ export function SiteHeader() {
                   <Link
                     href="/registro"
                     onClick={() => setOpen(false)}
-                    className="rounded-[6px] bg-primary px-4 py-2 text-center text-xs font-semibold text-white"
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-center text-xs font-semibold text-white"
                   >
                     Registrarse
                   </Link>
@@ -278,7 +278,7 @@ export function SiteHeader() {
 
 function LogoMark() {
   return (
-    <span className="grid h-7 w-7 place-items-center rounded-[6px] bg-primary text-white shadow-minimal">
+    <span className="grid h-7 w-7 place-items-center rounded-[6px] bg-primary-action text-white shadow-minimal">
       <svg
         width="15"
         height="15"

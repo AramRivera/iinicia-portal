@@ -68,7 +68,7 @@ export function CampusTopBar({
           <button
             type="button"
             onClick={onLaunchMoodleSSO}
-            className="flex items-center gap-1.5 rounded-[6px] bg-primary text-white hover:bg-primary/90 px-2.5 py-1.5 text-xs font-medium transition-all shadow-minimal"
+            className="flex items-center gap-1.5 rounded-[6px] bg-primary-action text-white hover:bg-primary-action/90 px-2.5 py-1.5 text-xs font-medium transition-all shadow-minimal"
             title="Abrir Moodle LMS con sesión iniciada (auth_userkey)"
           >
             <IconMoodle className="w-3.5 h-3.5 text-accent-lime" />

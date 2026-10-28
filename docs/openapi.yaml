@@ -488,6 +488,59 @@ paths:
         "200":
           description: Postulación dictaminada.
 
+  /contact:
+    post:
+      summary: Enviar un mensaje desde el formulario público de contacto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, email, subject, message]
+              properties:
+                full_name:
+                  type: string
+                  maxLength: 150
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                phone:
+                  type: string
+                  maxLength: 20
+                subject:
+                  type: string
+                  maxLength: 200
+                program_of_interest:
+                  type: string
+                  format: uuid
+                message:
+                  type: string
+                  maxLength: 3000
+      responses:
+        "201":
+          description: Mensaje registrado.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message_id, submitted_at]
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message_id:
+                    type: string
+                    format: uuid
+                  submitted_at:
+                    type: string
+                    format: date-time
+        "400":
+          description: Datos de contacto inválidos.
+        "500":
+          description: No fue posible registrar el mensaje.
+
   # =========================================================================
   # MOODLE WEB SERVICES & CAMPUS SSO
   # =========================================================================

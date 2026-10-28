@@ -598,7 +598,7 @@ export default function AsignacionesPage() {
                   <button
                     type="submit"
                     disabled={actionLoading === 'assign-course'}
-                    className="rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all disabled:opacity-50"
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50"
                   >
                     {actionLoading === 'assign-course' ? 'Matriculando en Moodle...' : 'Asignar y Matricular'}
                   </button>
@@ -729,7 +729,7 @@ export default function AsignacionesPage() {
                   <button
                     type="submit"
                     disabled={actionLoading === 'assign-role'}
-                    className="rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all disabled:opacity-50"
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50"
                   >
                     {actionLoading === 'assign-role' ? 'Guardando...' : 'Asignar Rol'}
                   </button>

@@ -7,23 +7,23 @@
 
 :root {
   /* Brand Shared */
-  --primary: #2457F5;
-  --primary-action: #2457F5;
-  --accent-lime: #D5F36A;
-  --accent: #2457F5;
-  --accent-strong: #1B45CC;
-  --accent-soft: rgba(36, 87, 245, 0.08);
+  --primary: #456B19;
+  --primary-action: #365314;
+  --accent-lime: #BEF264;
+  --accent: #456B19;
+  --accent-strong: #365314;
+  --accent-soft: #EFF8DF;
 
   /* Light Theme */
-  --background: #F6F7F5;
+  --background: #FFFFFF;
   --surface: #FFFFFF;
-  --surface-muted: #EDF0EC;
+  --surface-muted: #F5F8EF;
   --surface-elevated: #FFFFFF;
-  --foreground: #202522;
-  --text-secondary: #68716B;
-  --muted: #68716B;
-  --border: #E1E5E0;
-  --border-subtle: #ECEFEA;
+  --foreground: #1F2C21;
+  --text-secondary: #536050;
+  --muted: #536050;
+  --border: #DCE5D2;
+  --border-subtle: #E8EEDF;
 
   /* Semantics Light */
   --success: #18794E;
@@ -42,27 +42,27 @@
   /* Elevation */
   --shadow-minimal: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
   --shadow-panel: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-  --shadow-soft: 0 8px 24px -4px rgba(32, 37, 34, 0.06);
+  --shadow-soft: 0 8px 24px -4px rgba(31, 44, 33, 0.06);
 }
 
 .dark {
   /* Dark Theme */
-  --primary: #2457F5;
-  --primary-action: #7B98FF;
-  --accent-lime: #D5F36A;
-  --accent: #7B98FF;
-  --accent-strong: #96ADFF;
-  --accent-soft: rgba(123, 152, 255, 0.12);
+  --primary: #C4EC89;
+  --primary-action: #456B19;
+  --accent-lime: #BEF264;
+  --accent: #C4EC89;
+  --accent-strong: #BEF264;
+  --accent-soft: #25351B;
 
-  --background: #171B20;
-  --surface: #222830;
-  --surface-muted: #292F38;
-  --surface-elevated: #262D36;
-  --foreground: #F3F5F7;
-  --text-secondary: #A7B0BA;
-  --muted: #A7B0BA;
-  --border: #343C46;
-  --border-subtle: #2A313A;
+  --background: #101710;
+  --surface: #192219;
+  --surface-muted: #141E15;
+  --surface-elevated: #192219;
+  --foreground: #EDF5E7;
+  --text-secondary: #BAC8B1;
+  --muted: #BAC8B1;
+  --border: #354632;
+  --border-subtle: #2B3A29;
 
   /* Semantics Dark */
   --success: #63D9A0;
@@ -79,22 +79,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --primary: #2457F5;
-    --primary-action: #7B98FF;
-    --accent-lime: #D5F36A;
-    --accent: #7B98FF;
-    --accent-strong: #96ADFF;
-    --accent-soft: rgba(123, 152, 255, 0.12);
+    --primary: #C4EC89;
+    --primary-action: #456B19;
+    --accent-lime: #BEF264;
+    --accent: #C4EC89;
+    --accent-strong: #BEF264;
+    --accent-soft: #25351B;
 
-    --background: #171B20;
-    --surface: #222830;
-    --surface-muted: #292F38;
-    --surface-elevated: #262D36;
-    --foreground: #F3F5F7;
-    --text-secondary: #A7B0BA;
-    --muted: #A7B0BA;
-    --border: #343C46;
-    --border-subtle: #2A313A;
+    --background: #101710;
+    --surface: #192219;
+    --surface-muted: #141E15;
+    --surface-elevated: #192219;
+    --foreground: #EDF5E7;
+    --text-secondary: #BAC8B1;
+    --muted: #BAC8B1;
+    --border: #354632;
+    --border-subtle: #2B3A29;
 
     --success: #63D9A0;
     --success-bg: rgba(99, 217, 160, 0.12);

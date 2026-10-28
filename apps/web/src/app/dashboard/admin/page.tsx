@@ -27,6 +27,11 @@ import type {
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
 import {
+  closeMoodleLaunchWindow,
+  navigateMoodleLaunchWindow,
+  openMoodleLaunchWindow,
+} from '@/lib/moodle-window';
+import {
   IconPlus,
   IconRefresh,
   IconExternalLink,
@@ -491,15 +496,21 @@ export default function AdminDashboardPage() {
 
   // Acciones: Sincronización y Acceso SSO a Moodle
   const handleLaunchCampusSSO = async () => {
+    const launchWindow = openMoodleLaunchWindow();
+    if (!launchWindow) {
+      setError('Permite las ventanas emergentes para abrir Moodle.');
+      return;
+    }
     setActionLoading('launch-campus');
     setNotice(null);
     setError(null);
 
     try {
       const res = await moodleApi.launchCampus();
-      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+      navigateMoodleLaunchWindow(launchWindow, res.access_url);
       setNotice('Sesión iniciada con éxito en Moodle vía SSO (abierta en nueva pestaña).');
     } catch (err: any) {
+      closeMoodleLaunchWindow(launchWindow);
       setError(err.message || 'Error al iniciar sesión SSO en Moodle.');
     } finally {
       setActionLoading(null);
@@ -684,7 +695,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={handleLaunchCampusSSO}
                 disabled={actionLoading === 'launch-campus'}
-                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary-action/90 active:scale-[0.98] transition-all disabled:opacity-50"
                 title="Abrir Moodle como Administrador con sesión iniciada al instante"
               >
                 {actionLoading === 'launch-campus' ? (
@@ -712,7 +723,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowAssignCourseModal(true)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white hover:bg-primary/90 px-3 py-2 text-xs font-semibold transition-all shadow-minimal"
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white hover:bg-primary-action/90 px-3 py-2 text-xs font-semibold transition-all shadow-minimal"
               >
                 <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
                 <span>Asignar Curso</span>
@@ -754,7 +765,7 @@ export default function AdminDashboardPage() {
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Cursos Vinculados</span>
               <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{courses.length}</p>
               <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                <span className="h-1.5 w-1.5 rounded-full bg-primary-action" />
                 Catálogo activo oficial
               </span>
             </div>
@@ -967,11 +978,11 @@ export default function AdminDashboardPage() {
                                       : role === 'administrador'
                                       ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                                       : role === 'coordinador'
-                                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                                      ? 'bg-primary/10 text-primary border-primary/20'
                                       : role === 'profesor'
                                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                                       : role === 'estudiante'
-                                      ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'
+                                      ? 'bg-accent/10 text-accent border-accent/20'
                                       : 'bg-foreground/[0.04] text-muted border-border/80'
                                   }`}
                                 >
@@ -1067,7 +1078,7 @@ export default function AdminDashboardPage() {
                                   type="button"
                                   onClick={() => handleSyncSingleUser(u.id)}
                                   disabled={actionLoading === `user-sync-${u.id}`}
-                                  className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all"
+                                  className="rounded-xl border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 transition-all"
                                   title="Crear cuenta de este usuario en Moodle"
                                 >
                                   Sync Moodle
@@ -1235,11 +1246,11 @@ export default function AdminDashboardPage() {
                                         : r === 'administrador'
                                         ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                                         : r === 'coordinador'
-                                        ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                                        ? 'bg-primary/10 text-primary border-primary/20'
                                         : r === 'profesor'
                                         ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                                         : r === 'estudiante'
-                                        ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'
+                                        ? 'bg-accent/10 text-accent border-accent/20'
                                         : 'bg-foreground/[0.04] text-muted border-border/80'
                                     }`}
                                   >
@@ -1303,7 +1314,7 @@ export default function AdminDashboardPage() {
                                   type="button"
                                   disabled={actionLoading === `user-sync-${u.id}`}
                                   onClick={() => handleSyncSingleUser(u.id)}
-                                  className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all disabled:opacity-50"
+                                  className="rounded-xl border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/20 transition-all disabled:opacity-50"
                                   title="Sincronizar a Moodle"
                                 >
                                   {actionLoading === `user-sync-${u.id}` ? '...' : 'Sync Moodle'}
@@ -1571,7 +1582,7 @@ export default function AdminDashboardPage() {
                                   type="button"
                                   disabled={actionLoading === `sync-enr-${enr.id}`}
                                   onClick={() => handleRetryMoodleSync(enr.id)}
-                                  className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-all disabled:opacity-50"
+                                  className="rounded-xl border border-accent/30 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 transition-all disabled:opacity-50"
                                 >
                                   {actionLoading === `sync-enr-${enr.id}` ? 'Sincronizando...' : 'Reintentar Moodle'}
                                 </button>
@@ -1861,7 +1872,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateUserModal(true)}
-                  className="rounded-[6px] bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 flex items-center gap-1.5 transition-all active:scale-[0.98]"
+                  className="rounded-[6px] bg-primary-action px-3.5 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 flex items-center gap-1.5 transition-all active:scale-[0.98]"
                 >
                   <IconPlus className="w-3.5 h-3.5" />
                   <span>Registrar Profesor</span>
@@ -2000,11 +2011,11 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Color Primario</span>
-                  <span className="font-mono text-primary font-bold">#2457F5 (Electric Blue)</span>
+                  <span className="font-mono text-primary font-bold">#456B19 (Verde institucional)</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Acento de Marca</span>
-                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#D5F36A (Acid Lime)</span>
+                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#BEF264 (Verde lima)</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Radios de Componente</span>
@@ -2424,7 +2435,7 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3.5 text-xs text-muted leading-relaxed">
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-muted leading-relaxed">
                 ℹ️ Esta acción crea la autorización inmediata e invoca el Web Service oficial de Moodle (<code>enrol_manual_enrol_users</code>).
               </div>
 

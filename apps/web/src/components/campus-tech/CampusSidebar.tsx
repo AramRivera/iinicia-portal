@@ -274,7 +274,7 @@ export function CampusSidebar({
                 }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-[6px] transition-all text-left group relative ${
                   isActive
-                    ? 'bg-primary text-white shadow-minimal font-semibold'
+                    ? 'bg-primary-action text-white shadow-minimal font-semibold'
                     : 'text-foreground/80 hover:bg-surface-muted hover:text-foreground'
                 } ${collapsed ? 'justify-center px-0' : ''}`}
                 title={item.label}
@@ -320,7 +320,7 @@ export function CampusSidebar({
         <div className="h-13 border-b border-border flex items-center justify-between px-3.5 shrink-0">
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
-              <div className="h-6 w-6 rounded-[6px] bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0 ring-1 ring-primary/40">
+              <div className="h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-white font-bold text-xs shrink-0 ring-1 ring-primary/40">
                 <span className="text-accent-lime font-mono text-[11px]">I</span>
               </div>
               <div className="leading-none truncate">
@@ -333,7 +333,7 @@ export function CampusSidebar({
               </div>
             </div>
           ) : (
-            <div className="mx-auto h-6 w-6 rounded-[6px] bg-primary flex items-center justify-center text-accent-lime font-bold text-xs">
+            <div className="mx-auto h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime font-bold text-xs">
               I
             </div>
           )}
@@ -422,7 +422,7 @@ export function CampusSidebar({
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-[6px] bg-primary flex items-center justify-center text-accent-lime font-bold text-xs">
+                  <div className="h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime font-bold text-xs">
                     I
                   </div>
                   <span className="font-semibold text-sm text-foreground">IINICIA Portal</span>
@@ -449,7 +449,7 @@ export function CampusSidebar({
                     onCloseMobile();
                     onLaunchCampusSSO();
                   }}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white px-3 py-2 text-xs font-semibold mb-2"
+                  className="w-full flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white px-3 py-2 text-xs font-semibold mb-2"
                 >
                   <IconMoodle className="w-4 h-4 text-accent-lime" />
                   <span>Entrar al Aula Moodle SSO</span>

@@ -39,8 +39,8 @@ export default function AspiranteDashboardPage() {
       try {
         setLoading(true);
         const [offData, enrData] = await Promise.all([
-          coursesApi.getOfferings().catch(() => []),
-          enrollmentsApi.getMyEnrollments().catch(() => []),
+          coursesApi.getOfferings(),
+          enrollmentsApi.getMyEnrollments(),
         ]);
         setOfferings(offData);
         setEnrollments(enrData);
@@ -141,7 +141,7 @@ export default function AspiranteDashboardPage() {
             </div>
             <Link
               href="/dashboard/estudiante"
-              className="rounded-[6px] bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all shrink-0"
+              className="rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all shrink-0"
             >
               Ir a mi Aula de Estudiante →
             </Link>
@@ -260,7 +260,7 @@ export default function AspiranteDashboardPage() {
                         type="button"
                         onClick={() => handleApply(off.course_mapping_id, off.name)}
                         disabled={isSubmitting}
-                        className="w-full rounded-[6px] bg-primary py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-1.5"
+                        className="w-full rounded-[6px] bg-primary-action py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-1.5"
                       >
                         {isSubmitting ? (
                           <>

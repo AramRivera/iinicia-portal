@@ -3,6 +3,11 @@
 import React, { useState } from 'react';
 import { coursesApi } from '@/lib/api';
 import { IconExternalLink } from '@/components/campus-tech/Icons';
+import {
+  closeMoodleLaunchWindow,
+  navigateMoodleLaunchWindow,
+  openMoodleLaunchWindow,
+} from '@/lib/moodle-window';
 
 interface LaunchCourseButtonProps {
   courseMappingId: string;
@@ -26,16 +31,22 @@ export function LaunchCourseButton({
       return;
     }
 
+    // Abrir la pestaña durante el gesto del usuario evita que el navegador
+    // bloquee la ventana cuando la respuesta de la API llega de forma asíncrona.
+    const launchWindow = openMoodleLaunchWindow();
+    if (!launchWindow) {
+      setError('Permite las ventanas emergentes para abrir el aula virtual.');
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
 
       const data = await coursesApi.launchCourse(courseMappingId);
-
-      // Abrir curso en Moodle en nueva pestaña
-      window.open(data.access_url, '_blank', 'noopener,noreferrer');
-    } catch (err: any) {
-      setError(err.message || 'No fue posible acceder al aula virtual.');
+      navigateMoodleLaunchWindow(launchWindow, data.access_url);
+    } catch (err: unknown) {
+      closeMoodleLaunchWindow(launchWindow);
+      setError(err instanceof Error ? err.message : 'No fue posible acceder al aula virtual.');
     } finally {
       setLoading(false);
     }
@@ -49,7 +60,7 @@ export function LaunchCourseButton({
         disabled={loading || !isAuthorized}
         className={`inline-flex items-center justify-center gap-2 rounded-[6px] px-3.5 py-2 text-xs font-semibold text-white shadow-minimal transition-all ${
           isAuthorized
-            ? 'bg-primary hover:bg-primary/90 active:scale-[0.98]'
+            ? 'bg-primary-action hover:bg-primary-action/90 active:scale-[0.98]'
             : 'bg-surface-muted text-muted cursor-not-allowed opacity-60'
         } ${className}`}
       >

@@ -30,7 +30,7 @@ export default function MiIiniciaDashboardHub() {
   return (
     <div className="flex min-h-[calc(100vh-140px)] items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg space-y-6 rounded-[14px] border border-border bg-surface p-8 text-center shadow-minimal">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] bg-primary text-white shadow-minimal">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] bg-primary-action text-white shadow-minimal">
           <svg
             width="24"
             height="24"

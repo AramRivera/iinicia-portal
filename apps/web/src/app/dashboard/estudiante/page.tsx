@@ -10,6 +10,11 @@ import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
 import {
+  closeMoodleLaunchWindow,
+  navigateMoodleLaunchWindow,
+  openMoodleLaunchWindow,
+} from '@/lib/moodle-window';
+import {
   IconStudents,
   IconGroups,
   IconCheck,
@@ -67,9 +72,9 @@ export default function EstudianteDashboardPage() {
       setLoading(true);
       setError(null);
       const [userCourses, myEnrollments, allOfferings] = await Promise.all([
-        coursesApi.getAuthorizedCourses().catch(() => []),
-        enrollmentsApi.getMyEnrollments().catch(() => []),
-        coursesApi.getOfferings().catch(() => []),
+        coursesApi.getAuthorizedCourses(),
+        enrollmentsApi.getMyEnrollments(),
+        coursesApi.getOfferings(),
       ]);
       setCourses(userCourses);
       setEnrollments(myEnrollments);
@@ -127,15 +132,21 @@ export default function EstudianteDashboardPage() {
   };
 
   const handleLaunchCampusSSO = async () => {
+    const launchWindow = openMoodleLaunchWindow();
+    if (!launchWindow) {
+      setError('Permite las ventanas emergentes para abrir Moodle.');
+      return;
+    }
     setActionLoading('launch-campus');
     setNotice(null);
     setError(null);
 
     try {
       const res = await moodleApi.launchCampus();
-      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+      navigateMoodleLaunchWindow(launchWindow, res.access_url);
       setNotice('Sesión iniciada en el Campus Virtual Moodle vía SSO.');
     } catch (err: any) {
+      closeMoodleLaunchWindow(launchWindow);
       setError(err.message || 'Error al iniciar sesión SSO en Moodle.');
     } finally {
       setActionLoading(null);
@@ -143,14 +154,20 @@ export default function EstudianteDashboardPage() {
   };
 
   const handleLaunchCourseSSO = async (courseMappingId: string) => {
+    const launchWindow = openMoodleLaunchWindow();
+    if (!launchWindow) {
+      setError('Permite las ventanas emergentes para abrir Moodle.');
+      return;
+    }
     setActionLoading(`launch-${courseMappingId}`);
     setNotice(null);
     setError(null);
 
     try {
       const res = await coursesApi.launchCourse(courseMappingId);
-      window.open(res.access_url, '_blank', 'noopener,noreferrer');
+      navigateMoodleLaunchWindow(launchWindow, res.access_url);
     } catch (err: any) {
+      closeMoodleLaunchWindow(launchWindow);
       setError(err.message || 'Error al acceder al aula virtual en Moodle vía SSO.');
     } finally {
       setActionLoading(null);
@@ -376,7 +393,7 @@ export default function EstudianteDashboardPage() {
                 type="button"
                 onClick={handleLaunchCampusSSO}
                 disabled={actionLoading === 'launch-campus'}
-                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white font-medium px-3.5 py-2 text-xs shadow-minimal hover:bg-primary-action/90 active:scale-[0.98] transition-all disabled:opacity-50"
                 title="Abrir Moodle con sesión iniciada al instante"
               >
                 {actionLoading === 'launch-campus' ? (
@@ -511,7 +528,7 @@ export default function EstudianteDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('inscripciones')}
-                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all shrink-0"
+                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all shrink-0"
                   >
                     <IconPlus className="w-3.5 h-3.5" />
                     <span>Inscribir más materias</span>
@@ -535,7 +552,7 @@ export default function EstudianteDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('inscripciones')}
-                    className="rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
                   >
                     Ver catálogo disponible
                   </button>
@@ -588,7 +605,7 @@ export default function EstudianteDashboardPage() {
                               </div>
                               <div className="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
                                 <div
-                                  className="h-full rounded-full bg-primary transition-all duration-300"
+                                  className="h-full rounded-full bg-primary-action transition-all duration-300"
                                   style={{
                                     width: `${Math.min(pct, 100)}%`,
                                   }}
@@ -743,7 +760,7 @@ export default function EstudianteDashboardPage() {
                           type="button"
                           onClick={() => handleQuickEnroll(offeringId, off.name)}
                           disabled={isSubmitting}
-                          className="w-full rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-1.5"
+                          className="w-full rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-1.5"
                         >
                           {isSubmitting ? (
                             <>
@@ -1119,7 +1136,7 @@ export default function EstudianteDashboardPage() {
                             <ul className="mt-1 space-y-0.5 pl-3 border-l border-border/60">
                               {sec.modules.map((m: any, mIdx: number) => (
                                 <li key={mIdx} className="text-[11px] text-muted flex items-center gap-1.5">
-                                  <span className="h-1 w-1 rounded-full bg-primary shrink-0" />
+                                  <span className="h-1 w-1 rounded-full bg-primary-action shrink-0" />
                                   <span className="truncate">{m.name}</span>
                                   {m.modplural && <span className="text-[9px] font-mono text-muted/70">({m.modplural})</span>}
                                 </li>
@@ -1233,7 +1250,7 @@ export default function EstudianteDashboardPage() {
                   <button
                     type="submit"
                     disabled={actionLoading === 'save-profile'}
-                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
                   >
                     {actionLoading === 'save-profile' ? (
                       <span>Guardando...</span>

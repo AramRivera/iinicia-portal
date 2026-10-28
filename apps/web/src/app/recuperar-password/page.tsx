@@ -75,7 +75,7 @@ export default function RecuperarPasswordPage() {
             <div className="pt-2 flex flex-col gap-2">
               <Link
                 href="/login"
-                className="w-full rounded-[6px] bg-primary py-2.5 text-center text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all"
+                className="w-full rounded-[6px] bg-primary-action py-2.5 text-center text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
               >
                 Volver a Iniciar Sesión
               </Link>
@@ -114,7 +114,7 @@ export default function RecuperarPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-[6px] bg-primary py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary/90 transition-all disabled:opacity-50"
+              className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50"
             >
               {loading ? 'Enviando solicitud...' : 'Enviar instrucciones de recuperación'}
             </button>
