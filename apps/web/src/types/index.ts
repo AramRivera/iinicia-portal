@@ -79,9 +79,9 @@ export interface CourseOffering {
   is_active?: boolean;
   term_or_module?: number;
   is_mandatory?: boolean;
-  credits?: number | null;
-  hours_theory?: number | null;
-  hours_practice?: number | null;
+  credits: number;
+  hours_theory: number;
+  hours_practice: number;
   programs?: {
     code: string;
     name: string;
@@ -171,16 +171,6 @@ export interface EnrollmentRequest {
     last_name: string;
     moodle_user_id?: number | null;
   };
-}
-
-export interface AdmissionApplication {
-  id: string;
-  applicant_id: string;
-  program_id: string;
-  status: 'postulado' | 'en_revision' | 'admitido' | 'rechazado';
-  submitted_at?: string;
-  programs?: { code: string; name: string; slug: string } | null;
-  profiles?: { id: string; email: string; first_name: string; last_name: string; phone?: string | null } | null;
 }
 
 export interface MoodleLaunchResponse {

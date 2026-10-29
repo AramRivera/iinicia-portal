@@ -1,5 +1,4 @@
 import type {
-  AdmissionApplication,
   AuthorizedCourse,
   CourseOffering,
   EnrollmentRequest,
@@ -79,19 +78,6 @@ export async function apiFetch<T>(
 
 // ----------------- Auth API -----------------
 export const authApi = {
-  recoverPassword: async (email: string): Promise<{ message: string }> =>
-    apiFetch<{ message: string }>('/auth/recover', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    }),
-
-  resetPassword: async (recoveryToken: string, password: string): Promise<{ message: string }> =>
-    apiFetch<{ message: string }>('/auth/reset-password', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${recoveryToken}` },
-      body: JSON.stringify({ password }),
-    }),
-
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
     const res = await apiFetch<LoginResponse>('/auth/login', {
       method: 'POST',
@@ -132,31 +118,13 @@ export const authApi = {
 };
 
 // ----------------- Courses & Offerings API -----------------
-type CourseMappingResponse = Omit<CourseOffering, 'course_mapping_id' | 'code' | 'name' | 'program_name'> & {
-  course_mapping_id?: string;
-  code?: string;
-  name?: string;
-  program_name?: string;
-};
-
-function normalizeCourseOffering(course: CourseMappingResponse): CourseOffering {
-  return {
-    ...course,
-    course_mapping_id: course.course_mapping_id || course.id,
-    code: course.code || course.portal_course_code || course.moodle_shortname || '',
-    name: course.name || course.course_name || '',
-    program_name: course.program_name || course.programs?.name || '',
-  };
-}
-
 export const coursesApi = {
   getAuthorizedCourses: async (): Promise<AuthorizedCourse[]> => {
     return apiFetch<AuthorizedCourse[]>('/courses');
   },
 
   getOfferings: async (): Promise<CourseOffering[]> => {
-    const offerings = await apiFetch<CourseMappingResponse[]>('/courses/offerings');
-    return offerings.map(normalizeCourseOffering);
+    return apiFetch<CourseOffering[]>('/courses/offerings');
   },
 
   createCourse: async (payload: any): Promise<CourseOffering> => {
@@ -229,24 +197,6 @@ export const enrollmentsApi = {
       method: 'DELETE',
     });
   },
-};
-
-export const admissionsApi = {
-  getMyApplications: (): Promise<AdmissionApplication[]> =>
-    apiFetch<AdmissionApplication[]>('/admissions'),
-  createApplication: (payload: {
-    program_id: string;
-    motivation_letter?: string;
-  }): Promise<AdmissionApplication> =>
-    apiFetch<AdmissionApplication>('/admissions', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
-  reviewApplication: (id: string, status: 'en_revision' | 'admitido' | 'rechazado', reviewerNotes?: string): Promise<AdmissionApplication> =>
-    apiFetch<AdmissionApplication>(`/admissions/${id}/review`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status, reviewer_notes: reviewerNotes }),
-    }),
 };
 
 export interface ContactMessagePayload {
@@ -348,8 +298,8 @@ export const moodleApi = {
 // ----------------- Programs API -----------------
 export const programsApi = {
   getPrograms: async (type?: string): Promise<Program[]> => {
-    const programs = await apiFetch<Program[]>('/programs');
-    return type ? programs.filter((program) => program.type === type) : programs;
+    const qs = type ? `?type=${type}` : '';
+    return apiFetch<Program[]>(`/programs${qs}`);
   },
 
   getProgramBySlugOrId: async (slugOrId: string): Promise<Program> => {

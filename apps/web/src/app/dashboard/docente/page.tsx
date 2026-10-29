@@ -119,10 +119,6 @@ export default function DocenteDashboardPage() {
       router.push('/login');
       return;
     }
-    if (!user.roles.includes('profesor') && !user.roles.includes('superadministrador')) {
-      router.replace('/dashboard');
-      return;
-    }
 
     loadTeacherData();
   }, [user, authLoading, router]);
@@ -311,15 +307,15 @@ export default function DocenteDashboardPage() {
   const getBreadcrumbs = (tab: TeacherTab) => {
     switch (tab) {
       case 'materias':
-        return ['INICIA', 'Portal Docente', 'Mis Asignaturas'];
+        return ['IINICIA', 'Portal Docente', 'Mis Asignaturas'];
       case 'estudiantes':
-        return ['INICIA', 'Portal Docente', 'Alumnos y Grupos'];
+        return ['IINICIA', 'Portal Docente', 'Alumnos y Grupos'];
       case 'calificaciones':
-        return ['INICIA', 'Portal Docente', 'Libro de Calificaciones'];
+        return ['IINICIA', 'Portal Docente', 'Libro de Calificaciones'];
       case 'perfil':
-        return ['INICIA', 'Portal Docente', 'Perfil Institucional'];
+        return ['IINICIA', 'Portal Docente', 'Perfil Institucional'];
       default:
-        return ['INICIA', 'Portal Docente'];
+        return ['IINICIA', 'Portal Docente'];
     }
   };
 
@@ -937,7 +933,7 @@ export default function DocenteDashboardPage() {
                   <span>Perfil Institucional y Credenciales Docentes</span>
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
-                  Datos de identidad académica registrados en INICIA y vinculación con el campus virtual.
+                  Datos de identidad académica registrados en IINICIA y vinculación con el campus virtual.
                 </p>
               </div>
               <button

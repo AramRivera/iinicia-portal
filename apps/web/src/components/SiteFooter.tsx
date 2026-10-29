@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BrandWordmark } from "@/components/BrandWordmark";
 
 const linkGroups = [
   {
@@ -24,7 +23,7 @@ const linkGroups = [
   {
     title: "Institución y Campus",
     links: [
-      { label: "Universidad INICIA", href: "/#universidad", id: "universidad" },
+      { label: "Universidad IINICIA", href: "/#universidad", id: "universidad" },
       { label: "Canales de contacto", href: "/#contacto", id: "contacto" },
       { label: "Portal de Alumnos", href: "/dashboard/estudiante" },
       { label: "Portal de Docentes", href: "/dashboard/docente" },
@@ -53,7 +52,12 @@ export function SiteFooter() {
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
-              <BrandWordmark className="text-[20px] text-foreground" />
+              <span className="grid h-6 w-6 place-items-center rounded-[4px] bg-primary-action text-white text-xs font-bold">
+                I
+              </span>
+              <p className="text-[17px] font-semibold tracking-tight text-foreground">
+                IINICIA
+              </p>
             </div>
             <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-muted">
               Instituto de Innovación y Ciencias Aplicadas. Formación universitaria y continua en línea con integración transparente al Campus Virtual Moodle LMS.

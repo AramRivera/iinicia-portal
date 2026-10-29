@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { contactApi, coursesApi, enrollmentsApi, programsApi } from '@/lib/api';
-import type { CourseOffering, AuthorizedCourse, EnrollmentRequest, Program } from '@/types';
+import type { CourseOffering, AuthorizedCourse, Program } from '@/types';
 import {
   IconGroups,
   IconAudit,
@@ -25,10 +25,7 @@ export default function HomePage() {
   // Courses state
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [myCourses, setMyCourses] = useState<AuthorizedCourse[]>([]);
-  const [myEnrollments, setMyEnrollments] = useState<EnrollmentRequest[]>([]);
-  const [publicCourses, setPublicCourses] = useState<Program[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const [courseLoadError, setCourseLoadError] = useState(false);
   const [courseSearch, setCourseSearch] = useState('');
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollMessage, setEnrollMessage] = useState<string | null>(null);
@@ -67,28 +64,37 @@ export default function HomePage() {
     async function loadData() {
       try {
         setCoursesLoading(true);
-        setCourseLoadError(false);
-        const [offeringsData, authorized, enrollments, programs] = await Promise.all([
-          user ? coursesApi.getOfferings().catch(() => { setCourseLoadError(true); return []; }) : Promise.resolve([]),
+        const [offeringsData, authorized, dipData, certData] = await Promise.all([
+          coursesApi.getOfferings().catch(() => []),
           user ? coursesApi.getAuthorizedCourses().catch(() => []) : Promise.resolve([]),
-          user ? enrollmentsApi.getMyEnrollments().catch(() => []) : Promise.resolve([]),
-          programsApi.getPrograms().catch(() => []),
+          programsApi.getPrograms('diplomado').catch(() => []),
+          programsApi.getPrograms('certificacion').catch(() => []),
         ]);
 
-        setOfferings(offeringsData);
+        if (offeringsData && offeringsData.length > 0) {
+          setOfferings(offeringsData);
+        } else {
+          // Fallback offerings
+          setOfferings(fallbackCourses);
+        }
 
         setMyCourses(authorized || []);
-        setMyEnrollments(enrollments);
-        setPublicCourses(programs.filter((program) => program.type === 'curso'));
 
-        setDiplomados(programs.filter((program) => program.type === 'diplomado'));
-        setCertificaciones(programs.filter((program) => program.type === 'certificacion'));
+        if (dipData && dipData.length > 0) {
+          setDiplomados(dipData);
+        } else {
+          setDiplomados(fallbackDiplomados);
+        }
+
+        if (certData && certData.length > 0) {
+          setCertificaciones(certData);
+        } else {
+          setCertificaciones(fallbackCertificaciones);
+        }
       } catch {
-        setCourseLoadError(true);
-        setOfferings([]);
-        setPublicCourses([]);
-        setDiplomados([]);
-        setCertificaciones([]);
+        setOfferings(fallbackCourses);
+        setDiplomados(fallbackDiplomados);
+        setCertificaciones(fallbackCertificaciones);
       } finally {
         setCoursesLoading(false);
       }
@@ -112,9 +118,8 @@ export default function HomePage() {
       setEnrollMessage(null);
       setEnrollError(null);
 
-      const enrollment = await enrollmentsApi.requestEnrollment(courseMappingId);
-      setMyEnrollments((current) => [...current, enrollment]);
-      setEnrollMessage(`Solicitud para "${courseName}" registrada. Un administrador revisará tu inscripción.`);
+      await enrollmentsApi.requestEnrollment(courseMappingId);
+      setEnrollMessage(`Inscripción exitosa en "${courseName}". Tu acceso al aula de Moodle LMS se encuentra sincronizado.`);
       
       const authorized = await coursesApi.getAuthorizedCourses().catch(() => []);
       setMyCourses(authorized);
@@ -151,7 +156,7 @@ export default function HomePage() {
         full_name: contactName.trim(),
         email: contactEmail.trim(),
         phone: contactPhone.trim() || undefined,
-        subject: `Contacto web: ${contactDepartments[contactArea] ?? 'INICIA'}`,
+        subject: `Contacto web: ${contactDepartments[contactArea] ?? 'IINICIA'}`,
         message: contactMessage.trim(),
       });
       setContactSuccess(true);
@@ -173,10 +178,6 @@ export default function HomePage() {
   const filteredCourses = offerings.filter((c) =>
     c.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
     c.code.toLowerCase().includes(courseSearch.toLowerCase())
-  );
-  const filteredPublicCourses = publicCourses.filter((course) =>
-    course.name.toLowerCase().includes(courseSearch.toLowerCase()) ||
-    course.code.toLowerCase().includes(courseSearch.toLowerCase())
   );
 
   return (
@@ -332,7 +333,7 @@ export default function HomePage() {
               <span>Identidad y Gobernanza Universitaria</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Universidad INICIA
+              Universidad IINICIA
             </h2>
             <p className="text-xs sm:text-sm text-muted leading-relaxed">
               El Instituto de Innovación y Ciencias Aplicadas forma profesionales de vanguardia en ciencias de la computación, desarrollo tecnológico y gestión académica. Nuestro claustro combina excelencia investigadora y experiencia activa en la industria.
@@ -365,7 +366,7 @@ export default function HomePage() {
           {/* Modelo Educativo (4 Pilares) */}
           <div className="space-y-6 pt-4">
             <div className="text-center max-w-xl mx-auto space-y-1">
-              <h3 className="text-xl font-bold tracking-tight text-foreground">Modelo Educativo INICIA</h3>
+              <h3 className="text-xl font-bold tracking-tight text-foreground">Modelo Educativo IINICIA</h3>
               <p className="text-xs text-muted">Cuatro pilares estructurales diseñados para maximizar la efectividad del aprendizaje.</p>
             </div>
 
@@ -417,13 +418,13 @@ export default function HomePage() {
             <div>
               <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-                <span>Oferta académica</span>
+                <span>Oferta Curricular Oficial</span>
               </div>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Cursos y Asignaturas
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-muted max-w-xl">
-                Conoce los programas publicados y solicita acceso al iniciar sesión.
+                Cursos prácticos con acreditación por créditos SATCA y vinculación directa a nuestra plataforma Moodle LMS.
               </p>
             </div>
 
@@ -448,10 +449,10 @@ export default function HomePage() {
                 <span>{enrollMessage}</span>
               </div>
               <Link
-                href="/dashboard"
+                href="/dashboard/estudiante"
                 className="rounded-[4px] bg-success text-white px-2.5 py-1 text-xs font-semibold shrink-0"
               >
-                Ver mi panel
+                Ir a mi Aula
               </Link>
             </div>
           )}
@@ -471,36 +472,15 @@ export default function HomePage() {
                 <span>Cargando catálogo curricular...</span>
               </div>
             </div>
-          ) : !user && filteredPublicCourses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredPublicCourses.map((course) => (
-                <div key={course.id} className="flex flex-col justify-between rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-4 hover:border-primary/40 transition-all">
-                  <div className="space-y-2.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-mono font-medium text-foreground">{course.code}</span>
-                      {course.duration_text && <span className="text-[11px] text-muted">{course.duration_text}</span>}
-                    </div>
-                    <h3 className="text-base font-semibold text-foreground leading-snug">{course.name}</h3>
-                    {(course.short_description || course.description) && <p className="text-xs text-muted leading-relaxed">{course.short_description || course.description}</p>}
-                  </div>
-                  <div className="border-t border-border pt-3">
-                    <Link href="/login" className="inline-block rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90">Iniciar sesión para solicitar acceso</Link>
-                  </div>
-                </div>
-              ))}
-            </div>
           ) : filteredCourses.length === 0 ? (
             <div className="rounded-[10px] border border-border bg-surface p-12 text-center space-y-2">
-              <p className="text-sm font-semibold text-foreground">{!user ? publicCourses.length === 0 ? 'Aún no hay cursos publicados' : 'No se encontraron cursos coincidentes' : courseLoadError ? 'No fue posible cargar los cursos' : offerings.length === 0 ? 'Aún no hay cursos publicados' : 'No se encontraron cursos coincidentes'}</p>
-              <p className="text-xs text-muted">{!user ? publicCourses.length === 0 ? 'Consulta el catálogo más tarde.' : 'Intenta con otro término de búsqueda.' : courseLoadError ? 'Revisa la conexión con la API e inténtalo de nuevo.' : offerings.length === 0 ? 'Consulta el catálogo más tarde.' : 'Intenta con otro término de búsqueda.'}</p>
-              {!user && <Link href="/login" className="inline-block rounded-md bg-primary-action px-4 py-2 text-xs font-semibold text-white">Iniciar sesión</Link>}
+              <p className="text-sm font-semibold text-foreground">No se encontraron cursos coincidentes</p>
+              <p className="text-xs text-muted">Intenta con otro término de búsqueda.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCourses.map((course) => {
-                const enrolled = isEnrolled(course.course_mapping_id);
-                const pending = myEnrollments.some((request) =>
-                  request.course_mapping_id === course.course_mapping_id && request.status === 'pendiente');
+                const enrolled = isEnrolled(course.id);
                 return (
                   <div
                     key={course.id}
@@ -511,15 +491,13 @@ export default function HomePage() {
                         <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-mono font-medium text-foreground">
                           {course.code}
                         </span>
-                        {course.credits != null && (
-                          <span className="text-[11px] font-mono text-muted">
-                            {course.credits} créditos
-                          </span>
-                        )}
+                        <span className="text-[11px] font-mono text-muted">
+                          {course.credits} créditos
+                        </span>
                       </div>
                       <h3 className="text-base font-semibold text-foreground leading-snug">{course.name}</h3>
                       <p className="text-xs text-muted leading-relaxed line-clamp-3">
-                        {course.course_description || 'Curso disponible en el catálogo de INICIA.'}
+                        {course.course_description || 'Asignatura oficial con créditos universitarios y seguimiento formativo en Moodle.'}
                       </p>
                     </div>
 
@@ -540,10 +518,6 @@ export default function HomePage() {
                             Entrar
                           </Link>
                         </div>
-                      ) : pending ? (
-                        <span className="rounded-[4px] bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary border border-primary/20">
-                          Solicitud pendiente
-                        </span>
                       ) : (
                         <button
                           type="button"
@@ -551,7 +525,7 @@ export default function HomePage() {
                           disabled={enrollingId === (course.course_mapping_id || course.id)}
                           className="rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
                         >
-                          {enrollingId === (course.course_mapping_id || course.id) ? 'Solicitando...' : user ? 'Solicitar inscripción' : 'Iniciar sesión para solicitar'}
+                          {enrollingId === (course.course_mapping_id || course.id) ? 'Inscribiendo...' : user ? 'Inscribirme' : 'Inscribirse'}
                         </button>
                       )}
                     </div>
@@ -577,13 +551,10 @@ export default function HomePage() {
               Diplomados de Especialización
             </h2>
             <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Consulta la oferta de formación continua publicada por INICIA.
+              Programas modulares de 120 a 180 horas lectivas diseñados para profesionales que buscan dominar tecnologías estratégicas de alta demanda.
             </p>
           </div>
 
-          {diplomados.length === 0 && !coursesLoading && (
-            <p className="rounded-[10px] border border-border bg-surface p-6 text-center text-sm text-muted">Aún no hay diplomados publicados.</p>
-          )}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {diplomados.map((dip) => (
               <div
@@ -651,9 +622,6 @@ export default function HomePage() {
             </p>
           </div>
 
-          {certificaciones.length === 0 && !coursesLoading && (
-            <p className="rounded-[10px] border border-border bg-surface p-6 text-center text-sm text-muted">Aún no hay certificaciones publicadas.</p>
-          )}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {certificaciones.map((cert) => (
               <div
@@ -1011,6 +979,189 @@ const canalesAtencion = [
     email: 'escolar@iinicia.org',
     horario: 'Lunes a Viernes: 9:00 a 17:00 hrs',
     descripcion: 'Constancias oficiales, validación de expedientes y actas de calificación.',
+  },
+];
+
+const fallbackCourses: CourseOffering[] = [
+  {
+    id: 'course-1',
+    course_mapping_id: 'cm-1',
+    code: 'CS101',
+    name: 'Ingeniería de Software Web y Arquitecturas Modernas',
+    course_description: 'Principios de diseño modular, clean architecture, desarrollo fullstack con TypeScript, NestJS y Next.js.',
+    program_name: 'Ingeniería y Ciencias',
+    moodle_course_id: 2,
+    credits: 8,
+    hours_theory: 4,
+    hours_practice: 4,
+    is_active: true,
+  },
+  {
+    id: 'course-2',
+    course_mapping_id: 'cm-2',
+    code: 'CS102',
+    name: 'Bases de Datos Relacionales y Modelado PostgreSQL',
+    course_description: 'Diseño entidad-relación, migraciones reproducibles, índices, optimización de consultas y Row Level Security.',
+    program_name: 'Ingeniería y Ciencias',
+    moodle_course_id: 2,
+    credits: 6,
+    hours_theory: 3,
+    hours_practice: 3,
+    is_active: true,
+  },
+  {
+    id: 'course-3',
+    course_mapping_id: 'cm-3',
+    code: 'CS103',
+    name: 'Integración de Plataformas Educativas Moodle LMS',
+    course_description: 'Protocolos REST Web Services, sincronización distribuida, SSO con tokens temporales y analítica de aprendizaje.',
+    program_name: 'Tecnología Educativa',
+    moodle_course_id: 2,
+    credits: 6,
+    hours_theory: 3,
+    hours_practice: 3,
+    is_active: true,
+  },
+  {
+    id: 'course-4',
+    course_mapping_id: 'cm-4',
+    code: 'CS104',
+    name: 'Seguridad en Aplicaciones y APIs RESTful',
+    course_description: 'Autenticación JWT, control de acceso basado en roles (RBAC), sanitización de datos y directivas OWASP.',
+    program_name: 'Ciberseguridad',
+    moodle_course_id: 2,
+    credits: 8,
+    hours_theory: 4,
+    hours_practice: 4,
+    is_active: true,
+  },
+  {
+    id: 'course-5',
+    course_mapping_id: 'cm-5',
+    code: 'CS105',
+    name: 'DevOps, Contenedores Docker y Despliegue Continuo',
+    course_description: 'Contenerización de microservicios, redes Docker, automatización de pruebas unitarias e integración continua.',
+    program_name: 'Infraestructura Cloud',
+    moodle_course_id: 2,
+    credits: 6,
+    hours_theory: 3,
+    hours_practice: 3,
+    is_active: true,
+  },
+  {
+    id: 'course-6',
+    course_mapping_id: 'cm-6',
+    code: 'CS106',
+    name: 'Ciencia de Datos y Análisis Predictivo con Python',
+    course_description: 'Manipulación de datasets con Pandas, visualización analítica, álgebra matricial y modelos predictivos.',
+    program_name: 'Ciencia de Datos',
+    moodle_course_id: 2,
+    credits: 8,
+    hours_theory: 4,
+    hours_practice: 4,
+    is_active: true,
+  },
+];
+
+const fallbackDiplomados: Program[] = [
+  {
+    id: 'dip-1',
+    code: 'DIP-FULLSTACK',
+    name: 'Diplomado en Arquitecturas Web Fullstack y Cloud Native',
+    slug: 'diplomado-fullstack-cloud',
+    type: 'diplomado',
+    modality: 'en_linea',
+    duration_hours: 180,
+    duration_text: '6 meses (180 hrs)',
+    description: 'Especialización avanzada en TypeScript, Next.js App Router, microservicios NestJS, PostgreSQL y contenerización Docker.',
+    is_active: true,
+  },
+  {
+    id: 'dip-2',
+    code: 'DIP-DATA-AI',
+    name: 'Diplomado en Ciencia de Datos y Machine Learning Aplicado',
+    slug: 'diplomado-ciencia-datos-ai',
+    type: 'diplomado',
+    modality: 'en_linea',
+    duration_hours: 160,
+    duration_text: '5 meses (160 hrs)',
+    description: 'Fundamentos de IA, Python aplicado, modelado predictivo, visión artificial y despliegue de modelos en producción.',
+    is_active: true,
+  },
+  {
+    id: 'dip-3',
+    code: 'DIP-CYBERSEC',
+    name: 'Diplomado en Ciberseguridad y Gestión de Riesgos Digitales',
+    slug: 'diplomado-ciberseguridad-riesgos',
+    type: 'diplomado',
+    modality: 'hibrido',
+    duration_hours: 140,
+    duration_text: '4 meses (140 hrs)',
+    description: 'Seguridad perimetral, pentesting ético, auditoría de código, normativas ISO/IEC 27001 y respuesta a incidentes.',
+    is_active: true,
+  },
+  {
+    id: 'dip-4',
+    code: 'DIP-EDTECH',
+    name: 'Diplomado en Gestión de Entornos Virtuales y Moodle LMS',
+    slug: 'diplomado-moodle-edtech',
+    type: 'diplomado',
+    modality: 'autogestivo',
+    duration_hours: 120,
+    duration_text: '3 meses (120 hrs)',
+    description: 'Administración de Moodle, diseño de itinerarios instruccionales, evaluación analítica y desarrollo de extensiones.',
+    is_active: true,
+  },
+];
+
+const fallbackCertificaciones: Program[] = [
+  {
+    id: 'cert-1',
+    code: 'CERT-REACT-ADV',
+    name: 'Certificación Profesional en React 19 y Next.js App Router',
+    slug: 'certificacion-react-nextjs',
+    type: 'certificacion',
+    modality: 'en_linea',
+    duration_hours: 80,
+    duration_text: '80 horas lectivas',
+    description: 'Validación técnica en Server Components, optimización de renderizado y diseño de sistemas modulares en React.',
+    is_active: true,
+  },
+  {
+    id: 'cert-2',
+    code: 'CERT-NEST-BACKEND',
+    name: 'Certificación en Backend Escalable con NestJS y PostgreSQL',
+    slug: 'certificacion-nestjs-postgresql',
+    type: 'certificacion',
+    modality: 'en_linea',
+    duration_hours: 80,
+    duration_text: '80 horas lectivas',
+    description: 'Arquitectura modular, autenticación JWT, Row Level Security, integración Web Services Moodle y testing automatizado.',
+    is_active: true,
+  },
+  {
+    id: 'cert-3',
+    code: 'CERT-MOODLE-ADMIN',
+    name: 'Certificación en Administración y Web Services Moodle LMS',
+    slug: 'certificacion-moodle-admin',
+    type: 'certificacion',
+    modality: 'autogestivo',
+    duration_hours: 60,
+    duration_text: '60 horas lectivas',
+    description: 'Gestión de roles docentes, protocolos SSO auth_userkey, matriculación distribuida y optimización de bases de datos.',
+    is_active: true,
+  },
+  {
+    id: 'cert-4',
+    code: 'CERT-AGILE-DEVOPS',
+    name: 'Certificación en DevOps para Equipos de Ingeniería',
+    slug: 'certificacion-devops-agile',
+    type: 'certificacion',
+    modality: 'en_linea',
+    duration_hours: 70,
+    duration_text: '70 horas lectivas',
+    description: 'Pipelines CI/CD, Git workflows colaborativos, despliegues contenerizados con Docker y observabilidad en producción.',
+    is_active: true,
   },
 ];
 

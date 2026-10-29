@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { BrandWordmark } from '@/components/BrandWordmark';
 import {
   IconDashboard,
   IconStudents,
@@ -67,7 +66,6 @@ export function CampusSidebar({
   customSections,
 }: CampusSidebarProps) {
   const { user, logout } = useAuth();
-  const router = useRouter();
 
   const userRoles = (user?.roles || []) as string[];
   const isSuperOrAdmin = userRoles.some((r) =>
@@ -177,6 +175,17 @@ export function CampusSidebar({
             },
           ],
         },
+        {
+          title: 'Plataforma',
+          items: [
+            {
+              id: 'moodle',
+              label: 'Campus de Nivelación',
+              icon: <IconMoodle className="w-4 h-4 shrink-0" />,
+              onClick: onLaunchCampusSSO,
+            },
+          ],
+        },
       ]
     : [
         {
@@ -210,11 +219,6 @@ export function CampusSidebar({
               label: 'Solicitudes y Matrículas',
               icon: <IconAttendance className="w-4 h-4 shrink-0" />,
               badge: counts.enrollments,
-            },
-            {
-              id: 'admisiones',
-              label: 'Postulaciones',
-              icon: <IconAttendance className="w-4 h-4 shrink-0" />,
             },
             {
               id: 'programas',
@@ -265,9 +269,7 @@ export function CampusSidebar({
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  if (item.href) router.push(item.href);
-                  else if (item.onClick) item.onClick();
-                  else onSelectTab(item.id);
+                  onSelectTab(item.id);
                   onCloseMobile();
                 }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-[6px] transition-all text-left group relative ${
@@ -318,16 +320,21 @@ export function CampusSidebar({
         <div className="h-13 border-b border-border flex items-center justify-between px-3.5 shrink-0">
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
+              <div className="h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-white font-bold text-xs shrink-0 ring-1 ring-primary/40">
+                <span className="text-accent-lime font-mono text-[11px]">I</span>
+              </div>
               <div className="leading-none truncate">
-                <BrandWordmark className="text-[16px] text-foreground" />
+                <span className="font-semibold text-xs tracking-tight text-foreground block">
+                  IINICIA
+                </span>
                 <span className="text-[10px] text-muted">
                   Portal Académico
                 </span>
               </div>
             </div>
           ) : (
-            <div className="mx-auto h-7 w-7 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime">
-              <span className="relative pt-1 text-[16px] font-black leading-none">I<sup className="absolute -top-1 left-0 text-[8px]">2</sup></span>
+            <div className="mx-auto h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime font-bold text-xs">
+              I
             </div>
           )}
 
@@ -415,7 +422,10 @@ export function CampusSidebar({
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <BrandWordmark className="text-[16px] text-foreground" />
+                  <div className="h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime font-bold text-xs">
+                    I
+                  </div>
+                  <span className="font-semibold text-sm text-foreground">IINICIA Portal</span>
                 </div>
                 <button
                   type="button"

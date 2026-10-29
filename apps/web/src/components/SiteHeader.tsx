@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
-import { BrandWordmark } from "@/components/BrandWordmark";
 
 const navItems = [
   { label: "Inicio", href: "/#inicio", id: "inicio" },
@@ -85,7 +84,12 @@ export function SiteHeader() {
           onClick={(e) => handleNavClick(e, "inicio")}
           className="flex items-center gap-2.5 shrink-0"
         >
-          <BrandWordmark className="text-[20px] text-foreground" />
+          <LogoMark />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[16px] font-bold tracking-tight text-foreground">
+              IINICIA
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -269,5 +273,25 @@ export function SiteHeader() {
         </div>
       )}
     </header>
+  );
+}
+
+function LogoMark() {
+  return (
+    <span className="grid h-7 w-7 place-items-center rounded-[6px] bg-primary-action text-white shadow-minimal">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2z" />
+        <path d="M12 2v9l8 4.5M12 11l-8 4.5" />
+      </svg>
+    </span>
   );
 }

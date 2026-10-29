@@ -103,17 +103,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getDefaultDashboardPath = (customRoles?: RoleSlug[]): string => {
     const r = customRoles || user?.roles || [];
-    if (r.includes('superadministrador') || r.includes('administrador')) {
+    if (r.includes('superadministrador') || r.includes('administrador') || r.includes('coordinador')) {
       return '/dashboard/admin';
     }
-    if (r.includes('coordinador')) return '/dashboard/coordinador';
     if (r.includes('profesor')) {
       return '/dashboard/docente';
     }
     if (r.includes('estudiante')) {
       return '/dashboard/estudiante';
     }
-    if (r.includes('soporte')) return '/dashboard/soporte';
     return '/dashboard/aspirante';
   };
 

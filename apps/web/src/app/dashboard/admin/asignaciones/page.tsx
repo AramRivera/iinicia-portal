@@ -231,7 +231,7 @@ export default function AsignacionesPage() {
           router.push('/dashboard/admin');
         }
       }}
-      breadcrumbs={['INICIA', 'Administración', 'Asignación de Cursos y Roles']}
+      breadcrumbs={['IINICIA', 'Administración', 'Asignación de Cursos y Roles']}
     >
       <div className="space-y-6">
         {/* Header Asignaciones */}
