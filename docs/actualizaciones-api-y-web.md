@@ -305,8 +305,8 @@ Se ejecutan mediante:
 ```bash
 npm test --prefix apps/api
 ```
-- **Resultado actual**: **13 archivos de prueba aprobados, 59 pruebas unitarias superadas** (100% de éxito).
-- Cobertura: Autenticación, guardias de rol, resolución canónica de URLs en MoodleClient, sincronización de usuarios, asignación de cursos, validación de DTOs y desmatriculación remota.
+- **Resultado actual**: **13 archivos de prueba aprobados, 61 pruebas unitarias superadas** (100% de éxito).
+- Cobertura: Autenticación, guardias de rol, resolución canónica de URLs en MoodleClient, sincronización de usuarios, asignación de cursos, validación de DTOs, desmatriculación remota y validación estricta de ámbitos en `validateCourseAccess`.
 
 ### 6.2 Compilación del Frontend (Next.js 16 / Turbopack)
 Se ejecuta mediante:
@@ -330,3 +330,25 @@ npm run build --prefix apps/web
   - `/recuperar-password`
   - `/registro`
   - `/universidad`
+
+---
+
+## 7. Blindaje de Autorización y Principio de Mínimo Privilegio (Octubre 2026)
+
+En estricto cumplimiento de la Sección 6 del documento de alcance técnico y funcional (*«Un usuario no deberá visualizar opciones, usuarios, programas o cursos que estén fuera de su rol y ámbito de autorización»*), se implementaron mecanismos de validación activa en la capa de servicio:
+
+### 7.1 Validador de Ámbito en Moodle (`validateCourseAccess`)
+Centralizado en `apps/api/src/modules/moodle/moodle.service.ts`:
+- **Estudiantes:** Únicamente pueden acceder a los contenidos de cursos donde posean una matrícula en estado `autorizada` o `sincronizada`. Tienen bloqueado el acceso a la lista de participantes y a métricas docentes (`403 Forbidden`).
+- **Privacidad de Calificaciones:** El endpoint `GET /moodle/courses/:courseId/progress` valida que un estudiante solo pueda solicitar su propio progreso. Si incluye en query un `moodle_user_id` ajeno, el servidor rechaza la solicitud con código `403`.
+- **Profesores:** Únicamente pueden consultar la lista de participantes y resúmenes analíticos de las asignaturas donde tengan rol docente asignado (`editingteacher`).
+- **Personal de Gestión (Staff):** Usuarios con rol `superadministrador`, `administrador` o `coordinador` cuentan con visibilidad global de supervisión académica.
+
+### 7.2 Alta Administrativa con Rol Específico (`POST /api/v1/users`)
+- Diseñado para que administradores puedan registrar usuarios seleccionando un rol unívoco (`role_id`), evitando el registro inicial como aspirante cuando se da de alta a docentes o personal operativo.
+- Permite la bandera `sync_to_moodle: true` para pre-aprovisionar la cuenta en Moodle LMS de manera inmediata.
+- Auditoría obligatoria registrada en `audit_logs` vinculando al actor administrativo.
+
+### 7.3 Corrección Canónica de IDs de Roles en Moodle
+- Se corrigió el valor en el entorno `.env` de la API: `MOODLE_ROLE_STUDENT_ID=5` (anteriormente configurado en 2 de forma errónea, el cual correspondía a `coursecreator`).
+- El método `getMoodleRoleId` resuelve con prioridad las variables de entorno declaradas y recurre a la constante tipada `MOODLE_ROLE_IDS` (`student: 5`, `editingteacher: 3`).

@@ -146,6 +146,46 @@ paths:
         "200":
           description: Listado paginado de usuarios.
 
+    post:
+      summary: Creación administrativa de usuario con asignación directa de rol
+      description: Permite al personal administrativo crear una cuenta con un rol específico (estudiante, profesor, coordinador, etc.) y sincronizarla opcionalmente con Moodle de forma inmediata sin suplantar la sesión del administrador.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, first_name, last_name, role_id]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                role_id:
+                  type: integer
+                  description: Identificador numérico del rol en Supabase (ej. 3=coordinador, 4=profesor, 5=estudiante).
+                sync_to_moodle:
+                  type: boolean
+                  default: false
+                  description: Si es true, aprovisiona la cuenta inmediatamente en Moodle LMS vía Web Services.
+      responses:
+        "201":
+          description: Usuario creado y rol asignado exitosamente.
+        "400":
+          description: Datos de entrada inválidos o correo ya registrado.
+        "403":
+          description: No posees permisos para crear usuarios administrativos (requiere users.manage).
+
   /users/{id}:
     get:
       summary: Detalle consolidado de usuario
@@ -642,6 +682,90 @@ paths:
           description: Enlace de acceso autorizado al campus Moodle.
         "403":
           description: Usuario sin matrícula autorizada en el curso.
+
+  /moodle/courses/{courseId}/contents:
+    get:
+      summary: Estructura de temas, secciones y módulos de un curso
+      description: Obtiene los recursos y actividades configuradas en Moodle LMS (core_course_get_contents). Requiere que el usuario esté matriculado activamente en el curso o pertenezca al personal de supervisión/staff.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          description: Identificador numérico del curso en Moodle (ej. 2)
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Estructura de secciones y módulos obtenida de Moodle.
+        "403":
+          description: No posees autorización ni matrícula activa en este curso.
+        "404":
+          description: Curso de Moodle no encontrado o no mapeado en el portal.
+
+  /moodle/courses/{courseId}/participants:
+    get:
+      summary: Listado de participantes matriculados en un curso
+      description: Retorna alumnos matriculados, roles y marcas de último acceso (core_enrol_get_enrolled_users). Exclusivo para docentes titulares del curso y personal administrativo/coordinador.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          description: Identificador numérico del curso en Moodle (ej. 2)
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de participantes con estatus y accesos.
+        "403":
+          description: Acceso restringido. Se requieren privilegios docentes o administrativos en este curso.
+
+  /moodle/courses/{courseId}/progress:
+    get:
+      summary: Progreso, actividades y calificaciones de un usuario en un curso
+      description: Consulta calificaciones oficiales (gradereport_user_get_grade_items) y estado de compleción (core_completion_get_course_completion_status). Los estudiantes solo pueden consultar su propio progreso. Docentes y administradores pueden auditar el progreso de otros alumnos pasando el parámetro moodle_user_id.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          description: Identificador numérico del curso en Moodle
+          schema:
+            type: integer
+        - in: query
+          name: moodle_user_id
+          required: false
+          description: ID de usuario en Moodle (opcional para estudiantes, se autocompleta con su perfil).
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resumen de avance, calificación ponderada y desglose de actividades evaluadas.
+        "403":
+          description: No posees autorización para consultar el avance de otro estudiante.
+
+  /moodle/courses/{courseId}/teacher-overview:
+    get:
+      summary: Resumen analítico global de curso para docentes y administradores
+      description: Consolida el total de alumnos matriculados, profesores, módulos interactivos, secciones y listas de estudiantes con fecha de última visita.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          description: Identificador numérico del curso en Moodle
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resumen analítico integral del aula virtual.
+        "403":
+          description: Acceso restringido a docentes o coordinadores del curso.
 
   # =========================================================================
   # AUDITORÍA
