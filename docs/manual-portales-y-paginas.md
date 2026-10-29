@@ -1,5 +1,7 @@
 # Manual de Uso del Portal Institucional IINICIA
 
+> Referencia histórica. Para rutas, configuración y límites de la implementación actual consulta [frontend.md](frontend.md).
+
 Documento de referencia operativa y arquitectónica para el portal universitario IINICIA, cubriendo páginas públicas, roles académicos, resolución de doble rol y espacios de trabajo.
 
 ---

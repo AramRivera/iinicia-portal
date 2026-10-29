@@ -1,5 +1,7 @@
 # Guía de Integración para el Frontend (Next.js / React) — IINICIA Portal
 
+> Documento histórico. La guía vigente del frontend está en [frontend.md](frontend.md) y el contrato verificable en [openapi.yaml](openapi.yaml). Las rutas, colores, identificadores y ejemplos de este documento pueden no corresponder a la implementación actual.
+
 > **Audiencia**: Equipo de Desarrollo Frontend (Next.js 14+ / React / Tailwind CSS)  
 > **Backend API**: NestJS + Supabase (PostgreSQL 15+) + Moodle LMS (Web Services)  
 > **Prefijo Global de API**: `/api/v1`  
