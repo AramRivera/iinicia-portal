@@ -1,176 +1,272 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { usePortalTheme } from "@/components/PortalThemeProvider";
-import { usePortalAuth } from "@/components/PortalAuthProvider";
-
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
+import { BrandWordmark } from "@/components/BrandWordmark";
 
 const navItems = [
-  { label: "Inicio", href: "/" },
-  { label: "Cursos", href: "/cursos" },
-  { label: "Certificaciones", href: "/certificaciones" },
-  { label: "Diplomados", href: "/diplomados" },
-  { label: "Universidad", href: "/universidad" },
-  { label: "Ayuda", href: "/#preguntas" },
+  { label: "Inicio", href: "/#inicio", id: "inicio" },
+  { label: "Universidad", href: "/#universidad", id: "universidad" },
+  { label: "Cursos", href: "/#cursos", id: "cursos" },
+  { label: "Diplomados", href: "/#diplomados", id: "diplomados" },
+  { label: "Certificaciones", href: "/#certificaciones", id: "certificaciones" },
+  { label: "Admisiones", href: "/#admisiones", id: "admisiones" },
+  { label: "Contacto", href: "/#contacto", id: "contacto" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("inicio");
   const pathname = usePathname();
-  const { theme, toggleTheme } = usePortalTheme();
-  const { session, loading, logout } = usePortalAuth();
+  const { user, logout, getDefaultDashboardPath } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
-  // La portada ya incluye su propio encabezado (modales y modo ambiente).
-  // Evitamos duplicarlo; el encabezado global aparece en las demás rutas.
-  if (pathname === "/") return null;
+  const isHome = pathname === "/";
+  const dashboardPath = user ? getDefaultDashboardPath() : "/login";
+  const primaryRole =
+    user?.roles?.find((r) => r === "superadministrador") ||
+    user?.roles?.find((r) => r === "administrador") ||
+    user?.roles?.find((r) => r === "coordinador") ||
+    user?.roles?.find((r) => r === "profesor") ||
+    user?.roles?.find((r) => r === "estudiante") ||
+    user?.roles?.[0] ||
+    "aspirante";
+
+  // Intersection observer or scroll spy to track the active section on landing page
+  useEffect(() => {
+    if (!isHome) return;
+
+    const sectionIds = navItems.map((item) => item.id);
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const offset = 140; // Header + threshold
+
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const section = document.getElementById(sectionIds[i]);
+        if (section) {
+          const top = section.offsetTop;
+          if (scrollY >= top - offset) {
+            setActiveSection(sectionIds[i]);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isHome]);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    if (isHome) {
+      e.preventDefault();
+      setOpen(false);
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+        window.history.pushState(null, "", `/#${id}`);
+        setActiveSection(id);
+      }
+    } else {
+      setOpen(false);
+    }
+  };
 
   return (
-    <header className="portal-global-header sticky top-0 z-50 border-b px-4 backdrop-blur-xl sm:px-6 lg:px-10">
-      <nav aria-label="Navegación principal" className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-4">
-        <Link href="/" onClick={() => setOpen(false)} aria-label="IINICIA, ir al inicio" className="flex shrink-0 items-center gap-3">
-          <span className="portal-logo-mark relative flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm">
-            <span className="text-sm font-semibold tracking-tight">I²</span>
-            <span className="portal-logo-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2" />
-          </span>
-          <span>
-            <span className="block text-lg font-semibold tracking-[0.16em]">IINICIA</span>
-            <span className="portal-muted -mt-0.5 block text-[9px] font-medium uppercase tracking-[0.23em]">Ciencias aplicadas</span>
-          </span>
+    <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-border transition-colors">
+      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-[52px] sm:px-6">
+        <Link
+          href="/#inicio"
+          onClick={(e) => handleNavClick(e, "inicio")}
+          className="flex items-center gap-2.5 shrink-0"
+        >
+          <BrandWordmark className="text-[20px] text-foreground" />
         </Link>
 
-        <ul className="hidden items-center gap-5 text-[13px] font-medium xl:flex">
-          {navItems.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={pathname === item.href ? "page" : undefined}
-                className="portal-global-nav-link transition-colors"
-              >{item.label}</Link>
-            </li>
-          ))}
+        {/* Desktop Navigation */}
+        <ul className="hidden items-center gap-1 lg:flex">
+          {navItems.map((item) => {
+            const isActive = isHome && activeSection === item.id;
+            return (
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  onClick={(e) => handleNavClick(e, item.id)}
+                  className={`relative px-3 py-1.5 text-[13px] font-medium transition-all rounded-[6px] ${
+                    isActive
+                      ? "text-primary font-semibold bg-primary/10"
+                      : "text-foreground/75 hover:text-primary hover:bg-surface-muted/50"
+                  }`}
+                >
+                  {item.label}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary-action rounded-full" />
+                  )}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
-        
-<div className="hidden items-center gap-3 xl:flex">
-  {loading ? (
-    <span className="text-sm opacity-60">
-      Comprobando sesión...
-    </span>
-  ) : session ? (
-    <>
-      <Link
-        href="/estudiante"
-        className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm"
-      >
-        Mi IINICIA
-      </Link>
+        <div className="hidden items-center gap-3 lg:flex">
+          {/* Theme switcher */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="h-8 w-8 rounded-[6px] border border-border bg-surface-muted/60 hover:bg-surface-muted text-foreground flex items-center justify-center transition-all"
+            title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          >
+            {theme === "dark" ? (
+              <IconSun className="w-4 h-4 text-accent-lime" />
+            ) : (
+              <IconMoon className="w-4 h-4 text-primary" />
+            )}
+          </button>
 
-      <button
-        type="button"
-        onClick={logout}
-        className="portal-global-nav-link rounded-lg border px-4 py-2.5 text-sm font-semibold"
-      >
-        Cerrar sesión
-      </button>
-    </>
-  ) : (
-    <>
-      <Link
-        href="/login"
-        className="portal-global-nav-link rounded-lg px-4 py-2.5 text-sm font-semibold"
-      >
-        Iniciar sesión
-      </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href={dashboardPath}
+                className="flex items-center gap-2 rounded-[6px] border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-all"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
+                <span>Panel ({primaryRole})</span>
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-xs font-medium text-muted hover:text-danger transition-colors"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="text-xs font-medium text-foreground/80 hover:text-foreground transition-colors px-2 py-1.5"
+              >
+                Iniciar sesión
+              </Link>
+              <Link
+                href="/registro"
+                className="rounded-[6px] bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-primary-action/90 shadow-minimal"
+              >
+                Registrarse
+              </Link>
+            </div>
+          )}
+        </div>
 
-      <Link
-        href="/registro"
-        className="portal-lime-button inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold shadow-sm"
-      >
-        Crear cuenta <span aria-hidden="true">↗</span>
-      </Link>
-    </>
-  )}
-</div>
-
-
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="portal-global-theme-toggle inline-flex shrink-0 items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold"
-          aria-label={theme === "light" ? "Activar modo oscuro" : "Activar modo claro"}
-          title={theme === "light" ? "Cambiar a oscuro" : "Cambiar a claro"}
-        >
-          <span aria-hidden="true" className="text-lg leading-none">{theme === "light" ? "☾" : "☀"}</span>
-          <span className="hidden sm:inline">{theme === "light" ? "Oscuro" : "Claro"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setOpen((current) => !current)}
-          aria-expanded={open}
-          aria-label={open ? "Cerrar menú" : "Abrir menú"}
-          className="portal-global-theme-toggle rounded-lg border px-3 py-2 text-sm xl:hidden"
-        >{open ? "Cerrar ✕" : "Menú ☰"}</button>
+        {/* Mobile controls */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="h-8 w-8 rounded-[6px] border border-border bg-surface-muted text-foreground flex items-center justify-center"
+            title="Cambiar tema"
+          >
+            {theme === "dark" ? (
+              <IconSun className="w-4 h-4 text-accent-lime" />
+            ) : (
+              <IconMoon className="w-4 h-4 text-primary" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Abrir menú"
+            aria-expanded={open}
+            className="grid h-8 w-8 place-items-center rounded-[6px] border border-border text-foreground hover:bg-surface-muted"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            >
+              {open ? (
+                <path d="M6 6l12 12M18 6L6 18" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </nav>
 
+      {/* Mobile drawer */}
       {open && (
-        <nav aria-label="Navegación móvil" className="portal-mobile-menu border-t py-3 xl:hidden">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="portal-mobile-link block rounded-lg px-3 py-3 text-sm">
-              {item.label}
-            </Link>
-          ))}
-          
-<div className="mt-2 grid grid-cols-2 gap-2 border-t pt-3">
-  {loading ? (
-    <span className="col-span-2 py-3 text-center text-sm opacity-60">
-      Comprobando sesión...
-    </span>
-  ) : session ? (
-    <>
-      <Link
-        href="/estudiante"
-        onClick={() => setOpen(false)}
-        className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold"
-      >
-        Mi IINICIA
-      </Link>
-
-      <button
-        type="button"
-        onClick={() => {
-          logout();
-          setOpen(false);
-        }}
-        className="portal-global-theme-toggle rounded-lg border px-3 py-3 text-center text-sm font-semibold"
-      >
-        Cerrar sesión
-      </button>
-    </>
-  ) : (
-    <>
-      <Link
-        href="/login"
-        onClick={() => setOpen(false)}
-        className="portal-global-theme-toggle rounded-lg border px-3 py-3 text-center text-sm font-semibold"
-      >
-        Iniciar sesión
-      </Link>
-
-      <Link
-        href="/registro"
-        onClick={() => setOpen(false)}
-        className="portal-lime-button rounded-lg px-3 py-3 text-center text-sm font-semibold"
-      >
-        Crear cuenta
-      </Link>
-    </>
-  )}
-</div>
-
-        </nav>
+        <div className="border-b border-border bg-surface px-4 py-4 lg:hidden animate-in slide-in-from-top-2 duration-150">
+          <ul className="flex flex-col gap-1.5">
+            {navItems.map((item) => {
+              const isActive = isHome && activeSection === item.id;
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.id)}
+                    className={`block px-3 py-2 text-sm font-medium rounded-[6px] transition-all ${
+                      isActive
+                        ? "text-primary font-semibold bg-primary/10"
+                        : "text-foreground/80 hover:text-primary hover:bg-surface-muted/60"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+            <li className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
+              {user ? (
+                <>
+                  <Link
+                    href={dashboardPath}
+                    onClick={() => setOpen(false)}
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-center text-xs font-semibold text-white"
+                  >
+                    Ir al Panel ({primaryRole})
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      logout();
+                    }}
+                    className="rounded-[6px] border border-danger/30 px-4 py-2 text-center text-xs font-medium text-danger hover:bg-danger/10"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="rounded-[6px] border border-border px-4 py-2 text-center text-xs font-medium text-foreground"
+                  >
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/registro"
+                    onClick={() => setOpen(false)}
+                    className="rounded-[6px] bg-primary-action px-4 py-2 text-center text-xs font-semibold text-white"
+                  >
+                    Registrarse
+                  </Link>
+                </>
+              )}
+            </li>
+          </ul>
+        </div>
       )}
     </header>
   );

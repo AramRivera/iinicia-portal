@@ -14,9 +14,13 @@ describe('MoodleService', () => {
     getUserByUsername: ReturnType<typeof vi.fn>;
     createUser: ReturnType<typeof vi.fn>;
     enrolUser: ReturnType<typeof vi.fn>;
+    unenrolUser?: ReturnType<typeof vi.fn>;
+    requestUserKeyLoginUrl: ReturnType<typeof vi.fn>;
+    getEffectiveBaseUrl: ReturnType<typeof vi.fn>;
   };
   let supabaseMock: {
     getAdminClient: ReturnType<typeof vi.fn>;
+    getResilientClient: ReturnType<typeof vi.fn>;
   };
   let configMock: {
     get: ReturnType<typeof vi.fn>;
@@ -31,6 +35,9 @@ describe('MoodleService', () => {
       getUserByUsername: vi.fn(),
       createUser: vi.fn(),
       enrolUser: vi.fn(),
+      unenrolUser: vi.fn(),
+      requestUserKeyLoginUrl: vi.fn(),
+      getEffectiveBaseUrl: vi.fn().mockResolvedValue('http://localhost/moodle'),
     };
 
     configMock = {
@@ -46,6 +53,7 @@ describe('MoodleService', () => {
 
     supabaseMock = {
       getAdminClient: vi.fn().mockReturnValue(adminClientMock),
+      getResilientClient: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -58,6 +66,46 @@ describe('MoodleService', () => {
     }).compile();
 
     service = module.get<MoodleService>(MoodleService);
+  });
+
+  describe('authorizeCourseRead', () => {
+    function withCourseAccess(moodleRole: string | null, moodleUserId = 42) {
+      const db = {
+        from: vi.fn((table: string) => {
+          if (table === 'user_roles') return {
+            select: () => ({ eq: () => ({ eq: async () => ({ data: [{ is_active: true, expires_at: null, roles: { slug: 'estudiante' } }], error: null }) }) }),
+          };
+          if (table === 'v_user_authorized_courses') return {
+            select: () => ({ eq: () => ({ eq: async () => ({ data: moodleRole ? [{ moodle_role: moodleRole }] : [], error: null }) }) }),
+          };
+          if (table === 'profiles') return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { moodle_user_id: moodleUserId }, error: null }) }) }),
+          };
+          return {};
+        }),
+      };
+      supabaseMock.getResilientClient.mockReturnValue(db);
+    }
+
+    it('denies course contents without an authorized enrollment', async () => {
+      withCourseAccess(null);
+      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'contents'))
+        .rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('uses the authenticated student Moodle ID for progress and blocks another ID', async () => {
+      withCourseAccess('student');
+      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'progress'))
+        .resolves.toBe(42);
+      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'progress', 99))
+        .rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('does not expose participant data to a student', async () => {
+      withCourseAccess('student');
+      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'participants'))
+        .rejects.toBeInstanceOf(ForbiddenException);
+    });
   });
 
   describe('syncUser', () => {
@@ -261,7 +309,23 @@ describe('MoodleService', () => {
         eq: vi.fn().mockResolvedValue({ error: null }),
       });
 
+      clientMock.requestUserKeyLoginUrl.mockResolvedValue(
+        'http://localhost/moodle/auth/userkey/login.php?key=dummy-test-key',
+      );
+
       adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { id: 'usr-1', email: 'test@example.com', moodle_user_id: 10 },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
         if (table === 'enrollment_requests') {
           return { select: selectMock, update: updateMock };
         }
@@ -278,7 +342,7 @@ describe('MoodleService', () => {
         userAgent: 'Mozilla/5.0',
       });
 
-      expect(result.access_url).toBe('http://localhost/moodle/course/view.php?id=3');
+      expect(result.access_url).toContain('http://localhost/moodle/auth/userkey/login.php?key=dummy-test-key&wantsurl=');
       expect(insertMock).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 'usr-1',
@@ -321,6 +385,33 @@ describe('MoodleService', () => {
           succeeded: false,
         }),
       );
+    });
+  });
+
+  describe('unenrolStudent', () => {
+    it('calls moodle client unenrolUser when moodle ids are present', async () => {
+      const enrollment = {
+        id: 'enr-1',
+        moodle_role: 'student',
+        profiles: { moodle_user_id: 12 },
+        course_mappings: { moodle_course_id: 4 },
+      };
+
+      adminClientMock.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: enrollment, error: null }),
+          }),
+        }),
+      });
+
+      const res = await service.unenrolStudent('enr-1');
+      expect(res.success).toBe(true);
+      expect(clientMock.unenrolUser).toHaveBeenCalledWith({
+        userId: 12,
+        courseId: 4,
+        roleId: 5,
+      });
     });
   });
 });

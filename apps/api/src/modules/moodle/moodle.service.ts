@@ -26,6 +26,77 @@ export class MoodleService {
     return this.client.checkConnection();
   }
 
+  /** Revisa el ámbito académico antes de devolver datos obtenidos con el token de Moodle. */
+  async authorizeCourseRead(
+    accessToken: string,
+    userId: string,
+    courseId: number,
+    resource: 'contents' | 'participants' | 'progress' | 'teacher-overview',
+    requestedMoodleUserId?: number,
+  ): Promise<number | undefined> {
+    if (!Number.isInteger(courseId) || courseId <= 0) {
+      throw new BadRequestException('Identificador de curso inválido.');
+    }
+
+    const db = this.supabase.getResilientClient(accessToken);
+    const { data: assignments, error: rolesError } = await db
+      .from('user_roles')
+      .select('is_active, expires_at, roles!role_id ( slug )')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+    if (rolesError) throw new ForbiddenException('No fue posible comprobar tus permisos.');
+
+    const now = new Date().toISOString();
+    const activeRoles = (assignments ?? []).flatMap((assignment) => {
+      if (assignment.expires_at && assignment.expires_at < now) return [];
+      const role = assignment.roles as unknown as { slug: string } | { slug: string }[] | null;
+      const slug = Array.isArray(role) ? role[0]?.slug : role?.slug;
+      return slug ? [slug] : [];
+    });
+    const isAdmin = activeRoles.includes('superadministrador') || activeRoles.includes('administrador');
+
+    const { data: courses, error: courseError } = await db
+      .from('v_user_authorized_courses')
+      .select('moodle_role')
+      .eq('user_id', userId)
+      .eq('moodle_course_id', courseId);
+    if (courseError) throw new ForbiddenException('No fue posible comprobar tu matrícula.');
+
+    const enrolled = (courses ?? []).length > 0;
+    const teachesCourse = (courses ?? []).some((course) =>
+      course.moodle_role === 'teacher' || course.moodle_role === 'editingteacher',
+    );
+    const allowed = resource === 'contents'
+      ? isAdmin || enrolled
+      : resource === 'progress'
+        ? isAdmin || enrolled
+        : isAdmin || teachesCourse;
+    if (!allowed) {
+      throw new ForbiddenException('No tienes acceso autorizado a este curso.');
+    }
+
+    if (resource !== 'progress') return undefined;
+    if (isAdmin) {
+      if (!requestedMoodleUserId || !Number.isInteger(requestedMoodleUserId) || requestedMoodleUserId <= 0) {
+        throw new BadRequestException('Se requiere un usuario de Moodle válido.');
+      }
+      return requestedMoodleUserId;
+    }
+
+    const { data: profile, error: profileError } = await db
+      .from('profiles')
+      .select('moodle_user_id')
+      .eq('id', userId)
+      .maybeSingle();
+    if (profileError || !profile?.moodle_user_id) {
+      throw new ForbiddenException('Tu cuenta no está vinculada con Moodle.');
+    }
+    if (requestedMoodleUserId && requestedMoodleUserId !== profile.moodle_user_id) {
+      throw new ForbiddenException('No puedes consultar las calificaciones de otra persona.');
+    }
+    return profile.moodle_user_id;
+  }
+
   /**
    * Sincroniza un usuario de Supabase con Moodle LMS:
    * 1. Consulta el perfil en Supabase.
@@ -386,15 +457,238 @@ export class MoodleService {
       .update({ last_moodle_access_at: new Date().toISOString() })
       .eq('id', enrollment.id);
 
-    const moodleBase =
-      this.config.get<string>('MOODLE_URL') || 'http://localhost/moodle';
-    const redirectUrl = `${moodleBase.replace(/\/+$/, '')}/course/view.php?id=${moodleCourseId}`;
+    const moodleBase = await this.client.getEffectiveBaseUrl();
+    const courseUrl = `${moodleBase}/course/view.php?id=${moodleCourseId}`;
+
+    let accessUrl = courseUrl;
+
+    // Obtener correo del usuario para solicitar token SSO de un solo uso
+    const { data: userProfile } = await admin
+      .from('profiles')
+      .select('id, email, moodle_user_id')
+      .eq('id', params.userId)
+      .maybeSingle();
+
+    if (userProfile?.email) {
+      try {
+        // Asegurar que el usuario exista en Moodle antes de solicitar el SSO
+        if (!userProfile.moodle_user_id) {
+          const syncRes = await this.syncUser(params.userId);
+          userProfile.moodle_user_id = syncRes.moodle_user_id;
+        }
+
+        const loginUrl = await this.client.requestUserKeyLoginUrl(userProfile.email);
+        if (loginUrl) {
+          const sep = loginUrl.includes('?') ? '&' : '?';
+          accessUrl = `${loginUrl}${sep}wantsurl=${encodeURIComponent(courseUrl)}`;
+        }
+      } catch (err: any) {
+        this.logger.warn(
+          `No fue posible generar SSO one-time key para ${userProfile.email}, usando URL directa: ${err?.message}`,
+        );
+      }
+    }
 
     return {
       course_mapping_id: params.courseMappingId,
       course_name: courseMapping.course_name,
       moodle_course_id: moodleCourseId,
-      access_url: redirectUrl,
+      access_url: accessUrl,
+    };
+  }
+
+  /**
+   * Genera una URL de acceso directo con SSO al campus general de Moodle.
+   */
+  async getCampusAccessUrl(params: {
+    userId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    const admin = this.supabase.getAdminClient();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('id, email, moodle_user_id')
+      .eq('id', params.userId)
+      .maybeSingle();
+
+    if (!profile) {
+      throw new NotFoundException('Perfil de usuario no encontrado.');
+    }
+
+    const moodleBase = await this.client.getEffectiveBaseUrl();
+    const baseUrl = moodleBase.replace(/\/+$/, '');
+
+    let accessUrl = `${baseUrl}/`;
+
+    if (profile.email) {
+      try {
+        // Asegurar que el usuario exista en Moodle antes de solicitar el SSO
+        if (!profile.moodle_user_id) {
+          const syncRes = await this.syncUser(params.userId);
+          profile.moodle_user_id = syncRes.moodle_user_id;
+        }
+
+        const loginUrl = await this.client.requestUserKeyLoginUrl(profile.email);
+        if (loginUrl) {
+          const sep = loginUrl.includes('?') ? '&' : '?';
+          accessUrl = `${loginUrl}${sep}wantsurl=${encodeURIComponent(baseUrl + '/')}`;
+        }
+      } catch (err: any) {
+        this.logger.warn(`No fue posible generar SSO al campus: ${err?.message}`);
+      }
+    }
+
+    return { access_url: accessUrl };
+  }
+
+  /**
+   * Desmatricula a un usuario de un curso en Moodle LMS.
+   */
+  async unenrolStudent(enrollmentId: string) {
+    const admin = this.supabase.getAdminClient();
+
+    const { data: enrollment, error } = await admin
+      .from('enrollment_requests')
+      .select('*, course_mappings!course_mapping_id (*), profiles!user_id (*)')
+      .eq('id', enrollmentId)
+      .maybeSingle();
+
+    if (error || !enrollment) {
+      throw new NotFoundException('Solicitud de inscripción no encontrada.');
+    }
+
+    const courseMapping = (enrollment as any).course_mappings;
+    const profile = (enrollment as any).profiles;
+
+    if (profile?.moodle_user_id && courseMapping?.moodle_course_id) {
+      try {
+        const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
+        const roleId = MOODLE_ROLE_IDS[moodleRole] ?? MOODLE_ROLE_IDS.student;
+
+        await this.client.unenrolUser({
+          userId: Number(profile.moodle_user_id),
+          courseId: Number(courseMapping.moodle_course_id),
+          roleId,
+        });
+      } catch (err: any) {
+        this.logger.warn(`Advertencia al desmatricular en Moodle (${enrollmentId}): ${err?.message}`);
+      }
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Obtiene la estructura de contenidos (secciones y módulos) de un curso en Moodle.
+   */
+  async getCourseContents(courseId: number) {
+    return this.client.getCourseContents(courseId);
+  }
+
+  /**
+   * Obtiene los participantes matriculados en un curso en Moodle.
+   */
+  async getCourseParticipants(courseId: number) {
+    const rawUsers = await this.client.getCourseEnrolledUsers(courseId);
+    return rawUsers.map((u: any) => ({
+      id: u.id,
+      username: u.username,
+      fullname: u.fullname || `${u.firstname} ${u.lastname}`,
+      email: u.email,
+      roles: (u.roles || []).map((r: any) => r.shortname || r.name),
+      lastaccess: u.lastaccess ? new Date(u.lastaccess * 1000).toISOString() : null,
+      lastcourseaccess: u.lastcourseaccess ? new Date(u.lastcourseaccess * 1000).toISOString() : null,
+    }));
+  }
+
+  /**
+   * Obtiene las calificaciones y progreso de un usuario en un curso de Moodle.
+   */
+  async getUserCourseProgress(courseId: number, moodleUserId: number) {
+    const [gradesData, completionData, contents] = await Promise.all([
+      this.client.getUserCourseGrades(courseId, moodleUserId),
+      this.client.getCourseCompletionStatus(courseId, moodleUserId),
+      this.client.getCourseContents(courseId),
+    ]);
+
+    let totalModules = 0;
+    if (Array.isArray(contents)) {
+      contents.forEach((sec: any) => {
+        if (Array.isArray(sec.modules)) {
+          totalModules += sec.modules.length;
+        }
+      });
+    }
+
+    const courseGrade = gradesData?.gradeitems?.find((g: any) => g.itemtype === 'course');
+    const rawGrade = courseGrade?.graderaw != null ? Number(courseGrade.graderaw) : null;
+    const formattedGrade = courseGrade?.gradeformatted ?? '-';
+    let percentage = courseGrade?.percentageformatted ? parseFloat(courseGrade.percentageformatted) : null;
+
+    if (percentage == null && rawGrade != null && courseGrade?.grademax) {
+      percentage = Math.round((rawGrade / courseGrade.grademax) * 100);
+    }
+
+    return {
+      course_id: courseId,
+      moodle_user_id: moodleUserId,
+      total_modules: totalModules,
+      grade_raw: rawGrade,
+      grade_formatted: formattedGrade,
+      percentage: percentage ?? (completionData?.completed ? 100 : 0),
+      is_completed: completionData?.completed === true,
+      completion_status: completionData,
+      grade_items: gradesData?.gradeitems || [],
+    };
+  }
+
+  /**
+   * Resumen analítico global de un curso para docentes y administradores.
+   */
+  async getCourseTeacherOverview(courseId: number) {
+    const [course, enrolled, contents] = await Promise.all([
+      this.client.getCourseById(courseId),
+      this.client.getCourseEnrolledUsers(courseId),
+      this.client.getCourseContents(courseId),
+    ]);
+
+    let totalActivities = 0;
+    if (Array.isArray(contents)) {
+      contents.forEach((sec: any) => {
+        if (Array.isArray(sec.modules)) {
+          totalActivities += sec.modules.length;
+        }
+      });
+    }
+
+    const students = enrolled.filter((u: any) =>
+      (u.roles || []).some((r: any) => r.shortname === 'student')
+    );
+    const teachers = enrolled.filter((u: any) =>
+      (u.roles || []).some((r: any) => r.shortname === 'editingteacher' || r.shortname === 'teacher')
+    );
+
+    return {
+      course: course || { id: courseId },
+      total_enrolled: enrolled.length,
+      total_students: students.length,
+      total_teachers: teachers.length,
+      total_sections: Array.isArray(contents) ? contents.length : 0,
+      total_activities: totalActivities,
+      students: students.map((s: any) => ({
+        id: s.id,
+        username: s.username,
+        fullname: s.fullname || `${s.firstname} ${s.lastname}`,
+        email: s.email,
+        lastaccess: s.lastaccess ? new Date(s.lastaccess * 1000).toISOString() : null,
+      })),
+      teachers: teachers.map((t: any) => ({
+        id: t.id,
+        username: t.username,
+        fullname: t.fullname || `${t.firstname} ${t.lastname}`,
+        email: t.email,
+      })),
     };
   }
 }

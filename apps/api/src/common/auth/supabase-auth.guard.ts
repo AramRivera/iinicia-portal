@@ -11,6 +11,7 @@ import { SupabaseService } from '../supabase/supabase.service.js';
 export interface AuthenticatedRequest extends Request {
   accessToken: string;
   user: User;
+  userRoles?: string[];
 }
 
 @Injectable()
@@ -31,6 +32,16 @@ export class SupabaseAuthGuard implements CanActivate {
     const accessToken = match[1];
     request.accessToken = accessToken;
     request.user = await this.supabase.getAuthenticatedUser(accessToken);
+
+    const { data: profile, error } = await this.supabase
+      .getResilientClient(accessToken)
+      .from('profiles')
+      .select('status')
+      .eq('id', request.user.id)
+      .maybeSingle();
+    if (error || !profile || ['suspendido', 'inactivo', 'baja'].includes(profile.status)) {
+      throw new UnauthorizedException('La cuenta no está activa en el portal.');
+    }
 
     return true;
   }

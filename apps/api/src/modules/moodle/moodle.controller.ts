@@ -6,6 +6,7 @@ import {
   Ip,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -47,10 +48,28 @@ export class MoodleController {
   @Post('sync/enrollment/:enrollmentId')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador', 'coordinador')
+  @Roles('superadministrador', 'administrador')
   @RequirePermissions('moodle.sync.execute')
   syncEnrollment(@Param('enrollmentId') enrollmentId: string) {
     return this.moodleService.syncEnrollment(enrollmentId);
+  }
+
+  /**
+   * Genera el enlace de salto seguro SSO al campus principal de Moodle.
+   */
+  @Post('launch')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard)
+  launchCampus(
+    @Req() req: AuthenticatedRequest,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.moodleService.getCampusAccessUrl({
+      userId: req.user.id,
+      ipAddress,
+      userAgent,
+    });
   }
 
   /**
@@ -73,5 +92,67 @@ export class MoodleController {
       ipAddress,
       userAgent,
     });
+  }
+
+  /**
+   * Obtiene la estructura de temas y módulos de un curso en Moodle.
+   */
+  @Get('courses/:courseId/contents')
+  @UseGuards(SupabaseAuthGuard)
+  async getCourseContents(
+    @Param('courseId') courseId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.moodleService.authorizeCourseRead(req.accessToken, req.user.id, Number(courseId), 'contents');
+    return this.moodleService.getCourseContents(Number(courseId));
+  }
+
+  /**
+   * Lista los participantes matriculados en un curso de Moodle.
+   */
+  @Get('courses/:courseId/participants')
+  @UseGuards(SupabaseAuthGuard)
+  async getCourseParticipants(
+    @Param('courseId') courseId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.moodleService.authorizeCourseRead(req.accessToken, req.user.id, Number(courseId), 'participants');
+    return this.moodleService.getCourseParticipants(Number(courseId));
+  }
+
+  /**
+   * Obtiene el progreso y calificaciones de un usuario en un curso de Moodle.
+   */
+  @Get('courses/:courseId/progress')
+  @UseGuards(SupabaseAuthGuard)
+  async getCourseProgress(
+    @Param('courseId') courseId: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('moodle_user_id') moodleUserId?: string,
+  ) {
+    const targetMoodleUserId = await this.moodleService.authorizeCourseRead(
+      req.accessToken,
+      req.user.id,
+      Number(courseId),
+      'progress',
+      moodleUserId ? Number(moodleUserId) : undefined,
+    );
+    return this.moodleService.getUserCourseProgress(
+      Number(courseId),
+      targetMoodleUserId!,
+    );
+  }
+
+  /**
+   * Resumen analítico global de un curso (docentes y administradores).
+   */
+  @Get('courses/:courseId/teacher-overview')
+  @UseGuards(SupabaseAuthGuard)
+  async getCourseTeacherOverview(
+    @Param('courseId') courseId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.moodleService.authorizeCourseRead(req.accessToken, req.user.id, Number(courseId), 'teacher-overview');
+    return this.moodleService.getCourseTeacherOverview(Number(courseId));
   }
 }

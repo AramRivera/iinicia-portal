@@ -99,6 +99,7 @@ export class AuthService {
       roles,
       permissions,
       moodle_user_id: profile.moodle_user_id,
+      moodle_username: profile.moodle_username,
       moodle_sync_status: profile.moodle_sync_status,
       password_changed_at: null,
     } satisfies MeResponse;

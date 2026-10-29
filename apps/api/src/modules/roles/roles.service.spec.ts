@@ -110,6 +110,11 @@ describe('RolesService', () => {
               }),
             }),
             insert: insertUserRoleMock,
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({ error: null }),
+              }),
+            }),
           };
         }
         if (table === 'audit_logs') {

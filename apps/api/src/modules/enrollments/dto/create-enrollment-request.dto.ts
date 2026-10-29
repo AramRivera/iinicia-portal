@@ -7,6 +7,10 @@ export class CreateEnrollmentRequestDto {
 
   @IsOptional()
   @IsUUID('4')
+  user_id?: string;
+
+  @IsOptional()
+  @IsUUID('4')
   program_id?: string;
 
   @IsOptional()

@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: IINICIA API
+  title: INICIA API
   version: 1.0.0
   description: >
-    API REST oficial de la Plataforma Digital Universitaria IINICIA (NestJS + Supabase + Moodle).
+    API REST oficial de la Plataforma Digital Universitaria INICIA (NestJS + Supabase + Moodle).
     Gestiona la identidad con Supabase Auth, roles RBAC, oferta académica, solicitudes de admisión,
     matrículas y sincronización bidireccional con Moodle LMS.
 servers:
@@ -108,6 +108,50 @@ paths:
                 $ref: "#/components/schemas/MeResponse"
         "401":
           description: Token no válido o cuenta suspendida.
+
+  /auth/recover:
+    post:
+      summary: Solicitar correo de recuperación de contraseña
+      description: Envía el correo mediante Supabase Auth. La respuesta no revela si la cuenta existe. Requiere que la URL de retorno esté permitida en Supabase Auth.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Solicitud aceptada.
+        "503":
+          description: Servicio de correo no disponible.
+
+  /auth/reset-password:
+    post:
+      summary: Cambiar contraseña con token válido de Supabase Auth
+      description: La identidad se toma del token validado, nunca del cuerpo de la solicitud.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Contraseña actualizada.
+        "401":
+          description: Token inválido o caducado.
 
   # =========================================================================
   # USUARIOS Y PERFILES
@@ -387,6 +431,37 @@ paths:
         "201":
           description: Solicitud registrada en estado 'pendiente'.
 
+  /enrollments/{id}:
+    delete:
+      summary: Desasignar curso o dar de baja matrícula
+      description: Permite al estudiante darse de baja de su curso o al personal docente/administrativo revocar una matrícula. Desmatricula al usuario de Moodle LMS vía Web Services oficiales (enrol_manual_unenrol_users).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Identificador UUID de la matrícula
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Matrícula revocada y desasignada exitosamente en el portal y en Moodle LMS.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        "403":
+          description: No autorizado para dar de baja esta matrícula.
+        "404":
+          description: Matrícula no encontrada.
+
   /enrollments/{id}/status:
     patch:
       summary: Autorizar o rechazar inscripción
@@ -450,12 +525,65 @@ paths:
   /admissions/{id}/review:
     patch:
       summary: Dictaminar postulación (admitir, rechazar)
-      description: Al admitir, activa la cuenta y asigna rol estudiante. Requiere admissions.review.
+      description: Al admitir, activa la cuenta y asigna rol estudiante. Requiere rol administrador y permiso admissions.review.
       security:
         - bearerAuth: []
       responses:
         "200":
           description: Postulación dictaminada.
+
+  /contact:
+    post:
+      summary: Enviar un mensaje desde el formulario público de contacto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, email, subject, message]
+              properties:
+                full_name:
+                  type: string
+                  maxLength: 150
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                phone:
+                  type: string
+                  maxLength: 20
+                subject:
+                  type: string
+                  maxLength: 200
+                program_of_interest:
+                  type: string
+                  format: uuid
+                message:
+                  type: string
+                  maxLength: 3000
+      responses:
+        "201":
+          description: Mensaje registrado.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, message_id, submitted_at]
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message_id:
+                    type: string
+                    format: uuid
+                  submitted_at:
+                    type: string
+                    format: date-time
+        "400":
+          description: Datos de contacto inválidos.
+        "500":
+          description: No fue posible registrar el mensaje.
 
   # =========================================================================
   # MOODLE WEB SERVICES & CAMPUS SSO
@@ -521,9 +649,29 @@ paths:
         "200":
           description: Matrícula sincronizada.
 
+  /moodle/launch:
+    post:
+      summary: Salto directo con SSO al campus general de Moodle
+      description: Genera una URL de acceso directo de un solo uso para ingresar a la portada del campus virtual sin pedir credenciales.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Enlace de acceso autorizado mediante token efímero al campus.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_url:
+                    type: string
+                    example: "http://localhost/moodle/auth/userkey/login.php?key=123abc456&wantsurl=http://localhost/moodle/"
+        "401":
+          description: No autenticado.
+
   /moodle/courses/{courseMappingId}/launch:
     post:
-      summary: Salto seguro al curso de Moodle desde el portal (Mi IINICIA)
+      summary: Salto seguro al curso de Moodle desde el portal (Mi INICIA)
       description: Valida matrícula autorizada, registra en campus_access_logs y devuelve la URL del curso en Moodle.
       security:
         - bearerAuth: []
@@ -538,6 +686,87 @@ paths:
           description: Enlace de acceso autorizado al campus Moodle.
         "403":
           description: Usuario sin matrícula autorizada en el curso.
+
+  /moodle/courses/{courseId}/contents:
+    get:
+      summary: Contenidos de un curso Moodle autorizado
+      description: Requiere matrícula en el curso o rol administrador.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Secciones y actividades del curso.
+        "403":
+          description: El usuario no está autorizado para el curso.
+
+  /moodle/courses/{courseId}/participants:
+    get:
+      summary: Participantes de un curso Moodle
+      description: Solo para un docente asignado al curso o un administrador.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Participantes del curso.
+        "403":
+          description: Acceso denegado.
+
+  /moodle/courses/{courseId}/progress:
+    get:
+      summary: Progreso de un usuario en un curso Moodle
+      description: El estudiante o docente solo puede consultar su propio progreso; el administrador debe indicar moodle_user_id.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: moodle_user_id
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Estado de progreso del usuario.
+        "403":
+          description: Acceso denegado al curso o al usuario solicitado.
+
+  /moodle/courses/{courseId}/teacher-overview:
+    get:
+      summary: Resumen docente del curso Moodle
+      description: Solo para un docente asignado al curso o un administrador.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Resumen de alumnos y actividades.
+        "403":
+          description: Acceso denegado.
 
   # =========================================================================
   # AUDITORÍA
@@ -674,6 +903,9 @@ components:
           example: ["campus.access"]
         moodle_user_id:
           type: integer
+          nullable: true
+        moodle_username:
+          type: string
           nullable: true
         moodle_sync_status:
           type: string

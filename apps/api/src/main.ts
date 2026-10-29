@@ -13,7 +13,10 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN?.split(',') || [
       'http://localhost:3000',
       'http://localhost:3001',
-      'http://192.168.191.171:3000'
+      'http://localhost:4000',
+      'http://127.0.0.1:4000',
+      'http://192.168.191.171:3000',
+      'http://192.168.191.171:4000',
     ],
     credentials: true,
   });

@@ -1,70 +1,32 @@
-
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { PortalThemeProvider } from "@/components/PortalThemeProvider";
-import { PortalAuthProvider } from "@/components/PortalAuthProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata: Metadata = {
   title: {
-    default: "IINICIA — Instituto de Innovación y Ciencias Aplicadas",
-    template: "%s | IINICIA",
+    default: "INICIA — Instituto de Innovación",
+    template: "%s | INICIA",
   },
   description:
-    "Tu educación comienza hoy, estés donde estés. Cursos, certificaciones y diplomados en línea del Instituto de Innovación y Ciencias Aplicadas.",
+    "Plataforma de gestión universitaria y académica para estudiantes, docentes y administradores de INICIA.",
+  icons: { icon: '/icon.svg' },
 };
 
-// Recupera el tema antes de mostrar la página.
-const themeScript = `
-(function () {
-  try {
-    var saved = localStorage.getItem("iinicia-portal-theme");
-    var theme = saved === "dark" ? "dark" : "light";
-    document.documentElement.dataset.portalTheme = theme;
-  } catch (error) {
-    document.documentElement.dataset.portalTheme = "light";
-  }
-})();
-`;
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="es"
-      className="h-full antialiased"
-      suppressHydrationWarning
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <style>{`
-          html[data-portal-theme="dark"] body:has(.academic-site) {
-            background: #101710;
-          }
-
-          html[data-portal-theme="dark"] .academic-site:not([data-disco="true"]) {
-            --portal-bg: #101710;
-            --portal-surface: #192219;
-            --portal-soft: #141e15;
-            --portal-text: #edf5e7;
-            --portal-muted: #bac8b1;
-            --portal-border: #354632;
-            --portal-tint: #25351b;
-            --portal-accent: #c4ec89;
-            color-scheme: dark;
-          }
-        `}</style>
-      </head>
-
-      <body className="flex min-h-full flex-col bg-background text-foreground">
-  <PortalThemeProvider>
-    <PortalAuthProvider>
-      <SiteHeader />
-      <main className="flex flex-1 flex-col">{children}</main>
-      <SiteFooter />
-    </PortalAuthProvider>
-  </PortalThemeProvider>
-</body>
+    <html lang="es" className="h-full antialiased" suppressHydrationWarning>
+      <body className="flex min-h-full flex-col bg-background text-foreground transition-colors duration-150">
+        <ThemeProvider>
+          <AuthProvider>
+            <SiteHeader />
+            <main className="flex flex-1 flex-col">{children}</main>
+            <SiteFooter />
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
@@ -13,6 +13,7 @@ describe('EnrollmentsService', () => {
   };
   let moodleServiceMock: {
     syncEnrollment: ReturnType<typeof vi.fn>;
+    unenrolStudent: ReturnType<typeof vi.fn>;
   };
   let clientMock: any;
   let adminClientMock: any;
@@ -32,6 +33,7 @@ describe('EnrollmentsService', () => {
 
     moodleServiceMock = {
       syncEnrollment: vi.fn().mockResolvedValue({ success: true }),
+      unenrolStudent: vi.fn().mockResolvedValue({ success: true }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +48,58 @@ describe('EnrollmentsService', () => {
   });
 
   describe('createEnrollmentRequest', () => {
+    it('keeps a personal request pending without granting a role or calling Moodle', async () => {
+      const inserted = { id: 'enr-new', status: 'pendiente' };
+      const insert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: inserted, error: null }),
+        }),
+      });
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'course_mappings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { id: 'c1', program_id: 'p1', is_active: true, course_name: 'Curso 1' },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'enrollment_requests') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
+            }),
+            insert,
+          };
+        }
+        if (table === 'audit_logs') return { insert: vi.fn().mockResolvedValue({ error: null }) };
+        return {};
+      });
+
+      const result = await service.createEnrollmentRequest('usr-1', {
+        course_mapping_id: 'c1',
+        moodle_role: 'student',
+      });
+
+      expect(result.status).toBe('pendiente');
+      expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'pendiente',
+        moodle_role: 'student',
+        authorized_by: null,
+        authorized_at: null,
+      }));
+      expect(adminClientMock.from).not.toHaveBeenCalledWith('user_roles');
+      expect(moodleServiceMock.syncEnrollment).not.toHaveBeenCalled();
+    });
+
     it('throws NotFoundException if course does not exist', async () => {
       adminClientMock.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -83,7 +137,7 @@ describe('EnrollmentsService', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   maybeSingle: vi.fn().mockResolvedValue({
-                    data: { id: 'enr-exist', status: 'pendiente' },
+                    data: { id: 'enr-exist', status: 'sincronizada' },
                     error: null,
                   }),
                 }),
@@ -150,6 +204,74 @@ describe('EnrollmentsService', () => {
 
       expect(result.enrollment.status).toBe('autorizada');
       expect(moodleServiceMock.syncEnrollment).toHaveBeenCalledWith('enr-1');
+    });
+  });
+
+  describe('deleteEnrollment', () => {
+    it('throws NotFoundException if enrollment does not exist', async () => {
+      adminClientMock.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      });
+
+      await expect(
+        service.deleteEnrollment('enr-missing', 'usr-1', false),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws ForbiddenException if non-staff tries to delete other user enrollment', async () => {
+      adminClientMock.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { id: 'enr-1', user_id: 'usr-different' },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      await expect(
+        service.deleteEnrollment('enr-1', 'usr-1', false),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('successfully unenrolls user from Moodle and deletes record', async () => {
+      const current = {
+        id: 'enr-1',
+        user_id: 'usr-1',
+        status: 'sincronizada',
+        course_mappings: { course_name: 'Curso Demo' },
+      };
+
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'enrollment_requests') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: current, error: null }),
+              }),
+            }),
+            delete: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'audit_logs') {
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          };
+        }
+        return {};
+      });
+
+      const res = await service.deleteEnrollment('enr-1', 'usr-1', false);
+
+      expect(res.success).toBe(true);
+      expect(moodleServiceMock.unenrolStudent).toHaveBeenCalledWith('enr-1');
     });
   });
 });

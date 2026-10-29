@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
@@ -25,13 +27,8 @@ export class EnrollmentsController {
 
   @Get()
   @UseGuards(SupabaseAuthGuard)
-  findEnrollments(@Req() req: AuthenticatedRequest) {
-    const userRoles = (req as any).userRoles || [];
-    const isStaff =
-      userRoles.includes('superadministrador') ||
-      userRoles.includes('administrador') ||
-      userRoles.includes('coordinador') ||
-      userRoles.includes('soporte');
+  async findEnrollments(@Req() req: AuthenticatedRequest) {
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id, req.accessToken);
 
     return this.enrollmentsService.findEnrollments(
       req.user.id,
@@ -43,17 +40,38 @@ export class EnrollmentsController {
   @Post()
   @HttpCode(201)
   @UseGuards(SupabaseAuthGuard)
-  createEnrollmentRequest(
+  async createEnrollmentRequest(
     @Body() dto: CreateEnrollmentRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.enrollmentsService.createEnrollmentRequest(req.user.id, dto);
+    const isAssigningOther = Boolean(dto.user_id && dto.user_id !== req.user.id);
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id, req.accessToken);
+
+    if (isAssigningOther && !isStaff) {
+      throw new ForbiddenException(
+        'No posees privilegios de administración para asignar cursos a otros usuarios.',
+      );
+    }
+
+    if (!isStaff && (dto.moodle_role !== 'student' || dto.program_id)) {
+      throw new ForbiddenException(
+        'La solicitud personal no puede elegir un rol de Moodle ni un programa distinto.',
+      );
+    }
+
+    const targetUserId = isAssigningOther ? dto.user_id! : req.user.id;
+    return this.enrollmentsService.createEnrollmentRequest(
+      targetUserId,
+      dto,
+      req.user.id,
+      isStaff,
+    );
   }
 
   @Patch(':id/status')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador', 'coordinador')
+  @Roles('superadministrador', 'administrador')
   @RequirePermissions('enrollments.authorize')
   updateEnrollmentStatus(
     @Param('id') id: string,
@@ -66,9 +84,20 @@ export class EnrollmentsController {
   @Post(':id/sync')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador', 'coordinador')
+  @Roles('superadministrador', 'administrador')
   @RequirePermissions('moodle.sync.execute')
   syncToMoodle(@Param('id') id: string) {
     return this.enrollmentsService.syncToMoodle(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard)
+  async deleteEnrollment(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id, req.accessToken);
+    return this.enrollmentsService.deleteEnrollment(id, req.user.id, isStaff);
   }
 }

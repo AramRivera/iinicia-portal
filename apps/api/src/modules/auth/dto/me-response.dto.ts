@@ -17,6 +17,7 @@ export interface MeResponse {
   roles: string[];
   permissions: string[];
   moodle_user_id?: number | null;
+  moodle_username?: string | null;
   moodle_sync_status?: SyncStatusType;
   password_changed_at?: string | null;
 }

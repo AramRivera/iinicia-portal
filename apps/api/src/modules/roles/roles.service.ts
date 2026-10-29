@@ -104,6 +104,25 @@ export class RolesService {
       }
     }
 
+    // Si se asigna un rol formal (profesor, estudiante, administrador, coordinador, etc.),
+    // eliminar automáticamente el rol temporal de 'aspirante' para evitar duplicidad y roles contradictorios.
+    if (role.slug !== 'aspirante') {
+      const { data: aspiranteRole } = await admin
+        .from('roles')
+        .select('id')
+        .eq('slug', 'aspirante')
+        .maybeSingle();
+
+      if (aspiranteRole) {
+        const query = admin.from('user_roles') as any;
+        if (typeof query.delete === 'function') {
+          await query.delete().eq('user_id', targetUserId).eq('role_id', aspiranteRole.id);
+        } else {
+          await query.update({ is_active: false }).eq('user_id', targetUserId).eq('role_id', aspiranteRole.id);
+        }
+      }
+    }
+
     // Registrar en audit_logs
     await admin.from('audit_logs').insert({
       actor_id: actorId,

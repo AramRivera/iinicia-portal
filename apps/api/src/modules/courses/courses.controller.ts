@@ -23,15 +23,21 @@ import { UpdateCourseMappingDto } from './dto/update-course-mapping.dto.js';
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
+  @Get('offerings')
+  @UseGuards(SupabaseAuthGuard)
+  findOfferings(@Req() req: AuthenticatedRequest) {
+    return this.coursesService.findCourses(req.user.id, true, req.accessToken);
+  }
+
   /**
    * Consulta cursos.
    * - Para Estudiantes y Profesores: solo devuelve sus cursos autorizados (`v_user_authorized_courses`).
    * - Para Administradores y Coordinadores: devuelve el catálogo completo de cursos mapeados.
    */
   @Get()
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   findCourses(@Req() req: AuthenticatedRequest) {
-    const userRoles = (req as any).userRoles || [];
+    const userRoles = req.userRoles || [];
     const isStaff =
       userRoles.includes('superadministrador') ||
       userRoles.includes('administrador') ||

@@ -9,7 +9,12 @@ import { AuthService } from './auth.service.js';
 @Module({
   imports: [
     SupabaseModule,
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 5 }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: process.env.NODE_ENV === 'production' ? 30 : 300,
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, SupabaseAuthGuard],
