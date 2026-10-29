@@ -246,7 +246,7 @@ El frontend implementa una dirección de arte minimalista, orientada a SaaS admi
 3. **Pestaña "Libro de Calificaciones y Actas"**:
    - Cumplimiento de la directriz de ALCANCE.md: Las actas oficiales y ponderaciones residen en Moodle LMS.
    - Botón superior: **"Abrir Calificador en Moodle ↗"** para acceder con SSO al calificador de la asignatura activa.
-   - Tabla con listado de alumnos, estado de sincronización y botón **"Nota Rápida"** para almacenar notas formativas preliminares de seguimiento.
+   - Tabla con listado de alumnos y estado de sincronización. Las calificaciones se consultan y administran únicamente en el calificador oficial de Moodle; el portal no almacena notas.
 
 4. **Pestaña "Perfil Docente"**:
    - Identidad académica, rol docente, usuario y ID en Moodle LMS.

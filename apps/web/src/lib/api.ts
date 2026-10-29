@@ -4,6 +4,7 @@ import type {
   CourseOffering,
   EnrollmentRequest,
   LoginResponse,
+  MoodleCourseProgress,
   MoodleLaunchResponse,
   MoodleStatusResponse,
   Program,
@@ -335,9 +336,9 @@ export const moodleApi = {
     return apiFetch<any[]>(`/moodle/courses/${courseId}/participants`);
   },
 
-  getCourseProgress: async (courseId: number, moodleUserId?: number): Promise<any> => {
+  getCourseProgress: async (courseId: number, moodleUserId?: number): Promise<MoodleCourseProgress> => {
     const qs = moodleUserId ? `?moodle_user_id=${moodleUserId}` : '';
-    return apiFetch<any>(`/moodle/courses/${courseId}/progress${qs}`);
+    return apiFetch<MoodleCourseProgress>(`/moodle/courses/${courseId}/progress${qs}`);
   },
 
   getCourseTeacherOverview: async (courseId: number): Promise<any> => {

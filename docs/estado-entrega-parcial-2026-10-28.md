@@ -21,7 +21,7 @@ Verificación de esta copia de trabajo con el PDF rector, `ALCANCE.md`, los cont
 2. **Detalle público de cursos.** La portada muestra los dos programas publicados de tipo curso. `/api/v1/courses/offerings` exige sesión, por lo que los detalles de sus mapeos y la solicitud de inscripción solo aparecen después del login.
 3. **Dos cursos de muestra.** Existen dos mapeos y dos cursos remotos. Falta demostrar que ambos tienen las actividades y la asignación de un profesor y dos estudiantes exigidas para la entrega.
 4. **Vistas de coordinación y soporte.** Compilan y muestran datos permitidos por los permisos disponibles, pero no se probaron con cuentas reales de esos roles. No hay un ámbito de programa definido para habilitar operaciones de coordinación.
-5. **Vista docente.** El listado y las calificaciones reales requieren comprobar los datos académicos del servicio. La función de “Nota Rápida” sigue siendo temporal y no crea una calificación oficial.
+5. **Vista docente.** El listado y las calificaciones reales requieren comprobar los datos académicos del servicio. Se retiró “Nota Rápida”; el portal enlaza al calificador oficial de Moodle y no guarda calificaciones.
 6. **Moodle.** El compañero del usuario se encarga de su instalación y diseño. No se cambió el tema del Moodle compartido. La instalación local iniciada por este agente se detuvo a petición del usuario; no debe considerarse lista para uso.
 
 ## Inicio desde PowerShell

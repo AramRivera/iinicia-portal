@@ -58,7 +58,7 @@ Cuando una persona se registraba públicamente en `/registro`, Supabase Auth y e
 
 2. **Portal Docente (`/dashboard/docente`):**
    - **Directorio de Alumnos:** Lista de estudiantes con nombre, correo, fecha y estado de sincronización. Botón **"Desasignar"** para dar de baja a un alumno del grupo con confirmación modal.
-   - **Libro de Calificaciones y Actas:** Conforme al modelo académico de IINICIA (ALCANCE.md Sección 10), las actas y calificaciones oficiales se gestionan en Moodle LMS. El portal incluye botón de salto directo al **Calificador Oficial de Moodle** (`grade/report/grader/index.php`) y permite registrar notas formativas de seguimiento pedagógico.
+   - **Libro de Calificaciones y Actas:** Las actas y calificaciones oficiales se gestionan en Moodle LMS. El portal incluye un botón de salto directo al **Calificador Oficial de Moodle** (`grade/report/grader/index.php`) y no almacena calificaciones.
    - **Mis Asignaturas:** Conteo en tiempo real de alumnos inscritos, enlace directo al calificador y botón de acceso seguro al aula virtual.
    - **Perfil Docente Editable:** Modal interactivo para actualizar nombre, apellidos, teléfono de contacto y semblanza académica mediante `PATCH /users/me/profile`.
 
@@ -93,8 +93,9 @@ Cuando una persona se registraba públicamente en `/registro`, Supabase Auth y e
 ## 5. Identidad Visual Institucional (Campus Tech OS)
 
 - **Tokens Compartidos:**
-  - Color Primario: `#2457F5` (Azul eléctrico institucional).
-  - Acento de Identidad: `#D5F36A` (Lima ácido, utilizado con moderación en indicadores y viñetas activas).
+  - Esmeralda principal: `#087654` (botones y selección).
+  - Esmeralda de interacción: `#065C42` (estado hover).
+  - Fondo de bienvenida: `#064D3B` (paneles destacados).
   - Radios: Controles `rounded-[6px]`, tarjetas `rounded-[10px]`, modales/paneles `rounded-[14px]`.
 - **Modo Claro y Oscuro:**
   - Persistencia en almacenamiento local (`iinicia_theme`).

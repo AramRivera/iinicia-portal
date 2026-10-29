@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +28,7 @@ export default function HomePage() {
   const [myCourses, setMyCourses] = useState<AuthorizedCourse[]>([]);
   const [myEnrollments, setMyEnrollments] = useState<EnrollmentRequest[]>([]);
   const [publicCourses, setPublicCourses] = useState<Program[]>([]);
+  const [licenciaturas, setLicenciaturas] = useState<Program[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [courseLoadError, setCourseLoadError] = useState(false);
   const [courseSearch, setCourseSearch] = useState('');
@@ -80,6 +82,7 @@ export default function HomePage() {
         setMyCourses(authorized || []);
         setMyEnrollments(enrollments);
         setPublicCourses(programs.filter((program) => program.type === 'curso'));
+        setLicenciaturas(programs.filter((program) => program.type === 'licenciatura'));
 
         setDiplomados(programs.filter((program) => program.type === 'diplomado'));
         setCertificaciones(programs.filter((program) => program.type === 'certificacion'));
@@ -87,6 +90,7 @@ export default function HomePage() {
         setCourseLoadError(true);
         setOfferings([]);
         setPublicCourses([]);
+        setLicenciaturas([]);
         setDiplomados([]);
         setCertificaciones([]);
       } finally {
@@ -234,22 +238,22 @@ export default function HomePage() {
 
         {/* Institutional Statistics */}
         <div className="mx-auto mt-16 max-w-5xl px-4 sm:px-6">
-          <div className="grid grid-cols-2 gap-4 rounded-[10px] border border-border bg-surface/70 p-6 shadow-minimal sm:grid-cols-4">
-            <div className="text-center space-y-1 border-r border-border/50 last:border-r-0">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-primary font-mono">100%</p>
-              <p className="text-xs text-muted">Modalidad en línea</p>
+          <div className="grid grid-cols-2 gap-4 rounded-[10px] border border-white/15 bg-welcome-panel p-6 shadow-minimal sm:grid-cols-4">
+            <div className="text-center space-y-1 border-r border-white/20 last:border-r-0">
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">100%</p>
+              <p className="text-xs text-white/75">Modalidad en línea</p>
             </div>
-            <div className="text-center space-y-1 sm:border-r border-border/50 last:border-r-0">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-primary font-mono">+40</p>
-              <p className="text-xs text-muted">Programas académicos</p>
+            <div className="text-center space-y-1 sm:border-r border-white/20 last:border-r-0">
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">+40</p>
+              <p className="text-xs text-white/75">Programas académicos</p>
             </div>
-            <div className="text-center space-y-1 border-r border-border/50 last:border-r-0">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-primary font-mono">24/7</p>
-              <p className="text-xs text-muted">Acceso a Campus Moodle</p>
+            <div className="text-center space-y-1 border-r border-white/20 last:border-r-0">
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">24/7</p>
+              <p className="text-xs text-white/75">Acceso a Campus Moodle</p>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-primary font-mono">+1,000</p>
-              <p className="text-xs text-muted">Alumnos y graduados</p>
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">+1,000</p>
+              <p className="text-xs text-white/75">Alumnos y graduados</p>
             </div>
           </div>
         </div>
@@ -327,13 +331,16 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl space-y-12">
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-              <span>Identidad y Gobernanza Universitaria</span>
+            <div className="mx-auto w-full max-w-[680px] rounded-xl border border-primary/20 bg-welcome-panel px-5 py-4 shadow-soft sm:px-8">
+              <Image
+                src="/universidad-inicia-wordmark.png"
+                alt="Universidad INICIA"
+                width={1024}
+                height={100}
+                className="mx-auto h-auto w-full max-w-[640px]"
+              />
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Universidad INICIA
-            </h2>
+            <h2 className="sr-only">Universidad INICIA</h2>
             <p className="text-xs sm:text-sm text-muted leading-relaxed">
               El Instituto de Innovación y Ciencias Aplicadas forma profesionales de vanguardia en ciencias de la computación, desarrollo tecnológico y gestión académica. Nuestro claustro combina excelencia investigadora y experiencia activa en la industria.
             </p>
@@ -410,6 +417,36 @@ export default function HomePage() {
       {/* =================================================================== */}
       {/* SECTION 3: CURSOS Y ASIGNATURAS                                     */}
       {/* =================================================================== */}
+      <section id="licenciaturas" className="border-b border-border py-16 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl space-y-7">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Licenciaturas</h2>
+            <p className="mt-2 text-sm text-muted">Conoce los programas universitarios publicados por INICIA.</p>
+          </div>
+          {licenciaturas.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {licenciaturas.map((program) => (
+                <article key={program.id} className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-minimal">
+                  <div>
+                    <p className="font-mono text-xs font-semibold text-primary">{program.code}</p>
+                    <h3 className="mt-2 text-lg font-semibold text-foreground">{program.name}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted">{program.short_description || program.description}</p>
+                  </div>
+                  <Link href={`/programas/${program.slug}`} className="mt-5 inline-flex w-fit items-center rounded-md bg-primary-action px-4 py-2 text-sm font-semibold text-white hover:bg-accent-strong">
+                    Ver programa
+                  </Link>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-border bg-surface p-5 text-center text-sm text-muted">No hay licenciaturas publicadas por el momento.</p>
+          )}
+        </div>
+      </section>
+
+      {/* =================================================================== */}
+      {/* SECTION 4: CURSOS Y ASIGNATURAS                                     */}
+      {/* =================================================================== */}
       <section id="cursos" className="border-b border-border py-20 px-4 sm:px-6 lg:px-8 bg-surface-muted/20">
         <div className="mx-auto max-w-6xl space-y-8">
           {/* Header */}
@@ -483,8 +520,9 @@ export default function HomePage() {
                     <h3 className="text-base font-semibold text-foreground leading-snug">{course.name}</h3>
                     {(course.short_description || course.description) && <p className="text-xs text-muted leading-relaxed">{course.short_description || course.description}</p>}
                   </div>
-                  <div className="border-t border-border pt-3">
-                    <Link href="/login" className="inline-block rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90">Iniciar sesión para solicitar acceso</Link>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <Link href={`/programas/${course.slug}`} className="text-xs font-semibold text-primary hover:underline">Ver detalles</Link>
+                    <Link href="/login" className="inline-block rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-strong">Iniciar sesión</Link>
                   </div>
                 </div>
               ))}
@@ -524,9 +562,9 @@ export default function HomePage() {
                     </div>
 
                     <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
-                      <div className="text-[11px] font-mono text-muted">
-                        Moodle LMS
-                      </div>
+                      {course.programs?.slug ? (
+                        <Link href={`/programas/${course.programs.slug}`} className="text-[11px] font-semibold text-primary hover:underline">Detalles</Link>
+                      ) : <span className="text-[11px] font-mono text-muted">Moodle LMS</span>}
 
                       {enrolled ? (
                         <div className="flex items-center gap-1.5">
@@ -615,17 +653,15 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-border flex items-center justify-between gap-3">
+                <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5 text-xs font-mono text-muted">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
                     <span>Campus Virtual Moodle</span>
                   </div>
-                  <Link
-                    href="/registro"
-                    className="rounded-[6px] bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all"
-                  >
-                    Postularme
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link href={`/programas/${dip.slug}`} className="text-xs font-semibold text-primary hover:underline">Ver programa</Link>
+                    <Link href="/registro" className="rounded-[6px] bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-accent-strong transition-all">Postularme</Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -671,14 +707,12 @@ export default function HomePage() {
                   <p className="text-xs text-muted leading-relaxed line-clamp-3">{cert.description}</p>
                 </div>
 
-                <div className="pt-3 border-t border-border flex items-center justify-between">
+                <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                   <span className="text-[11px] font-mono text-muted">Evaluación continua</span>
-                  <Link
-                    href="/registro"
-                    className="rounded-[6px] border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-all"
-                  >
-                    Inscribirme
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link href={`/programas/${cert.slug}`} className="text-xs font-semibold text-primary hover:underline">Ver programa</Link>
+                    <Link href="/registro" className="rounded-[6px] border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-all">Inscribirme</Link>
+                  </div>
                 </div>
               </div>
             ))}

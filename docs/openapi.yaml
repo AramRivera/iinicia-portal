@@ -745,7 +745,48 @@ paths:
             minimum: 1
       responses:
         "200":
-          description: Estado de progreso del usuario.
+          description: Progreso de finalización de Moodle y calificaciones del usuario. `percentage` se conserva por compatibilidad como campo heredado de calificación.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  course_id:
+                    type: integer
+                  moodle_user_id:
+                    type: integer
+                  total_modules:
+                    type: integer
+                  grade_raw:
+                    type: number
+                    nullable: true
+                  grade_formatted:
+                    type: string
+                  percentage:
+                    type: number
+                    deprecated: true
+                    description: Campo heredado del porcentaje de calificación; usar grade_percentage.
+                  grade_percentage:
+                    type: number
+                    nullable: true
+                    description: Porcentaje de la calificación final en Moodle, no representa avance del curso.
+                  progress_percentage:
+                    type: number
+                    nullable: true
+                    minimum: 0
+                    maximum: 100
+                    description: Porcentaje de finalización del curso calculado por Moodle; null si no hay datos de progreso.
+                  is_completed:
+                    type: boolean
+                  completion_status:
+                    type: object
+                    nullable: true
+                    additionalProperties: true
+                  grade_items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
         "403":
           description: Acceso denegado al curso o al usuario solicitado.
 

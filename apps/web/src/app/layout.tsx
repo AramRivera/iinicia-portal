@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -21,9 +22,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-full flex-col bg-background text-foreground transition-colors duration-150">
         <ThemeProvider>
           <AuthProvider>
-            <SiteHeader />
+            <Suspense fallback={<div aria-hidden="true" className="h-16 border-b border-border bg-surface" />}>
+              <SiteHeader />
+            </Suspense>
             <main className="flex flex-1 flex-col">{children}</main>
-            <SiteFooter />
+            <Suspense fallback={null}>
+              <SiteFooter />
+            </Suspense>
           </AuthProvider>
         </ThemeProvider>
       </body>

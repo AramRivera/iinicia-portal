@@ -606,10 +606,17 @@ export class MoodleService {
    * Obtiene las calificaciones y progreso de un usuario en un curso de Moodle.
    */
   async getUserCourseProgress(courseId: number, moodleUserId: number) {
-    const [gradesData, completionData, contents] = await Promise.all([
+    const [gradesData, completionData, contents, userCourses] = await Promise.all([
       this.client.getUserCourseGrades(courseId, moodleUserId),
       this.client.getCourseCompletionStatus(courseId, moodleUserId),
       this.client.getCourseContents(courseId),
+      this.client.getUserCourses(moodleUserId).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'error desconocido';
+        this.logger.warn(
+          `No fue posible obtener el avance de Moodle para usuario #${moodleUserId}: ${message}`,
+        );
+        return [];
+      }),
     ]);
 
     let totalModules = 0;
@@ -624,11 +631,24 @@ export class MoodleService {
     const courseGrade = gradesData?.gradeitems?.find((g: any) => g.itemtype === 'course');
     const rawGrade = courseGrade?.graderaw != null ? Number(courseGrade.graderaw) : null;
     const formattedGrade = courseGrade?.gradeformatted ?? '-';
-    let percentage = courseGrade?.percentageformatted ? parseFloat(courseGrade.percentageformatted) : null;
+    const formattedGradePercentage = courseGrade?.percentageformatted
+      ? parseFloat(courseGrade.percentageformatted)
+      : null;
+    let gradePercentage = formattedGradePercentage != null && Number.isFinite(formattedGradePercentage)
+      ? formattedGradePercentage
+      : null;
 
-    if (percentage == null && rawGrade != null && courseGrade?.grademax) {
-      percentage = Math.round((rawGrade / courseGrade.grademax) * 100);
+    if (gradePercentage == null && rawGrade != null && courseGrade?.grademax) {
+      gradePercentage = Math.round((rawGrade / courseGrade.grademax) * 100);
     }
+
+    const moodleCourse = userCourses.find((course) => Number(course.id) === courseId);
+    const rawProgress = moodleCourse?.progress;
+    const progressPercentage = typeof rawProgress === 'number' && Number.isFinite(rawProgress)
+      ? Math.min(100, Math.max(0, rawProgress))
+      : completionData?.completed === true
+        ? 100
+        : null;
 
     return {
       course_id: courseId,
@@ -636,7 +656,10 @@ export class MoodleService {
       total_modules: totalModules,
       grade_raw: rawGrade,
       grade_formatted: formattedGrade,
-      percentage: percentage ?? (completionData?.completed ? 100 : 0),
+      // Keep the legacy field and its prior fallback behavior for existing API consumers.
+      percentage: gradePercentage ?? (completionData?.completed ? 100 : 0),
+      grade_percentage: gradePercentage,
+      progress_percentage: progressPercentage,
       is_completed: completionData?.completed === true,
       completion_status: completionData,
       grade_items: gradesData?.gradeitems || [],

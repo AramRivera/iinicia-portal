@@ -16,6 +16,15 @@ export type MoodleSyncStatus =
 
 export type UserStatus = 'activo' | 'inactivo' | 'suspendido' | 'pendiente' | 'baja';
 
+export interface UserProgramMembership {
+  program_id: string;
+  code: string;
+  name: string;
+  type: Program['type'];
+  academic_status: string;
+  cohort: string | null;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -31,6 +40,7 @@ export interface UserProfile {
   moodle_username?: string | null;
   moodle_sync_status?: MoodleSyncStatus;
   moodle_last_sync_at?: string | null;
+  programs?: UserProgramMembership[] | null;
   created_at?: string;
 }
 
@@ -188,6 +198,21 @@ export interface MoodleLaunchResponse {
   course_name: string;
   moodle_course_id: number;
   access_url: string;
+}
+
+export interface MoodleCourseProgress {
+  course_id: number;
+  moodle_user_id: number;
+  total_modules: number;
+  grade_raw: number | null;
+  grade_formatted: string;
+  /** @deprecated Use grade_percentage or progress_percentage explicitly. */
+  percentage: number;
+  grade_percentage: number | null;
+  progress_percentage: number | null;
+  is_completed: boolean;
+  completion_status: Record<string, unknown> | null;
+  grade_items: Record<string, unknown>[];
 }
 
 export interface MoodleStatusResponse {

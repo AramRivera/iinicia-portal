@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, enrollmentsApi, moodleApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, CourseOffering, EnrollmentRequest } from '@/types';
+import type { AuthorizedCourse, CourseOffering, EnrollmentRequest, MoodleCourseProgress } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -56,7 +56,7 @@ export default function EstudianteDashboardPage() {
   // Modales interactivos
   const [dropTarget, setDropTarget] = useState<CourseDropTarget | null>(null);
   const [syllabusTarget, setSyllabusTarget] = useState<AuthorizedCourse | null>(null);
-  const [courseProgressMap, setCourseProgressMap] = useState<Record<number, any>>({});
+  const [courseProgressMap, setCourseProgressMap] = useState<Record<number, MoodleCourseProgress>>({});
   const [moodleContents, setMoodleContents] = useState<any[]>([]);
   const [loadingContents, setLoadingContents] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -82,7 +82,7 @@ export default function EstudianteDashboardPage() {
 
       // Cargar progreso en tiempo real desde Moodle LMS para cada materia
       if (userCourses.length > 0) {
-        const progMap: Record<number, any> = {};
+        const progMap: Record<number, MoodleCourseProgress> = {};
         await Promise.all(
           userCourses.map(async (c) => {
             if (c.moodle_course_id) {
@@ -597,22 +597,25 @@ export default function EstudianteDashboardPage() {
                         {/* Barra de Progreso Didáctico enlazada con Moodle */}
                         {(() => {
                           const prog = courseProgressMap[course.moodle_course_id];
-                          const pct = prog?.percentage != null ? prog.percentage : (course.cached_progress ?? 20);
+                          const rawProgress = prog?.progress_percentage;
+                          const pct = typeof rawProgress === 'number' && Number.isFinite(rawProgress)
+                            ? Math.min(100, Math.max(0, rawProgress))
+                            : null;
                           return (
                             <div className="mt-4 space-y-1.5">
                               <div className="flex justify-between text-[11px] text-muted">
                                 <span>Avance del Curso (Moodle)</span>
                                 <span className="font-mono font-medium text-foreground">
-                                  {pct}% completado
+                                  {pct === null ? 'Progreso no disponible' : `${pct}% completado`}
                                 </span>
                               </div>
                               <div className="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-primary-action transition-all duration-300"
-                                  style={{
-                                    width: `${Math.min(pct, 100)}%`,
-                                  }}
-                                />
+                                {pct !== null && (
+                                  <div
+                                    className="h-full rounded-full bg-primary-action transition-all duration-300"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                )}
                               </div>
                               {prog?.total_modules != null && (
                                 <div className="flex justify-between text-[10px] text-muted font-mono pt-0.5">

@@ -1222,6 +1222,8 @@ export default function AdminDashboardPage() {
                     <th className="px-6 py-3.5">Usuario / Correo</th>
                     <th className="px-6 py-3.5">Roles Activos</th>
                     <th className="px-6 py-3.5">Estado Portal</th>
+                    <th className="px-6 py-3.5">Programa asignado</th>
+                    <th className="px-6 py-3.5">Fecha de alta</th>
                     <th className="px-6 py-3.5">Vinculación Moodle</th>
                     <th className="px-6 py-3.5 text-right">Acciones de Control</th>
                   </tr>
@@ -1229,7 +1231,7 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-border/40">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted">
+                      <td colSpan={7} className="p-8 text-center text-muted">
                         No se encontraron usuarios con los criterios de búsqueda especificados.
                       </td>
                     </tr>
@@ -1296,6 +1298,22 @@ export default function AdminDashboardPage() {
                             >
                               {u.status}
                             </span>
+                          </td>
+
+                          <td className="px-6 py-4 text-muted">
+                            {u.programs?.length ? (
+                              <div className="flex min-w-40 flex-col gap-1.5">
+                                {u.programs.map((program) => (
+                                  <span key={program.program_id} className="rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                                    {program.name}<span className="ml-1 text-muted">· {program.academic_status}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : 'Sin programa'}
+                          </td>
+
+                          <td className="px-6 py-4 text-muted">
+                            {u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : 'No disponible'}
                           </td>
 
                           <td className="px-6 py-4">
@@ -2061,11 +2079,11 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Color Primario</span>
-                  <span className="font-mono text-primary font-bold">#456B19 (Verde institucional)</span>
+                  <span className="font-mono text-primary font-bold">#087654 (Esmeralda principal)</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Acento de Marca</span>
-                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#BEF264 (Verde lima)</span>
+                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#065C42 (Hover esmeralda)</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Radios de Componente</span>

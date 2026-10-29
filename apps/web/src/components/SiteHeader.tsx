@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
-import { BrandWordmark } from "@/components/BrandWordmark";
 
 const navItems = [
   { label: "Inicio", href: "/#inicio", id: "inicio" },
   { label: "Universidad", href: "/#universidad", id: "universidad" },
+  { label: "Licenciaturas", href: "/#licenciaturas", id: "licenciaturas" },
   { label: "Cursos", href: "/#cursos", id: "cursos" },
   { label: "Diplomados", href: "/#diplomados", id: "diplomados" },
   { label: "Certificaciones", href: "/#certificaciones", id: "certificaciones" },
@@ -85,7 +86,16 @@ export function SiteHeader() {
           onClick={(e) => handleNavClick(e, "inicio")}
           className="flex items-center gap-2.5 shrink-0"
         >
-          <BrandWordmark className="text-[20px] text-foreground" />
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-welcome-panel p-1.5 shadow-minimal ring-1 ring-primary/20">
+            <Image
+              src="/inicia-nav-wordmark.png"
+              alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+              width={1563}
+              height={1563}
+              priority
+              className="h-full w-full object-contain"
+            />
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
