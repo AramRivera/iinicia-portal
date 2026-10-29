@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type {
+  MoodleActivitiesCompletionResponse,
   MoodleCourseResponse,
   MoodleErrorResponse,
   MoodleUserResponse,
@@ -356,6 +357,29 @@ export class MoodleClient {
       return status?.completionstatus || null;
     } catch (err: any) {
       // Si el curso no tiene criterios de terminación configurados en Moodle, no se considera error crítico
+      return null;
+    }
+  }
+
+  /**
+   * Obtiene la compleción de las actividades visibles y rastreadas del curso.
+   */
+  async getActivitiesCompletionStatus(
+    courseId: number,
+    moodleUserId: number,
+  ): Promise<MoodleActivitiesCompletionResponse | null> {
+    try {
+      return await this.callFunction<MoodleActivitiesCompletionResponse>(
+        'core_completion_get_activities_completion_status',
+        {
+          courseid: courseId,
+          userid: moodleUserId,
+        },
+      );
+    } catch (err: any) {
+      this.logger.warn(
+        `No fue posible obtener la compleción de actividades para usuario #${moodleUserId} en curso #${courseId}: ${err.message}`,
+      );
       return null;
     }
   }

@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { BrandWordmark } from '@/components/BrandWordmark';
 import {
   IconDashboard,
   IconStudents,
@@ -318,8 +318,16 @@ export function CampusSidebar({
         <div className="h-13 border-b border-border flex items-center justify-between px-3.5 shrink-0">
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
-              <div className="leading-none truncate">
-                <BrandWordmark className="text-[16px] text-foreground" />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[7px] bg-welcome-panel p-1 shadow-minimal ring-1 ring-primary/20">
+                <Image
+                  src="/inicia-nav-wordmark.png"
+                  alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+                  width={1563}
+                  height={1563}
+                  className="h-full w-full object-contain"
+                />
+              </span>
+              <div className="min-w-0 leading-none">
                 <span className="text-[10px] text-muted">
                   Portal Académico
                 </span>
@@ -415,7 +423,16 @@ export function CampusSidebar({
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <BrandWordmark className="text-[16px] text-foreground" />
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[7px] bg-welcome-panel p-1 shadow-minimal ring-1 ring-primary/20">
+                    <Image
+                      src="/inicia-nav-wordmark.png"
+                      alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+                      width={1563}
+                      height={1563}
+                      className="h-full w-full object-contain"
+                    />
+                  </span>
+                  <span className="text-xs font-medium text-muted">Portal Académico</span>
                 </div>
                 <button
                   type="button"

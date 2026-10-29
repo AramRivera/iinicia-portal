@@ -606,9 +606,10 @@ export class MoodleService {
    * Obtiene las calificaciones y progreso de un usuario en un curso de Moodle.
    */
   async getUserCourseProgress(courseId: number, moodleUserId: number) {
-    const [gradesData, completionData, contents, userCourses] = await Promise.all([
+    const [gradesData, completionData, activityCompletionData, contents, userCourses] = await Promise.all([
       this.client.getUserCourseGrades(courseId, moodleUserId),
       this.client.getCourseCompletionStatus(courseId, moodleUserId),
+      this.client.getActivitiesCompletionStatus(courseId, moodleUserId),
       this.client.getCourseContents(courseId),
       this.client.getUserCourses(moodleUserId).catch((error: unknown) => {
         const message = error instanceof Error ? error.message : 'error desconocido';
@@ -644,11 +645,24 @@ export class MoodleService {
 
     const moodleCourse = userCourses.find((course) => Number(course.id) === courseId);
     const rawProgress = moodleCourse?.progress;
-    const progressPercentage = typeof rawProgress === 'number' && Number.isFinite(rawProgress)
-      ? Math.min(100, Math.max(0, rawProgress))
-      : completionData?.completed === true
-        ? 100
-        : null;
+    const trackedActivities = (activityCompletionData?.statuses ?? []).filter((status) =>
+      status.tracking !== 0 &&
+      status.hascompletion !== false &&
+      status.istrackeduser !== false &&
+      status.uservisible !== false,
+    );
+    const completedActivities = trackedActivities.filter((status) =>
+      status.state === 1 || status.state === 2 || status.state === 3,
+    ).length;
+    const activityProgress = trackedActivities.length > 0
+      ? (completedActivities / trackedActivities.length) * 100
+      : null;
+    const resolvedProgress = typeof rawProgress === 'number' && Number.isFinite(rawProgress)
+      ? rawProgress
+      : activityProgress ?? (completionData?.completed === true ? 100 : null);
+    const progressPercentage = resolvedProgress == null
+      ? null
+      : Math.round(Math.min(100, Math.max(0, resolvedProgress)) * 10) / 10;
 
     return {
       course_id: courseId,
@@ -660,6 +674,8 @@ export class MoodleService {
       percentage: gradePercentage ?? (completionData?.completed ? 100 : 0),
       grade_percentage: gradePercentage,
       progress_percentage: progressPercentage,
+      completed_activities: completedActivities,
+      total_tracked_activities: trackedActivities.length,
       is_completed: completionData?.completed === true,
       completion_status: completionData,
       grade_items: gradesData?.gradeitems || [],

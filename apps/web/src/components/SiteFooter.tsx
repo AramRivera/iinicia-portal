@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { BrandWordmark } from "@/components/BrandWordmark";
 
 const linkGroups = [
   {
@@ -53,7 +53,15 @@ export function SiteFooter() {
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
-              <BrandWordmark className="text-[20px] text-foreground" />
+              <span className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-welcome-panel p-2 shadow-minimal ring-1 ring-primary/20">
+                <Image
+                  src="/inicia-nav-wordmark.png"
+                  alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+                  width={1563}
+                  height={1563}
+                  className="h-full w-full object-contain"
+                />
+              </span>
             </div>
             <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-muted">
               Instituto de Innovación y Ciencias Aplicadas. Formación universitaria y continua en línea con integración transparente al Campus Virtual Moodle LMS.

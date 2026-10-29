@@ -17,6 +17,11 @@ describe('MoodleService', () => {
     unenrolUser?: ReturnType<typeof vi.fn>;
     requestUserKeyLoginUrl: ReturnType<typeof vi.fn>;
     getEffectiveBaseUrl: ReturnType<typeof vi.fn>;
+    getUserCourseGrades: ReturnType<typeof vi.fn>;
+    getCourseCompletionStatus: ReturnType<typeof vi.fn>;
+    getActivitiesCompletionStatus: ReturnType<typeof vi.fn>;
+    getCourseContents: ReturnType<typeof vi.fn>;
+    getUserCourses: ReturnType<typeof vi.fn>;
   };
   let supabaseMock: {
     getAdminClient: ReturnType<typeof vi.fn>;
@@ -38,6 +43,11 @@ describe('MoodleService', () => {
       unenrolUser: vi.fn(),
       requestUserKeyLoginUrl: vi.fn(),
       getEffectiveBaseUrl: vi.fn().mockResolvedValue('http://localhost/moodle'),
+      getUserCourseGrades: vi.fn(),
+      getCourseCompletionStatus: vi.fn(),
+      getActivitiesCompletionStatus: vi.fn(),
+      getCourseContents: vi.fn(),
+      getUserCourses: vi.fn(),
     };
 
     configMock = {
@@ -105,6 +115,54 @@ describe('MoodleService', () => {
       withCourseAccess('student');
       await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'participants'))
         .rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  describe('getUserCourseProgress', () => {
+    it('keeps the grade separate from Moodle course progress', async () => {
+      clientMock.getUserCourseGrades.mockResolvedValue({
+        gradeitems: [{ itemtype: 'course', graderaw: 10, grademax: 10, gradeformatted: '10.00', percentageformatted: '100.00 %' }],
+      });
+      clientMock.getCourseCompletionStatus.mockResolvedValue({ completed: false });
+      clientMock.getActivitiesCompletionStatus.mockResolvedValue({
+        statuses: [
+          { cmid: 1, state: 1, tracking: 2 },
+          { cmid: 2, state: 0, tracking: 2 },
+          { cmid: 3, state: 0, tracking: 1 },
+          { cmid: 4, state: 0, tracking: 2 },
+        ],
+      });
+      clientMock.getCourseContents.mockResolvedValue([{ modules: [{}, {}, {}, {}] }]);
+      clientMock.getUserCourses.mockResolvedValue([{ id: 7, progress: 25 }]);
+
+      const result = await service.getUserCourseProgress(7, 42);
+
+      expect(result.grade_percentage).toBe(100);
+      expect(result.progress_percentage).toBe(25);
+      expect(result.completed_activities).toBe(1);
+      expect(result.total_tracked_activities).toBe(4);
+    });
+
+    it('calculates progress from tracked activities when Moodle omits course progress', async () => {
+      clientMock.getUserCourseGrades.mockResolvedValue({ gradeitems: [] });
+      clientMock.getCourseCompletionStatus.mockResolvedValue({ completed: false });
+      clientMock.getActivitiesCompletionStatus.mockResolvedValue({
+        statuses: [
+          { cmid: 1, state: 1, tracking: 2 },
+          { cmid: 2, state: 2, tracking: 2 },
+          { cmid: 3, state: 0, tracking: 1 },
+          { cmid: 4, state: 3, tracking: 2 },
+          { cmid: 5, state: 1, tracking: 0 },
+        ],
+      });
+      clientMock.getCourseContents.mockResolvedValue([]);
+      clientMock.getUserCourses.mockResolvedValue([{ id: 7 }]);
+
+      const result = await service.getUserCourseProgress(7, 42);
+
+      expect(result.progress_percentage).toBe(75);
+      expect(result.completed_activities).toBe(3);
+      expect(result.total_tracked_activities).toBe(4);
     });
   });
 

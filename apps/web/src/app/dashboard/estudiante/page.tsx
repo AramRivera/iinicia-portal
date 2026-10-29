@@ -619,7 +619,11 @@ export default function EstudianteDashboardPage() {
                               </div>
                               {prog?.total_modules != null && (
                                 <div className="flex justify-between text-[10px] text-muted font-mono pt-0.5">
-                                  <span>{prog.total_modules} actividades / recursos</span>
+                                  <span>
+                                    {prog.total_tracked_activities > 0
+                                      ? `${prog.completed_activities} de ${prog.total_tracked_activities} actividades completadas`
+                                      : `${prog.total_modules} actividades / recursos sin seguimiento`}
+                                  </span>
                                   {prog.grade_formatted && prog.grade_formatted !== '-' && (
                                     <span className="font-semibold text-primary">Nota: {prog.grade_formatted}</span>
                                   )}

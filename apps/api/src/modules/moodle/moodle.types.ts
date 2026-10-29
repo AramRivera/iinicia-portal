@@ -25,6 +25,20 @@ export interface MoodleCourseResponse {
   completed?: boolean;
 }
 
+export interface MoodleActivityCompletionStatus {
+  cmid: number;
+  state: 0 | 1 | 2 | 3;
+  tracking: 0 | 1 | 2;
+  hascompletion?: boolean;
+  istrackeduser?: boolean;
+  uservisible?: boolean;
+}
+
+export interface MoodleActivitiesCompletionResponse {
+  statuses: MoodleActivityCompletionStatus[];
+  warnings?: unknown[];
+}
+
 export interface MoodleErrorResponse {
   exception?: string;
   errorcode?: string;

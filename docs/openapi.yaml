@@ -776,6 +776,14 @@ paths:
                     minimum: 0
                     maximum: 100
                     description: Porcentaje de finalización del curso calculado por Moodle; null si no hay datos de progreso.
+                  completed_activities:
+                    type: integer
+                    minimum: 0
+                    description: Actividades rastreadas que Moodle considera completadas.
+                  total_tracked_activities:
+                    type: integer
+                    minimum: 0
+                    description: Actividades visibles con seguimiento de finalización habilitado.
                   is_completed:
                     type: boolean
                   completion_status:

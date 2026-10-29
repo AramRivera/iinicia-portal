@@ -210,6 +210,8 @@ export interface MoodleCourseProgress {
   percentage: number;
   grade_percentage: number | null;
   progress_percentage: number | null;
+  completed_activities: number;
+  total_tracked_activities: number;
   is_completed: boolean;
   completion_status: Record<string, unknown> | null;
   grade_items: Record<string, unknown>[];
