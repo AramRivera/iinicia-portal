@@ -1,198 +1,484 @@
 /*
- * Propuesta visual IINICIA para el tema Boost de Moodle.
- * Aplicar en la configuración SCSS del tema, no en archivos del núcleo.
- * El servidor actual usa Boost; revisar el resultado después de instalar.
+ * IINICIA - Personalizacion visual para Moodle Boost.
+ * Pegar en "SCSS sin modificar / Raw SCSS", NO en "Raw initial SCSS".
+ * Respaldar antes el contenido del campo. No modificar Moodle Core.
+ * Modo claro fijo, independiente del sistema operativo.
+ * Este archivo no altera roles, matriculas, actividades ni enlaces SSO.
  */
 
 :root {
-  --iinicia-forest: #101710;
-  --iinicia-forest-soft: #192219;
-  --iinicia-lime: #bef264;
-  --iinicia-lime-soft: #eff8df;
-  --iinicia-text: #1f2c21;
-  --iinicia-muted: #536050;
-  --iinicia-border: #dce5d2;
-  --iinicia-surface: #ffffff;
+  --iin-bg: #f5f8ef;
+  --iin-surface: #ffffff;
+  --iin-soft: #eef3e7;
+  --iin-text: #20301f;
+  --iin-muted: #54634e;
+  --iin-border: #d8e3ce;
+  --iin-lime: #bef264;
+  --iin-action: #365314;
+  --iin-action-hover: #29400f;
+  --iin-link: #365b16;
+  --iin-header: #192219;
+  --iin-header-text: #f0f7e9;
+  --iin-focus: #628128;
 }
+
+/* Preferencia independiente de la seleccion de tema del portal React. */
+
 
 body {
-  background: #f5f8ef;
-  color: var(--iinicia-text);
+  background-color: var(--iin-bg);
+  color: var(--iin-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  line-height: 1.6;
 }
 
-body:not(#page-login-index) #page.drawers {
-  background: #f5f8ef;
+#page.drawers,
+#page-wrapper,
+#page-content,
+#region-main {
+  background-color: var(--iin-bg);
+  color: var(--iin-text);
 }
 
-body:not(#page-login-index) .navbar {
-  background: var(--iinicia-forest) !important;
-  border-bottom: 1px solid #354632;
+#page.drawers .main-inner,
+#page-header {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
 }
 
-body:not(#page-login-index) .navbar,
-body:not(#page-login-index) .navbar a,
-body:not(#page-login-index) .navbar .nav-link,
-body:not(#page-login-index) .navbar .navbar-brand {
-  color: #edf5e7 !important;
-}
-
-body:not(#page-login-index) .main-inner {
+#page.drawers .main-inner {
   max-width: 1440px;
+  border-radius: 18px;
 }
 
-body:not(#page-login-index) .block,
-body:not(#page-login-index) .dashboard-card,
-body:not(#page-login-index) .course-section,
-body:not(#page-login-index) .activity-item,
-body:not(#page-login-index) .coursebox,
-body:not(#page-login-index) .card {
-  background: var(--iinicia-surface);
-  border: 1px solid var(--iinicia-border);
+h1, h2, h3, h4, h5, h6 {
+  color: inherit;
+  line-height: 1.3;
+}
+
+h1, h2 { font-weight: 700; letter-spacing: -0.025em; }
+
+/* Navegacion: los desplegables tienen su propio contraste. */
+.navbar.fixed-top {
+  background-color: var(--iin-header) !important;
+  border-bottom: 1px solid #3c4c35;
+  box-shadow: 0 3px 16px rgba(16, 23, 16, 0.12);
+}
+
+.navbar.fixed-top .navbar-brand,
+.navbar.fixed-top .primary-navigation .nav-link,
+.navbar.fixed-top .usermenu .dropdown-toggle,
+.navbar.fixed-top .popover-region-toggle,
+.navbar.fixed-top .editmode-switch-form {
+  color: var(--iin-header-text) !important;
+}
+
+.navbar.fixed-top .primary-navigation .nav-link.active {
+  color: var(--iin-lime) !important;
+  border-bottom-color: var(--iin-lime);
+}
+
+.navbar.fixed-top .primary-navigation .nav-link:hover {
+  background-color: #293823;
+  color: var(--iin-lime) !important;
+}
+
+.dropdown-menu {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border-color: var(--iin-border);
+  border-radius: 12px;
+}
+
+.dropdown-menu .dropdown-item {
+  color: var(--iin-text);
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+  background-color: var(--iin-soft);
+  color: var(--iin-link);
+}
+
+.dropdown-menu .dropdown-item.active,
+.dropdown-menu .dropdown-item:active {
+  background-color: #365314;
+  color: #ffffff;
+}
+
+/* Secciones, recursos y tarjetas de cursos. */
+.block,
+.dashboard-card,
+.coursebox,
+.course-section,
+.activity-item {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border: 1px solid var(--iin-border);
   border-radius: 14px;
-  box-shadow: 0 4px 12px -2px rgb(31 44 33 / 6%);
+  box-shadow: 0 4px 16px rgba(16, 23, 16, 0.045);
 }
 
-body:not(#page-login-index) a,
-body:not(#page-login-index) .text-primary {
-  color: #456b19;
+.card {
+  border-color: var(--iin-border);
+  border-radius: 14px;
 }
 
-body:not(#page-login-index) a:hover,
-body:not(#page-login-index) a:focus {
-  color: #365314;
+.card:not(.alert),
+.card-header,
+.card-body,
+.card-footer,
+.list-group-item {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border-color: var(--iin-border);
 }
 
-body:not(#page-login-index) .btn-primary,
-body:not(#page-login-index) .btn-success {
-  background: #365314;
-  border-color: #365314;
-  color: #fff;
+.dashboard-card .dashboard-card-img {
+  border-radius: 13px 13px 0 0;
 }
 
-body:not(#page-login-index) .btn-primary:hover,
-body:not(#page-login-index) .btn-success:hover {
-  background: #456b19;
-  border-color: #456b19;
-  color: #fff;
+.dashboard-card .coursename,
+.coursebox .coursename { font-weight: 700; }
+
+.course-section { margin-bottom: 1.25rem; }
+.activity-item { padding: 1rem; }
+
+.drawer,
+.drawercontent,
+.drawerheader,
+.block .content {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
 }
 
-body:not(#page-login-index) .badge-primary,
-body:not(#page-login-index) .badge-info,
-body:not(#page-login-index) .bg-primary {
-  background-color: #eff8df !important;
-  color: #365314 !important;
+.drawer { border-color: var(--iin-border); }
+.courseindex .courseindex-item .courseindex-link { color: var(--iin-text); }
+.courseindex .courseindex-item.pageitem { background-color: #365314; }
+.courseindex .courseindex-item.pageitem .courseindex-link { color: #ffffff; }
+
+/* Botones y enlaces. Los estados de peligro conservan su significado. */
+#region-main a:not(.btn),
+#page-header a:not(.btn),
+.block a:not(.btn),
+.login-container a:not(.btn) { color: var(--iin-link); }
+
+#region-main a:not(.btn):hover,
+.block a:not(.btn):hover { text-decoration: underline; }
+
+.btn-primary {
+  background-color: var(--iin-action);
+  border-color: var(--iin-action);
+  color: #ffffff;
+  border-radius: 9px;
+  font-weight: 600;
+  min-height: 40px;
 }
 
-body:not(#page-login-index) .form-control:focus,
-body:not(#page-login-index) .custom-select:focus {
-  border-color: #789b4b;
-  box-shadow: 0 0 0 0.2rem rgb(190 242 100 / 28%);
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--iin-action-hover) !important;
+  border-color: var(--iin-action-hover) !important;
+  color: #ffffff !important;
 }
 
-/* Login split view: forest-green welcome panel, calm ivory form surface. */
-body#page-login-index {
-  background: #f5f8ef;
-  color: var(--iinicia-text);
+.btn-secondary,
+.btn-outline-secondary {
+  background-color: var(--iin-surface);
+  border-color: var(--iin-border);
+  color: var(--iin-text);
+  border-radius: 9px;
+  min-height: 40px;
 }
 
+.btn-secondary:hover,
+.btn-outline-secondary:hover {
+  background-color: var(--iin-soft);
+  border-color: var(--iin-muted);
+  color: var(--iin-text);
+}
+
+/* Formularios, tablas y ventanas de Moodle. */
+.form-control,
+.form-select,
+.custom-select {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border-color: var(--iin-border);
+  border-radius: 9px;
+}
+
+.form-control::placeholder { color: var(--iin-muted); opacity: 1; }
+.form-control:focus,
+.form-select:focus,
+.custom-select:focus {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border-color: var(--iin-focus);
+  box-shadow: 0 0 0 3px rgba(121, 154, 62, 0.24);
+}
+
+.modal-content,
+.popover,
+.popover-body {
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border-color: var(--iin-border);
+}
+
+.modal-content { border-radius: 16px; }
+.modal-header,
+.modal-footer { border-color: var(--iin-border); }
+
+.table {
+  color: var(--iin-text);
+  --bs-table-color: var(--iin-text);
+  --bs-table-bg: var(--iin-surface);
+  --bs-table-border-color: var(--iin-border);
+}
+
+.table th,
+.table td { border-color: var(--iin-border); }
+
+.progress { background-color: var(--iin-soft); border-radius: 20px; }
+.progress-bar { background-color: #527b24; }
+
+/* Login estandar de Boost, sin depender de plantillas adicionales. */
+body#page-login-index,
 body#page-login-index #page,
 body#page-login-index #page-content {
-  background: #f5f8ef;
-}
-
-body#page-login-index .login-layout-left {
-  align-items: center;
-  background:
-    radial-gradient(circle at 80% 18%, rgb(190 242 100 / 18%), transparent 28%),
-    linear-gradient(145deg, var(--iinicia-forest), #20351d);
-  color: #edf5e7;
-  padding: clamp(2rem, 6vw, 6rem);
-}
-
-body#page-login-index .login-layout-left-content {
-  max-width: 560px;
-}
-
-body#page-login-index .login-layout-left-content h1,
-body#page-login-index .login-layout-left-content p {
-  color: #edf5e7;
-}
-
-body#page-login-index .login-layout-stat-value {
-  color: var(--iinicia-lime);
-}
-
-body#page-login-index .login-layout-right {
-  align-items: center;
-  background: #f5f8ef;
-  display: flex;
-  justify-content: center;
-  padding: clamp(1rem, 4vw, 4rem);
-}
-
-body#page-login-index .login-layout-right-content {
-  width: 100%;
+  background-color: var(--iin-bg);
+  color: var(--iin-text);
 }
 
 body#page-login-index .login-container {
-  background: var(--iinicia-surface);
-  border: 1px solid var(--iinicia-border);
+  background-color: var(--iin-surface);
+  color: var(--iin-text);
+  border: 1px solid var(--iin-border);
+  border-top: 5px solid #8cbe3b;
   border-radius: 20px;
-  box-shadow: 0 18px 50px -24px rgb(31 44 33 / 28%);
-  margin: auto;
+  box-shadow: 0 18px 55px rgba(16, 23, 16, 0.12);
   max-width: 560px;
   padding: clamp(1.5rem, 4vw, 3rem);
 }
 
-body#page-login-index .login-container h1 {
-  color: var(--iinicia-text);
-  font-weight: 700;
+body#page-login-index .login-container .form-control { min-height: 46px; }
+
+/* Foco visible y respeto de las preferencias de movimiento. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--iin-focus);
+  outline-offset: 3px;
 }
 
-body#page-login-index .login-container label {
-  color: var(--iinicia-text);
-  font-weight: 600;
-}
 
-body#page-login-index .login-container .form-control {
-  background: #fbfcf8;
-  border: 1px solid var(--iinicia-border);
-  border-radius: 10px;
-  color: var(--iinicia-text);
-  min-height: 48px;
-}
-
-body#page-login-index .login-container .btn-primary {
-  background: #365314;
-  border: 1px solid #365314;
-  border-radius: 10px;
-  color: #fff;
-  font-weight: 700;
-  min-height: 48px;
-}
-
-body#page-login-index .login-container .btn-primary:hover {
-  background: #456b19;
-  border-color: #456b19;
-}
-
-body#page-login-index a {
-  color: #456b19;
-  font-weight: 600;
-}
-
-body#page-login-index a:hover,
-body#page-login-index a:focus {
-  color: #365314;
-}
 
 @media (max-width: 767.98px) {
-  body#page-login-index #region-main {
-    padding: 1rem;
-  }
+  #page.drawers .main-inner { border-radius: 12px; }
+  #page-header h1 { font-size: 1.75rem; }
+  .activity-item { padding: 0.75rem; }
+  body#page-login-index .login-container { padding: 1.5rem; border-radius: 14px; }
+}
 
-  body#page-login-index .login-container {
-    border-radius: 16px;
-    padding: 1.5rem;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-card,
+  .btn,
+  .drawer { transition: none !important; }
+}
+
+@media print {
+  body,
+  #page.drawers,
+  #region-main { background: #ffffff !important; color: #000000 !important; }
+  .card, .course-section, .activity-item { box-shadow: none; }
+}
+
+/* Modo claro fijo y acentos esmeralda. */
+:root {
+  color-scheme: light !important;
+  --iin-bg: #f2f7f4;
+  --iin-surface: #ffffff;
+  --iin-soft: #e4f3ec;
+  --iin-text: #111111;
+  --iin-muted: #303b35;
+  --iin-border: #c8ddd2;
+  --iin-lime: #066447;
+  --iin-action: #a9e8cb;
+  --iin-action-hover: #89dbb6;
+  --iin-link: #075b40;
+  --iin-header: #e4f3ec;
+  --iin-header-text: #111111;
+  --iin-focus: #087654;
+  --bs-body-bg: #f2f7f4;
+  --bs-body-color: #111111;
+  --bs-secondary-color: #303b35;
+  --bs-tertiary-bg: #e4f3ec;
+  --bs-border-color: #c8ddd2;
+  --bs-link-color: #075b40;
+}
+body, body #page, body #page-wrapper, body #page-content, body #region-main {
+  background-color: #f2f7f4 !important;
+  color: #111111 !important;
+}
+body #page .main-inner,
+body #page-header,
+body .card:not(.alert),
+body .card-header,
+body .card-body,
+body .card-footer,
+body .block,
+body .drawer,
+body .drawercontent,
+body .drawerheader,
+body .course-content .section-item,
+body .course-content .course-section,
+body .course-content .section .content,
+body .course-content ul.section,
+body .course-content .activity-item,
+body .dropdown-menu,
+body .dropdown-item,
+body .modal-content,
+body .popover,
+body .popover-body {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+  border-color: #c8ddd2 !important;
+}
+body .navbar {
+  background-color: #e4f3ec !important;
+  border-color: #bdd9ca !important;
+}
+body .navbar .nav-link,
+body .navbar .moremenu .nav-link,
+body .navbar .primary-navigation .nav-link,
+body .navbar .navbar-brand,
+body .navbar .usermenu .dropdown-toggle,
+body .navbar .editmode-switch-form,
+body .navbar .editmode-switch-form label,
+body .navbar .popover-region-toggle,
+body .navbar .nav-link span {
+  color: #111111 !important;
+}
+body .navbar .moremenu .nav-link.active,
+body .navbar .moremenu .nav-link:hover,
+body .navbar .nav-link.active,
+body .navbar .nav-link:hover {
+  background-color: #c9ecdc !important;
+  color: #111111 !important;
+  border-color: #087654 !important;
+}
+body .secondary-navigation,
+body .secondary-navigation .navigation,
+body .secondary-navigation .moremenu,
+body .secondary-navigation .nav-tabs {
+  background-color: #ffffff !important;
+  border-color: #c8ddd2 !important;
+}
+body .secondary-navigation .moremenu .nav-link,
+body .secondary-navigation .nav-link,
+body .secondary-navigation .nav-link span {
+  color: #111111 !important;
+  background-color: #ffffff !important;
+}
+body .secondary-navigation .moremenu .nav-link.active,
+body .secondary-navigation .moremenu .nav-link:hover {
+  background-color: #e4f3ec !important;
+  border-bottom-color: #087654 !important;
+}
+body #page .text-muted,
+body #page .text-body-secondary,
+body #page .text-dark,
+body #page .text-body,
+body #page .text-secondary,
+body .dashboard-card .small,
+body .dashboard-card .categoryname,
+body .dashboard-card small,
+body .course-content .sectionname,
+body .course-content .sectionname a,
+body .course-content .activityname a,
+body .course-content .instancename,
+body .courseindex .courseindex-link {
+  color: #111111 !important;
+}
+body .btn-primary,
+body .btn-primary:hover,
+body .btn-primary:focus,
+body .btn-primary:active,
+body .btn-secondary,
+body .btn-outline-primary,
+body .btn-outline-secondary {
+  background-color: #c9ecdc !important;
+  border-color: #6ba98e !important;
+  color: #111111 !important;
+}
+body .courseindex .courseindex-item.pageitem {
+  background-color: #c9ecdc !important;
+}
+body .courseindex .courseindex-item.pageitem .courseindex-link {
+  color: #111111 !important;
+}
+body .form-control,
+body .form-select,
+body .custom-select {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+  border-color: #8da99b !important;
+}
+body .form-control::placeholder { color: #45564c !important; opacity: 1; }
+body .progress-bar { background-color: #087654 !important; }
+
+/* Acentos esmeralda sobre el diseño claro */
+body .btn-primary,
+body .btn-primary:active {
+  background-color: #087654 !important;
+  border-color: #087654 !important;
+  color: #ffffff !important;
+}
+
+body .btn-primary:hover,
+body .btn-primary:focus {
+  background-color: #065c42 !important;
+  border-color: #065c42 !important;
+  color: #ffffff !important;
+}
+
+body .navbar .moremenu .nav-link.active,
+body .navbar .nav-link.active,
+body .secondary-navigation .moremenu .nav-link.active,
+body .courseindex .courseindex-item.pageitem {
+  background-color: #087654 !important;
+  border-color: #087654 !important;
+  color: #ffffff !important;
+}
+
+body .navbar .nav-link.active span,
+body .secondary-navigation .nav-link.active span,
+body .courseindex .courseindex-item.pageitem .courseindex-link {
+  color: #ffffff !important;
+}
+
+body #page-header {
+  border-top: 4px solid #087654;
+}
+
+body .progress-bar {
+  background-color: #087654 !important;
+}
+
+body#page-login-index .login-layout-left-content {
+  background: rgba(6, 77, 59, 0.94) !important;
+  color: #ffffff !important;
+  border: 1px solid #319b77 !important;
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+body#page-login-index .login-layout-left-content h2,
+body#page-login-index .login-layout-left-content p {
+  color: #ffffff !important;
 }

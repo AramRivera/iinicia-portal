@@ -1,0 +1,820 @@
+<!doctype html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Curso de HTML básico de I²NICIA: nueve módulos con lecturas, ejemplos, actividades y laboratorio de práctica."><title>HTML básico desde cero · I²NICIA</title><style>
+:root{color-scheme:light;--bg:#f2f7f4;--surface:#fff;--ink:#14251e;--muted:#455b50;--green:#087654;--deep:#064d3b;--mint:#e4f3ec;--border:#c8ddd2}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:#075b40;text-underline-offset:3px}button,input,textarea,select{font:inherit}button,.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--green);border-radius:9px;background:var(--green);color:#fff;padding:10px 17px;font-weight:650;cursor:pointer;text-decoration:none}button:hover,.button:hover{background:var(--deep);color:#fff}.secondary{background:white;color:var(--deep)}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #117b57;outline-offset:4px}h1,h2,h3,h4,h5,h6{line-height:1.25;letter-spacing:-.025em}h1{font-size:clamp(2.25rem,4vw,3.8rem);margin:12px 0 18px}h2{font-size:clamp(1.8rem,3vw,2.65rem)}h3{font-size:1.4rem}h4{font-size:1.15rem}p{margin:0 0 18px}li{margin:7px 0}sup{font-size:.6em}pre{background:#102c22;color:#e9fff3;padding:22px;border-radius:12px;overflow:auto;white-space:pre;max-width:100%;line-height:1.6;font-size:.88rem}code{font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}p code,li code,td code,blockquote code{background:#e7f3ec;color:#12563d;padding:2px 5px;border-radius:4px}blockquote{margin:24px 0;background:#eaf7ef;border-left:4px solid var(--green);padding:20px 24px}blockquote p:last-child{margin:0}hr{border:0;border-top:1px solid var(--border);margin:30px 0}table{border-collapse:collapse;width:100%;font-size:.9rem}td,th{padding:12px;border:1px solid var(--border);text-align:left}th{background:var(--mint)}.table-wrap{overflow:auto;margin:24px 0}img{max-width:100%;height:auto}.skip{position:absolute;top:-100px;left:16px;padding:10px;background:#fff;z-index:9}.skip:focus{top:10px}.topbar{background:#fff;border-bottom:1px solid var(--border);padding:18px max(24px,calc((100vw - 1320px)/2));display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-weight:850;font-size:1.4rem;text-decoration:none;color:var(--deep);white-space:nowrap}.topbar span{font-size:.8rem;color:var(--muted)}.hero{background:var(--deep);color:white;padding:52px max(24px,calc((100vw - 1320px)/2))}.hero-inner{max-width:800px}.hero p{color:#dbf6e8;max-width:680px}.eyebrow{font-size:.73rem;font-weight:750;letter-spacing:.15em;color:var(--green);margin-bottom:14px}.hero .eyebrow{color:#b6f0d3}.pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.pills span{padding:5px 12px;border:1px solid #40836a;border-radius:25px;font-size:.8rem}.shell{max-width:1370px;margin:auto;padding:34px 24px 60px;display:grid;grid-template-columns:270px minmax(0,1fr);gap:30px;align-items:start}.sidebar{position:sticky;top:20px;background:white;border:1px solid var(--border);border-radius:16px;padding:22px}.sidebar h2{font-size:1rem;margin:0 0 18px}.sidebar a{display:flex;gap:12px;align-items:center;text-decoration:none;padding:10px 12px;border-radius:9px;font-size:.88rem;line-height:1.4;margin:3px 0;color:var(--ink)}.sidebar a[aria-current="step"]{color:#fff;background:var(--green)}.sidebar a:hover{background:#e4f3ec;color:#14251e}.stepnum{font-size:.7rem;opacity:.8;font-weight:750;min-width:23px}.track{margin-top:24px;border-top:1px solid var(--border);padding-top:20px}.track p{font-size:.8rem;margin-bottom:8px}.track small{color:var(--muted);font-size:.72rem;line-height:1.5;display:block}progress{width:100%;accent-color:var(--green);height:9px}.shell>main{min-width:0}.lesson,.lab,.resources{background:white;border:1px solid var(--border);border-radius:18px;padding:clamp(22px,4vw,48px);margin-bottom:26px;min-width:0}.lesson-head{padding-bottom:24px;border-bottom:1px solid var(--border);margin-bottom:30px}.lesson-head h2{margin:0 0 14px}.lesson-head>p:last-child{color:var(--muted);margin:0}.reading h3{margin-top:40px}.reading h4{margin-top:28px}.reading{overflow-wrap:anywhere}.practice{background:#f2f8f4;border:1px solid var(--border);padding:26px;border-radius:14px;margin-top:36px}.practice h3{margin-top:0}fieldset{border:0;margin:0;padding:0}legend{font-weight:650;margin-bottom:18px}.answer{display:flex;align-items:start;gap:10px;background:#fff;border:1px solid var(--border);padding:12px 16px;border-radius:10px;margin:10px 0;cursor:pointer}.answer input{margin-top:7px;accent-color:var(--green)}.quickquiz button{margin-top:12px}.feedback{margin-top:14px;font-weight:550}.complete{padding:24px 0;border-bottom:1px solid var(--border)}.complete label{font-weight:650}.complete p{font-size:.8rem;color:var(--muted);margin:8px 0 0}.read-check{width:18px;height:18px;accent-color:var(--green);vertical-align:middle;margin-right:8px}.lesson-pager{display:flex;justify-content:space-between;gap:16px;margin-top:26px}.lab h2,.resources h2{margin-top:0;font-size:1.8rem}.lab label{display:block;font-weight:650;margin:16px 0 8px}.lab select{width:100%;padding:10px;border:1px solid #819a8d;border-radius:8px;background:white;color:var(--ink)}textarea{resize:vertical;min-height:300px;width:100%;padding:18px;background:#102c22;color:#effff4;font:14px/1.7 ui-monospace,Consolas,monospace;border:1px solid #507d68;border-radius:10px;tab-size:2}.tools{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.preview{width:100%;height:330px;background:#fff;border:1px solid var(--border);border-radius:10px}.notice{padding:18px;background:var(--mint);border-left:3px solid var(--green);font-size:.85rem}.status{font-size:.85rem;color:var(--muted)}.sitefoot{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:.8rem;color:var(--muted)}.copy-code{background:#fff;color:var(--deep);font-size:.75rem;padding:6px 12px;margin-top:-12px;margin-bottom:18px}.js [hidden]{display:none!important}noscript p{padding:18px;background:#fff3d6}.print-button{background:white;color:var(--deep);font-size:.8rem;padding:6px 12px}.resources ul{padding-left:20px}@media(max-width:850px){.shell{grid-template-columns:minmax(0,1fr);padding:20px 14px}.sidebar{position:static}.sidebar nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding:36px 24px}.topbar{padding:14px 20px}.track{margin-top:14px}}@media(max-width:470px){.sidebar nav{grid-template-columns:1fr}.topbar span{display:none}.lesson,.lab,.resources{padding:22px}.practice{padding:18px}.lesson-pager .button{font-size:.85rem;padding:10px}.tools button{width:100%}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{.sidebar,.topbar,.tools,.quickquiz,.lesson-pager,.complete,.lab,.copy-code,.print-button{display:none!important}.js .lesson[hidden]{display:block!important}.shell{display:block;max-width:100%;padding:0}.hero{background:#fff;color:#000;padding:20px}.hero p,.hero .eyebrow{color:#000}.lesson,.resources{border:0;padding:15px;break-before:page}pre{white-space:pre-wrap;background:#f2f7f4;color:#000;border:1px solid #aaa}.pills{display:none}}
+</style></head><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar"><a class="brand" href="#modulo-0" data-go="0">I<sup>2</sup>NICIA</a><span>CAMPUS VIRTUAL · FORMACIÓN EN DESARROLLO WEB</span><button class="print-button" type="button" id="print">Imprimir apuntes</button></header><section class="hero"><div class="hero-inner"><p class="eyebrow">APRENDE · PRACTICA · CONSTRUYE</p><h1>Tu primera página web<br>comienza con HTML.</h1><p>Una ruta desde las etiquetas básicas hasta un sitio completo. Lee, experimenta con el código y prepara tus entregas para Moodle.</p><div class="pills"><span>Nivel inicial</span><span>9 módulos</span><span>Proyecto integrador</span><span>Sin instalaciones adicionales para leer</span></div></div></section><div class="shell"><aside class="sidebar"><h2>Tu ruta de aprendizaje</h2><nav aria-label="Módulos del curso"><a href="#modulo-0" data-go="0"><span class="stepnum">IN</span><span>Bienvenida</span></a><a href="#modulo-1" data-go="1"><span class="stepnum">01</span><span>Fundamentos de HTML</span></a><a href="#modulo-2" data-go="2"><span class="stepnum">02</span><span>Texto y semántica</span></a><a href="#modulo-3" data-go="3"><span class="stepnum">03</span><span>Enlaces y rutas</span></a><a href="#modulo-4" data-go="4"><span class="stepnum">04</span><span>Listas y navegación</span></a><a href="#modulo-5" data-go="5"><span class="stepnum">05</span><span>Imágenes accesibles</span></a><a href="#modulo-6" data-go="6"><span class="stepnum">06</span><span>Tablas de datos</span></a><a href="#modulo-7" data-go="7"><span class="stepnum">07</span><span>Formularios</span></a><a href="#modulo-8" data-go="8"><span class="stepnum">08</span><span>Estructura semántica</span></a><a href="#modulo-9" data-go="9"><span class="stepnum">09</span><span>Metadatos, CSS y JS</span></a><a href="#modulo-10" data-go="10"><span class="stepnum">FIN</span><span>Proyecto final</span></a><a href="#laboratorio"><span class="stepnum">&lt;/&gt;</span><span>Laboratorio HTML</span></a><a href="#referencias"><span class="stepnum">↗</span><span>Documentación</span></a></nav><div class="track"><p id="progress-text">0 de 9 lecturas revisadas</p><progress id="progress" max="9" value="0" aria-labelledby="progress-text"></progress><small>Avance personal durante esta sesión. Al recargar se reinicia; no es una calificación de Moodle.</small></div></aside><main id="contenido"><noscript><p>JavaScript está desactivado. Puedes leer todos los módulos; las preguntas y el laboratorio necesitan JavaScript.</p></noscript><section id="modulo-0" class="lesson" data-index="0" aria-labelledby="title-0"><header class="lesson-head"><p class="eyebrow">COMIENZA AQUÍ</p><h2 id="title-0" tabindex="-1">Bienvenida</h2><p>Tu ruta para comenzar a construir sitios web.</p></header><div class="reading"><h3>📌 Configuración del Resumen de Sección en Moodle:</h3>
+<p><strong>Título:</strong> Bienvenida al Curso de HTML Básico<br><strong>Descripción para mostrar en la página del curso:</strong><br>¡Hola y bienvenido! Si tu idea es aprender a crear sitios web desde cero, sin conocimientos previos, estás en el lugar indicado. En este curso aprenderás <strong>HTML</strong>, el lenguaje fundamental con el que se construyen las estructuras de todas las páginas web en Internet. A través de lecciones cortas, amenas y prácticas, dominarás desde las etiquetas más simples hasta la maquetación semántica completa de un sitio web moderno.</p>
+<hr>
+<h3>📄 Recurso 0.1: Página de Moodle — &quot;Guía de Inicio y Herramientas Necesarias&quot;</h3>
+<h4>¿Qué vamos a aprender?</h4>
+<p>HTML (<em>HyperText Markup Language</em> o Lenguaje de Marcado de Hipertexto) <strong>no es un lenguaje de programación</strong>, sino un <strong>lenguaje de marcado</strong>. Su función principal es crear la <strong>estructura</strong> de un sitio web: definir dónde van los textos, las imágenes, los formularios, los botones y los menús.</p>
+<p>En el desarrollo web profesional, tres lenguajes trabajan siempre de la mano:</p>
+<ol>
+<li><strong>HTML:</strong> Crea la estructura y el contenido (el esqueleto del sitio).</li>
+<li><strong>CSS:</strong> Le da estilo visual: colores, formas, tamaños y posiciones (el diseño).</li>
+<li><strong>JavaScript:</strong> Añade interactividad y dinamismo avanzado.</li>
+</ol>
+<p>En este curso nos enfocaremos 100% en dominar las bases sólidas de <strong>HTML</strong> (incluyendo sus estándares modernos de <strong>HTML5</strong>).</p>
+<h4>🛠️ Herramientas que necesitas instalar antes de empezar</h4>
+<p>Para tomar este curso solo necesitas dos herramientas gratuitas en tu computadora:</p>
+<ol>
+<li><strong>Un Navegador Web Moderno:</strong> Es el programa que interpretará nuestro código y mostrará la página web.<ul>
+<li><strong>Recomendados:</strong> Mozilla Firefox, Google Chrome, Safari u Opera.</li>
+<li><strong>⚠️ Importante:</strong> Evita utilizar <em>Internet Explorer</em>, ya que es un navegador obsoleto que no interpreta bien los estándares modernos.</li>
+</ul>
+</li>
+<li><strong>Un Editor de Código:</strong> Es el programa donde escribiremos nuestras etiquetas HTML. Los editores de código colorean las palabras clave para que sea mucho más fácil leer y encontrar errores.<ul>
+<li><strong>Opciones recomendadas:</strong><ul>
+<li><strong>Sublime Text</strong> (Muy rápido y cómodo, cuenta con versión de prueba gratuita ilimitada).</li>
+<li><strong>Notepad++</strong> (100% gratuito y muy ligero para Windows).</li>
+<li><strong>Visual Studio Code</strong> (El estándar actual gratuito más popular).</li>
+<li><em>En última instancia:</em> El <strong>Bloc de notas</strong> del sistema.</li>
+</ul>
+</li>
+<li><strong>🚫 Qué NO usar nunca:</strong> Jamás utilices procesadores de texto como <strong>Microsoft Word</strong>, ya que agregan código oculto de formato que ensuciará y arruinará tu documento HTML.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3>💬 Actividades del Bloque General:</h3>
+<ul>
+<li><strong>Foro de Avisos:</strong> Configurado por defecto para anuncios del profesor.</li>
+<li><strong>Foro de Presentación y Entorno de Trabajo:</strong>  <ul>
+<li><em>Instrucción del foro:</em> &quot;¡Preséntate con tus compañeros! Cuéntanos por qué quieres aprender diseño web y comenta qué navegador y qué editor de código decidiste instalar para el curso.&quot;</li>
+</ul>
+</li>
+<li><strong>Recurso URL (Documentación de consulta):</strong><ul>
+<li><a href="https://developer.mozilla.org/es/docs/Web/HTML" target="_blank" rel="noopener noreferrer">MDN Web Docs - Documentación oficial de HTML en español</a></li>
+<li><a href="https://www.w3schools.com/html/" target="_blank" rel="noopener noreferrer">W3Schools - Referencia interactiva de etiquetas HTML</a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><nav class="lesson-pager" aria-label="Navegación de lecciones"><span></span><a href="#modulo-1" data-go="1" class="button">Siguiente →</a></nav></section><section id="modulo-1" class="lesson" data-index="1" aria-labelledby="title-1"><header class="lesson-head"><p class="eyebrow">MÓDULO 01 / 09</p><h2 id="title-1" tabindex="-1">Fundamentos de HTML</h2><p>Escribe tu primer documento y comprende sus etiquetas.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>En este primer módulo comprenderemos las diferencias entre HTML, XHTML y HTML5, aprenderemos la anatomía de una etiqueta y sus atributos, y escribiremos nuestro primer documento web (<code>index.html</code>).</p>
+<hr>
+<h3>📖 Lección 1: ¿Cómo funciona el código HTML?</h3>
+<h4>1.1 Breve historia: HTML, XHTML y HTML5</h4>
+<p>Al investigar en internet es común encontrar estos tres términos:</p>
+<ul>
+<li><strong>HTML:</strong> lenguaje de marcado que describe la estructura y el significado del contenido web.</li>
+<li><strong>XHTML:</strong> formulación de HTML con las reglas de sintaxis de XML.</li>
+<li><strong>HTML5:</strong> nombre histórico de una evolución de HTML. El estándar actual se mantiene como HTML Living Standard.</li>
+</ul>
+<h4>1.2 ¿Qué es una Etiqueta y qué es un Atributo?</h4>
+<p>Una <strong>etiqueta</strong> es un fragmento de código encerrado entre signos de menor y mayor que (<code>&lt; &gt;</code>) y representa un elemento en nuestro sitio web (un título, un párrafo, un botón, una imagen).</p>
+<p>La gran mayoría de las etiquetas tienen un <strong>inicio</strong> y un <strong>fin</strong> (indicado con una barra diagonal <code>/</code>), y en medio llevan su <strong>contenido</strong>:</p>
+<pre><code class="language-html">&lt;etiqueta&gt;Aquí va el contenido&lt;/etiqueta&gt;
+</code></pre>
+<p>Además, las etiquetas pueden tener <strong>atributos</strong> en su etiqueta de apertura. Un atributo es una propiedad adicional que modifica o identifica a la etiqueta, y suele tener un valor entre comillas; existen también atributos booleanos, como <code>required</code>:</p>
+<pre><code class="language-html">&lt;etiqueta atributo=&quot;valor&quot;&gt;Contenido&lt;/etiqueta&gt;
+</code></pre>
+<p><em>(Por ejemplo, los atributos más comunes que veremos más adelante son <code>id=&quot;identificador&quot;</code> o <code>class=&quot;clase&quot;</code>, los cuales sirven para conectar HTML con CSS y JavaScript).</em></p>
+<p><strong>Elementos vacíos:</strong>
+Elementos como <code>&lt;br&gt;</code>, <code>&lt;img&gt;</code> e <code>&lt;input&gt;</code> no contienen otros nodos y no llevan etiqueta de cierre. La barra final de <code>&lt;br /&gt;</code> es opcional en HTML y no provoca un autocierre.</p>
+<pre><code class="language-html">&lt;br /&gt; &lt;!-- Etiqueta para dar un salto de línea --&gt;
+</code></pre>
+<h4>1.3 Estructura obligatoria de todo documento HTML</h4>
+<p>Toda página web consta de dos partes fundamentales dentro de la etiqueta raíz <code>&lt;html&gt;</code>:</p>
+<ol>
+<li><strong>La Cabecera (<code>&lt;head&gt;</code>):</strong> Contiene información técnica para el navegador y para buscadores como Google. Casi nada de lo que se escribe aquí es visible directamente en el lienzo de la página, a excepción de la etiqueta <code>&lt;title&gt;</code>, que cambia el texto de la pestaña del navegador.</li>
+<li><strong>El Cuerpo (<code>&lt;body&gt;</code>):</strong> Contiene absolutamente todo lo que el usuario verá en pantalla (textos, imágenes, botones, etc.).</li>
+</ol>
+<pre><code class="language-html">&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;Título de nuestra primera web&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;!-- Esto es un comentario: solo lo ves tú en el código, no aparece en la web --&gt;
+        &lt;h1&gt;Título de nuestro documento&lt;/h1&gt;
+        &lt;br /&gt;
+        &lt;h2&gt;Subtítulo de nivel 2&lt;/h2&gt;
+        &lt;h3&gt;Subtítulo de nivel 3&lt;/h3&gt;
+        &lt;h4&gt;Subtítulo de nivel 4&lt;/h4&gt;
+        &lt;h5&gt;Subtítulo de nivel 5&lt;/h5&gt;
+        &lt;h6&gt;Subtítulo de nivel 6 (el más pequeño)&lt;/h6&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h4>1.4 Los Encabezados (<code>&lt;h1&gt;</code> al <code>&lt;h6&gt;</code>) y Comentarios</h4>
+<ul>
+<li><strong>Encabezados (Headers):</strong> Existen 6 niveles de titulares, desde el <code>&lt;h1&gt;</code> (el más grande e importante) hasta el <code>&lt;h6&gt;</code> (el más pequeño).</li>
+<li><strong>Comentarios:</strong> Si deseas dejar notas para ti mismo dentro de tu código sin que los visitantes las vean en el navegador, utiliza la sintaxis <code>&lt;!-- Tu nota aquí --&gt;</code>.</li>
+</ul>
+<h4>1.5 ¿Cómo guardar y visualizar tu página?</h4>
+<ol>
+<li>Crea una carpeta en tu escritorio llamada <code>mi primer sitio web</code>.</li>
+<li>En tu editor de código, ve a <strong>Archivo &gt; Guardar como...</strong> (<em>File &gt; Save As</em>).</li>
+<li>Guárdalo con el nombre <strong><code>index.html</code></strong> (es fundamental poner la extensión <code>.html</code> para que el navegador lo reconozca, y el nombre <code>index</code> es el estándar para la página principal de cualquier sitio).</li>
+<li>Haz doble clic sobre <code>index.html</code> para abrirlo en Firefox o Chrome. Cada vez que hagas un cambio en el editor, guarda con <code>Ctrl + S</code> y recarga el navegador con <code>F5</code>.</li>
+<li><strong>Tip curioso:</strong> Si haces <em>Clic derecho &gt; Ver código fuente de la página</em> en tu navegador (o en sitios como Google o YouTube), podrás ver el código HTML real con el que están hechos.</li>
+</ol>
+<hr>
+<h3>📝 Tarea 1 (Actividad de Moodle): Mi Primera Página Web</h3>
+<ul>
+<li><strong>Instrucciones para el alumno:</strong><ol>
+<li>Crea una carpeta en tu computadora para tus prácticas del curso.</li>
+<li>Abre tu editor de código y crea un archivo llamado <code>index.html</code>.</li>
+<li>Escribe la estructura completa obligatoria (<code>&lt;html&gt;</code>, <code>&lt;head&gt;</code>, <code>&lt;title&gt;</code> y <code>&lt;body&gt;</code>).</li>
+<li>En el <code>&lt;title&gt;</code>, coloca tu nombre completo seguido de &quot;- Mi primera web&quot;.</li>
+<li>Dentro del <code>&lt;body&gt;</code>, escribe un comentario HTML con la fecha de hoy.</li>
+<li>Agrega los 6 niveles de encabezados (<code>&lt;h1&gt;</code> al <code>&lt;h6&gt;</code>) con diferentes textos de prueba y separa los dos primeros usando la etiqueta <code>&lt;br /&gt;</code>.</li>
+<li>Verifica que funcione en tu navegador y <strong>sube tu archivo <code>index.html</code> en este espacio</strong>.</li>
+</ol>
+</li>
+<li><strong>Criterios de calificación (100 pts):</strong><ul>
+<li>Estructura <code>html</code>, <code>head</code>, <code>title</code> y <code>body</code> bien cerrada (40 pts).</li>
+<li>Uso correcto de <code>h1</code> a <code>h6</code> y etiqueta <code>&lt;br /&gt;</code> (40 pts).</li>
+<li>Inclusión del comentario en el código y extensión <code>.html</code> correcta (20 pts).</li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-1"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-1">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="0" data-explain="HTML es un lenguaje de marcado; CSS se ocupa de la presentación y JavaScript del comportamiento."><fieldset><legend>¿Qué función tiene HTML?</legend><label class="answer"><input type="radio" name="quiz1" value="0" required> <span>Organizar y dar significado al contenido</span></label><label class="answer"><input type="radio" name="quiz1" value="1" required> <span>Almacenar contraseñas en una base de datos</span></label><label class="answer"><input type="radio" name="quiz1" value="2" required> <span>Definir los colores del sistema operativo</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="1"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-0" data-go="0" class="button secondary">← Anterior</a><a href="#modulo-2" data-go="2" class="button">Siguiente →</a></nav></section><section id="modulo-2" class="lesson" data-index="2" aria-labelledby="title-2"><header class="lesson-head"><p class="eyebrow">MÓDULO 02 / 09</p><h2 id="title-2" tabindex="-1">Texto y semántica</h2><p>Da significado y jerarquía a tus contenidos.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>El 80% de la información en internet es texto. En este módulo aprenderemos a maquetar artículos utilizando párrafos, subtítulos, negritas, cursivas y citas, entendiendo cómo Google lee nuestra estructura (Semántica).</p>
+<hr>
+<h3>📖 Lección 2: Maquetación de Textos y Valor Semántico</h3>
+<h4>2.1 ¿Qué es la Semántica en HTML y por qué le importa a Google?</h4>
+<p>Maquetar significa construir la estructura de nuestro sitio. Cuando decimos que las etiquetas tienen un <strong>valor semántico</strong>, significa que le indican al navegador y a los buscadores (como Google) qué significa cada fragmento de texto.</p>
+<blockquote>
+<p><strong>Jerarquía de encabezados:</strong> para estas prácticas utiliza un título principal <code>&lt;h1&gt;</code> y organiza las subsecciones con <code>&lt;h2&gt;</code> y <code>&lt;h3&gt;</code>. La jerarquía comunica la estructura; varios <code>&lt;h1&gt;</code> no implican por sí solos una penalización automática de Google.</p>
+</blockquote>
+<p><em>Nota sobre el tamaño visual:</em> No uses etiquetas HTML solo por el tamaño de la letra que muestran por defecto. Más adelante, con <strong>CSS</strong>, podrás hacer que un <code>&lt;h2&gt;</code> se vea incluso más grande que un <code>&lt;h1&gt;</code> si así lo deseas. En HTML lo que importa es la jerarquía y estructura.</p>
+<h4>2.2 Párrafos (<code>&lt;p&gt;</code>) y Separadores (<code>&lt;hr /&gt;</code>)</h4>
+<p>Para los bloques de prosa utiliza párrafos <code>&lt;p&gt;</code> que comuniquen su estructura. Todo bloque de texto normal debe ir encerrado en la etiqueta de párrafo <code>&lt;p&gt;</code>:</p>
+<pre><code class="language-html">&lt;h1&gt;Título de nuestro Artículo&lt;/h1&gt;
+&lt;h2&gt;Subtítulo del Artículo&lt;/h2&gt;
+
+&lt;p&gt;
+    Este es nuestro primer párrafo de texto. Al usar la etiqueta p, el navegador 
+    agrega automáticamente un espaciado limpio antes y después del párrafo.
+&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;
+    Este es un segundo párrafo. Si queremos forzar un salto de línea aquí mismo,&lt;br /&gt;
+    utilizamos la etiqueta br y el texto continúa abajo.
+&lt;/p&gt;
+</code></pre>
+<ul>
+<li><strong><code>&lt;p&gt;</code>:</strong> Define un párrafo semántico con espaciado automático.</li>
+<li><strong><code>&lt;br /&gt;</code>:</strong> Fuerza un salto de línea dentro de un mismo párrafo o entre elementos.</li>
+<li><strong><code>&lt;hr /&gt;</code>:</strong> Etiqueta que se cierra sola y dibuja una línea horizontal separadora entre secciones.</li>
+</ul>
+<h4>2.3 Etiquetas de Formato y Énfasis en el Texto</h4>
+<p>Dentro de nuestros párrafos podemos resaltar palabras clave utilizando las siguientes etiquetas:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Etiqueta</th>
+<th align="left">Ejemplo de Código</th>
+<th align="left">Función Visual</th>
+<th align="left">Función Semántica (Para Google)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><code>&lt;b&gt;</code></strong></td>
+<td align="left"><code>&lt;b&gt;Texto&lt;/b&gt;</code></td>
+<td align="left">Negrita por defecto.</td>
+<td align="left">Llama la atención sin indicar importancia adicional.</td>
+</tr>
+<tr>
+<td align="left"><strong><code>&lt;strong&gt;</code></strong></td>
+<td align="left"><code>&lt;strong&gt;Texto&lt;/strong&gt;</code></td>
+<td align="left">Negrita por defecto.</td>
+<td align="left">Expresa importancia, gravedad o urgencia; no es una garantía de posicionamiento.</td>
+</tr>
+<tr>
+<td align="left"><strong><code>&lt;i&gt;</code></strong></td>
+<td align="left"><code>&lt;i&gt;Texto&lt;/i&gt;</code></td>
+<td align="left">Pone la letra en <em>cursiva</em> (<em>itálica</em>).</td>
+<td align="left">Uso estilístico para términos especiales o extranjerismos.</td>
+</tr>
+<tr>
+<td align="left"><strong><code>&lt;span&gt;</code></strong></td>
+<td align="left"><code>&lt;span&gt;Texto&lt;/span&gt;</code></td>
+<td align="left"><strong>Ningún cambio visual</strong> por sí sola.</td>
+<td align="left">Sirve como un contenedor neutro para seleccionar palabras específicas y darles color o estilo más adelante con CSS.</td>
+</tr>
+</tbody></table>
+<h4>2.4 Citas Textuales (<code>&lt;blockquote&gt;</code> y <code>&lt;cite&gt;</code>)</h4>
+<p>Cuando queremos citar una frase de un libro, autor o artículo externo, utilizamos <code>&lt;blockquote&gt;</code> para la frase (el navegador aplicará un margen o sangría hacia la derecha) y <code>&lt;cite&gt;</code> para indicar el título de la obra citada (no el nombre del autor):</p>
+<pre><code class="language-html">&lt;blockquote&gt;
+    &quot;La mayoría de los sitios web se basan en un 80% en texto bien estructurado y el resto es diseño con CSS.&quot;
+&lt;/blockquote&gt;
+&lt;cite&gt;Guía de HTML&lt;/cite&gt;
+</code></pre>
+<hr>
+<h3>📝 Tarea 2 (Actividad de Moodle): Maquetando un Artículo Semántico</h3>
+<ul>
+<li><strong>Instrucciones para el alumno:</strong>
+Crea un archivo llamado <code>articulo.html</code> sobre un tema que te apasione (un videojuego, un libro, ciencia o deportes) que cumpla con los siguientes requisitos:<ol>
+<li>Un único encabezado <code>&lt;h1&gt;</code> con el título del artículo.</li>
+<li>Dos subtítulos <code>&lt;h2&gt;</code> para dividir el tema en dos partes, separados por una línea horizontal <code>&lt;hr /&gt;</code>.</li>
+<li>Al menos tres párrafos <code>&lt;p&gt;</code>.</li>
+<li>Dentro de los párrafos, aplica estratégicamente: dos palabras clave importantes con <code>&lt;strong&gt;</code>, un texto en negrita puramente visual con <code>&lt;b&gt;</code>, una frase en cursiva con <code>&lt;i&gt;</code> y una palabra envuelta en <code>&lt;span&gt;</code>.</li>
+<li>Al final del artículo, incluye una cita célebre usando <code>&lt;blockquote&gt;</code> y el título de la obra usando <code>&lt;cite&gt;</code>; escribe el autor como texto normal.</li>
+</ol>
+</li>
+<li><strong>Criterios de calificación (100 pts):</strong><ul>
+<li>Uso exclusivo de un solo <code>&lt;h1&gt;</code> y jerarquía correcta con <code>&lt;h2&gt;</code> (25 pts).</li>
+<li>Uso correcto de <code>&lt;p&gt;</code>, <code>&lt;br /&gt;</code> y <code>&lt;hr /&gt;</code> sin texto suelto (25 pts).</li>
+<li>Aplicación diferenciada de <code>&lt;strong&gt;</code>, <code>&lt;b&gt;</code>, <code>&lt;i&gt;</code> y <code>&lt;span&gt;</code> (25 pts).</li>
+<li>Cita estructurada con <code>&lt;blockquote&gt;</code> y <code>&lt;cite&gt;</code> (25 pts).</li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-2"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-2">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="0" data-explain="strong añade importancia semántica. Su aspecto visual puede cambiar con CSS."><fieldset><legend>¿Qué expresa el elemento strong?</legend><label class="answer"><input type="radio" name="quiz2" value="0" required> <span>Importancia del contenido</span></label><label class="answer"><input type="radio" name="quiz2" value="1" required> <span>Un salto de línea</span></label><label class="answer"><input type="radio" name="quiz2" value="2" required> <span>Una lista numerada</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="2"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-1" data-go="1" class="button secondary">← Anterior</a><a href="#modulo-3" data-go="3" class="button">Siguiente →</a></nav></section><section id="modulo-3" class="lesson" data-index="3" aria-labelledby="title-3"><header class="lesson-head"><p class="eyebrow">MÓDULO 03 / 09</p><h2 id="title-3" tabindex="-1">Enlaces y rutas</h2><p>Conecta documentos, recursos y secciones.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>La esencia de la web es conectar documentos entre sí. En este módulo aprenderemos a crear hipervínculos externos e internos, abrir pestañas nuevas, configurar enlaces de correo y colocar el icono de nuestra página (<em>Favicon</em>).</p>
+<hr>
+<h3>📖 Lección 3: Hipervínculos y Rutas en HTML</h3>
+<h4>3.1 La etiqueta <code>&lt;a&gt;</code> y el atributo <code>href</code></h4>
+<p>Los enlaces son esos textos (por defecto subrayados en azul) que al hacerles clic redirigen al usuario a otra página o archivo. Se crean con la etiqueta <code>&lt;a&gt;</code> (<em>anchor</em>) y su atributo indispensable <strong><code>href</code></strong> (donde indicamos la URL o dirección de destino):</p>
+<pre><code class="language-html">&lt;a href=&quot;https://www.google.com&quot;&gt;Ir a Google&lt;/a&gt;
+</code></pre>
+<h4>3.2 Rutas Absolutas vs. Rutas Relativas</h4>
+<p>Existen dos formas de indicarle al atributo <code>href</code> hacia dónde debe ir:</p>
+<ol>
+<li><strong>Rutas Absolutas (Enlaces externos):</strong><br>Se utilizan cuando enviamos al usuario a otro sitio web en internet cuya dirección ya está predefinida.<ul>
+<li><strong>¡Muy importante!</strong> Siempre debes escribir el protocolo <strong><code>http://</code> o <code>https://</code></strong> al inicio. Si solo escribes <code>href=&quot;www.google.com&quot;</code>, el navegador creerá que estás buscando una carpeta llamada <em><a href="http://www.google.com" target="_blank" rel="noopener noreferrer">www.google.com</a></em> dentro de tu propia computadora y dará error.</li>
+</ul>
+</li>
+<li><strong>Rutas Relativas (Enlaces internos):</strong><br>Se utilizan para enlazar páginas, imágenes o documentos (<code>.html</code>, <code>.jpg</code>, <code>.pdf</code>, <code>.doc</code>, <code>.ppt</code>) que están guardados <strong>dentro de nuestra propia carpeta del sitio web</strong>, sin escribir <code>http://</code>.<ul>
+<li><em>Ejemplo:</em> Si tu archivo <code>index.html</code> está en tu carpeta principal, y al lado tienes una carpeta llamada <code>imagenes</code> que adentro contiene el archivo <code>logo.jpg</code>, la ruta relativa para abrirlo es:</li>
+</ul>
+<pre><code class="language-html">&lt;a href=&quot;imagenes/logo.jpg&quot;&gt;Ir a la imagen del logotipo&lt;/a&gt;
+</code></pre>
+</li>
+</ol>
+<h4>3.3 Abrir en nueva pestaña (<code>target=&quot;_blank&quot;</code>) y atributo <code>title</code></h4>
+<p>Si el usuario hace clic en un enlace externo, por defecto el navegador navegará en la misma pestaña. Para evitar que el visitante abandone nuestro sitio, agregamos el atributo <strong><code>target=&quot;_blank&quot;</code></strong>, el cual fuerza al navegador a abrir el enlace en una <strong>nueva pestaña</strong>:</p>
+<pre><code class="language-html">&lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot; href=&quot;https://www.google.com&quot; title=&quot;Haz clic para buscar en Google&quot;&gt;Ir a Google en otra pestaña&lt;/a&gt;
+</code></pre>
+<p><em>(El atributo opcional <code>title</code> muestra un pequeño recuadro informativo cuando el usuario deja el cursor encima del enlace).</em></p>
+<h4>3.4 Enlaces de Correo Electrónico (<code>mailto:</code>)</h4>
+<p>Podemos hacer que al dar clic en un enlace se abra automáticamente el programa de correo del usuario listo para enviarnos un mensaje usando <code>mailto:</code> dentro del <code>href</code>:</p>
+<pre><code class="language-html">&lt;a href=&quot;mailto:contacto@misitioweb.com&quot; title=&quot;Enviar correo de contacto&quot;&gt;Enviar Mail&lt;/a&gt;
+</code></pre>
+<ul>
+<li><strong>Ventaja:</strong> Rápido de escribir en HTML puro.</li>
+<li><strong>⚠️ Desventaja importante:</strong> Hoy en día <strong>no se recomienda usarlo mucho</strong> en sitios públicos porque los robots (<em>bots</em>) de internet rastrean el código en busca de <code>mailto:</code> para recolectar tu dirección y enviarte correo basura (<em>spam</em>). Más adelante es mejor usar formularios de contacto.</li>
+</ul>
+<h4>3.5 La etiqueta <code>&lt;link&gt;</code> y cómo agregar un Favicon</h4>
+<p>Dentro de la cabecera <code>&lt;head&gt;</code> existen enlaces especiales que no son para darle clic, sino para conectar recursos a nuestro documento utilizando la etiqueta <code>&lt;link /&gt;</code>:</p>
+<pre><code class="language-html">&lt;head&gt;
+    &lt;title&gt;Mi Sitio Web&lt;/title&gt;
+    &lt;!-- 1. Enlazar el icono de la pestaña (Favicon) --&gt;
+    &lt;link rel=&quot;shortcut icon&quot; type=&quot;image/x-icon&quot; href=&quot;imagenes/favicon.ico&quot; /&gt;
+    
+    &lt;!-- 2. Enlazar una hoja de estilos CSS (lo usaremos en el futuro) --&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;estilos.css&quot; /&gt;
+&lt;/head&gt;
+</code></pre>
+<ul>
+<li><strong>¿Qué es el Favicon?</strong> Es el pequeño icono que aparece en la pestaña del navegador junto al título (como la &quot;G&quot; de Google). Se recomienda que el archivo se llame <code>favicon.ico</code> y esté en formato <code>.ico</code>.</li>
+<li><em>Nota sobre el Caché:</em> Si cambias tu archivo <code>favicon.ico</code> por otro y al actualizar no ves cambios, no te preocupes: los navegadores guardan los iconos en su memoria <em>caché</em>. Deberás borrar el caché del navegador para ver el nuevo icono.</li>
+</ul>
+<hr>
+<h3>Repaso del módulo</h3>
+<p>Utiliza las preguntas de autoevaluación al final de esta lección. Las evaluaciones oficiales se realizan en Moodle.</p>
+</div><section class="practice" aria-labelledby="practice-title-3"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-3">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="1" data-explain="La ruta se resuelve con relación a la ubicación del documento."><fieldset><legend>¿Cuál es una ruta relativa?</legend><label class="answer"><input type="radio" name="quiz3" value="0" required> <span>https://ejemplo.org/contacto.html</span></label><label class="answer"><input type="radio" name="quiz3" value="1" required> <span>paginas/contacto.html</span></label><label class="answer"><input type="radio" name="quiz3" value="2" required> <span>mailto:contacto@ejemplo.org</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="3"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-2" data-go="2" class="button secondary">← Anterior</a><a href="#modulo-4" data-go="4" class="button">Siguiente →</a></nav></section><section id="modulo-4" class="lesson" data-index="4" aria-labelledby="title-4"><header class="lesson-head"><p class="eyebrow">MÓDULO 04 / 09</p><h2 id="title-4" tabindex="-1">Listas y navegación</h2><p>Organiza información y construye un menú.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>Las listas tienen un doble propósito en el desarrollo web: organizar información para facilitar su lectura y servir como la estructura base con la que se crean todos los menús de navegación de los sitios web.</p>
+<hr>
+<h3>📖 Lección 4: Creación de Listas y Submenús</h3>
+<h4>4.1 Listas Desordenadas (<code>&lt;ul&gt;</code>)</h4>
+<p>Las listas desordenadas (<em>Unordered List</em>) se utilizan cuando el orden de los elementos no altera su significado. Muestran viñetas (puntitos) junto a cada ítem.</p>
+<ul>
+<li>Se abren con la etiqueta <strong><code>&lt;ul&gt;</code></strong>.</li>
+<li>Cada elemento o renglón dentro de la lista se encierra en una etiqueta <strong><code>&lt;li&gt;</code></strong> (<em>List Item</em>).</li>
+</ul>
+<pre><code class="language-html">&lt;ul&gt;
+    &lt;li&gt;Item número 1&lt;/li&gt;
+    &lt;li&gt;Item número 2&lt;/li&gt;
+    &lt;li&gt;Item número 3&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<h4>4.2 Listas Ordenadas (<code>&lt;ol&gt;</code>)</h4>
+<p>Las listas ordenadas (<em>Ordered List</em>) funcionan exactamente igual, pero cambiamos la etiqueta contenedora por <strong><code>&lt;ol&gt;</code></strong>. El navegador numerará automáticamente cada elemento <code>&lt;li&gt;</code> (1, 2, 3, 4...):</p>
+<pre><code class="language-html">&lt;ol&gt;
+    &lt;li&gt;Primer paso&lt;/li&gt;
+    &lt;li&gt;Segundo paso&lt;/li&gt;
+    &lt;li&gt;Tercer paso&lt;/li&gt;
+&lt;/ol&gt;
+</code></pre>
+<h4>4.3 Listas Anidadas (Sublistas)</h4>
+<p>Podemos meter una lista dentro de otra lista para crear subniveles o submenús con la profundidad que deseemos. Para hacerlo correctamente, la nueva lista <code>&lt;ul&gt;</code> u <code>&lt;ol&gt;</code> se coloca <strong>dentro</strong> del elemento <code>&lt;li&gt;</code> padre:</p>
+<pre><code class="language-html">&lt;ul&gt;
+    &lt;li&gt;Elemento 1&lt;/li&gt;
+    &lt;li&gt;Elemento 2
+        &lt;ul&gt;
+            &lt;li&gt;Sub-elemento 2.1&lt;/li&gt;
+            &lt;li&gt;Sub-elemento 2.2&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/li&gt;
+    &lt;li&gt;Elemento 3&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<h4>4.4 ¿Cómo se hacen los Menús de Navegación en la vida real?</h4>
+<p>Prácticamente todos los menús de navegación profesionales en las páginas web se construyen utilizando una <strong>lista desordenada (<code>&lt;ul&gt;</code>) cuyos elementos (<code>&lt;li&gt;</code>) contienen enlaces (<code>&lt;a&gt;</code>)</strong>. Más adelante, con CSS, se les quitan los puntitos y se acomodan horizontalmente con colores y efectos:</p>
+<pre><code class="language-html">&lt;ul&gt;
+    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Inicio&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Categorías&lt;/a&gt;
+        &lt;ul&gt;
+            &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Diseño Web&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Desarrollo&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Contacto&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p><em>(Tip: Cuando ponemos un símbolo de gato o almohadilla <code>href=&quot;#&quot;</code> en un enlace de prueba, el enlace se activa visualmente pero no nos redirige a ningún otro sitio al darle clic).</em></p>
+<hr>
+<h3>📝 Tarea 3 (Actividad de Moodle): Creando Listas y la Estructura de un Menú</h3>
+<ul>
+<li><strong>Instrucciones para el alumno:</strong>
+Crea un archivo llamado <code>listas.html</code> que incluya:<ol>
+<li>Un subtítulo <code>&lt;h2&gt;</code> que diga &quot;Menú de Navegación del Sitio&quot; seguido de una lista desordenada (<code>&lt;ul&gt;</code>) con 4 enlaces (<code>&lt;a href=&quot;#&quot;&gt;</code>). El segundo elemento debe tener una sublista anidada con 3 subcategorías (también con enlaces).</li>
+<li>Una línea separadora <code>&lt;hr /&gt;</code>.</li>
+<li>Un subtítulo <code>&lt;h2&gt;</code> que diga &quot;Pasos para crear un sitio web&quot; seguido de una lista ordenada (<code>&lt;ol&gt;</code>) con al menos 5 ítems explicativos.</li>
+</ol>
+</li>
+<li><strong>Criterios de calificación (100 pts):</strong><ul>
+<li>Anidación correcta del submenú dentro del <code>&lt;li&gt;</code> correspondiente (40 pts).</li>
+<li>Uso de etiquetas <code>&lt;a href=&quot;#&quot;&gt;</code> dentro de cada <code>&lt;li&gt;</code> del menú (30 pts).</li>
+<li>Uso correcto de la lista ordenada <code>&lt;ol&gt;</code> (30 pts).</li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-4"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-4">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="0" data-explain="La sublista forma parte del contenido de un elemento li."><fieldset><legend>¿Dónde debe colocarse una lista anidada?</legend><label class="answer"><input type="radio" name="quiz4" value="0" required> <span>Dentro del li al que pertenece</span></label><label class="answer"><input type="radio" name="quiz4" value="1" required> <span>Fuera de toda lista</span></label><label class="answer"><input type="radio" name="quiz4" value="2" required> <span>Dentro de la etiqueta head</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="4"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-3" data-go="3" class="button secondary">← Anterior</a><a href="#modulo-5" data-go="5" class="button">Siguiente →</a></nav></section><section id="modulo-5" class="lesson" data-index="5" aria-labelledby="title-5"><header class="lesson-head"><p class="eyebrow">MÓDULO 05 / 09</p><h2 id="title-5" tabindex="-1">Imágenes accesibles</h2><p>Integra imágenes con alternativas de texto.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>Una web sin imágenes es aburrida. En este módulo aprenderemos a insertar imágenes en diferentes formatos, controlar su tamaño sin deformarlas y optimizar sus atributos para Google.</p>
+<hr>
+<h3>📖 Lección 5: La etiqueta <code>&lt;img /&gt;</code> y sus Atributos</h3>
+<h4>5.1 Insertar una imagen con <code>&lt;img /&gt;</code> y <code>src</code></h4>
+<p>Para agregar una imagen utilizamos la etiqueta <strong><code>&lt;img /&gt;</code></strong>, la cual es un elemento vacío. Su atributo obligatorio es <strong><code>src</code></strong> (<em>source</em> o fuente), donde escribimos la ruta hacia la imagen (soportando formatos como <code>.jpg</code>, <code>.png</code>, <code>.gif</code>, etc.):</p>
+<pre><code class="language-html">&lt;img src=&quot;imagenes/logo.jpg&quot; /&gt;
+</code></pre>
+<ul>
+<li><strong>¿Ruta Relativa o Ruta Absoluta en imágenes?</strong><br>Puedes copiar el link directo de una imagen de Google (ruta absoluta <code>https://...</code>) y pegarlo en el <code>src</code>, pero <strong>no es recomendable</strong>. Si el dueño de ese otro sitio web borra la imagen o su servidor se cae, tu página se quedará sin imagen. Lo mejor es descargar tus imágenes en una carpeta <code>imagenes/</code> dentro de tu proyecto y usar siempre <strong>rutas relativas</strong>.</li>
+</ul>
+<h4>5.2 Controlar el Tamaño (<code>width</code> y <code>height</code>) sin deformar la imagen</h4>
+<p>Podemos modificar el tamaño en píxeles usando los atributos <strong><code>width</code></strong> (ancho) y <strong><code>height</code></strong> (alto):</p>
+<pre><code class="language-html">&lt;!-- Opción 1: Poner medidas proporcionales exactas --&gt;
+&lt;img src=&quot;imagenes/logo.jpg&quot; width=&quot;300&quot; height=&quot;300&quot; /&gt;
+
+&lt;!-- Opción 2 (Recomendada en HTML): Definir SOLO el ancho o SOLO el alto --&gt;
+&lt;img src=&quot;imagenes/logo.jpg&quot; width=&quot;300&quot; /&gt;
+</code></pre>
+<blockquote>
+<p><strong>💡 Truco para no deformar imágenes:</strong><br>Si una imagen es cuadrada (800x800) y le pones <code>width=&quot;300&quot; height=&quot;100&quot;</code>, la imagen se verá aplastada y fea. Si especificas <strong>únicamente el <code>width=&quot;300&quot;</code></strong> (y omites el <code>height</code>), el navegador calculará la altura automáticamente de forma proporcional. <em>(Recuerda que en proyectos finales controlaremos los tamaños desde CSS).</em></p>
+</blockquote>
+<h4>5.3 Atributos clave para SEO y Accesibilidad: <code>alt</code> y <code>title</code></h4>
+<p>Nunca dejes una etiqueta <code>&lt;img /&gt;</code> solo con el <code>src</code>. Debes acompañarla siempre de:</p>
+<ol>
+<li><strong><code>alt</code> (Texto Alternativo - Indispensable):</strong><br>Es una breve descripción de la imagen. Sirve para dos cosas vitales:<ul>
+<li>Si la ruta de la imagen está mal escrita o el usuario tiene mala conexión a internet y la imagen no carga, el navegador mostrará este texto en su lugar.</li>
+<li><strong>Posicionamiento en Google (SEO):</strong> Google no &quot;ve&quot; imágenes como un humano, sino que lee el atributo <code>alt</code> para saber de qué trata la imagen y posicionar tu web en Google Imágenes.</li>
+</ul>
+</li>
+<li><strong><code>title</code> (Descripción emergente):</strong><br>Muestra un recuadro con información adicional cuando el usuario pasa el ratón por encima de la imagen.</li>
+</ol>
+<pre><code class="language-html">&lt;img src=&quot;imagenes/logo.jpg&quot; width=&quot;300&quot; alt=&quot;Logotipo de FalconMasters&quot; title=&quot;Logotipo diseñado por Carlos Arturo&quot; /&gt;
+</code></pre>
+<h4>5.4 Imágenes de Contenido vs. Imágenes de Adorno</h4>
+<p>En HTML solo debemos colocar con <code>&lt;img /&gt;</code> aquellas imágenes que <strong>aportan valor al contenido</strong> (fotos de un artículo, logotipos, productos). Las imágenes que son meramente decorativas (como fondos de página, texturas o bordes) no aportan nada a Google y se deben agregar mediante <strong>CSS</strong>.</p>
+<hr>
+<h3>📦 Recurso Descargable + 📝 Tarea 4 (Actividad de Moodle): Galería de Imágenes</h3>
+<ul>
+<li><strong>Recurso adjunto en Moodle:</strong> Sube una carpeta <code>.zip</code> con 3 imágenes de diferente tamaño (<code>logo.jpg</code>, <code>paisaje.jpg</code>, <code>icono.png</code>).</li>
+<li><strong>Instrucciones de la Tarea para el alumno:</strong><ol>
+<li>Descarga las imágenes de prueba y guárdalas dentro de una subcarpeta llamada <code>imagenes</code> junto a tu archivo <code>galeria.html</code>.</li>
+<li>Inserta las 3 imágenes usando rutas relativas.</li>
+<li>A cada imagen ajústale un ancho (<code>width</code>) de <code>250</code> sin que pierda su proporción original.</li>
+<li>Agrega a todas las imágenes sus atributos <code>alt</code> y <code>title</code> descriptivos.</li>
+<li>Agrega una cuarta etiqueta <code>&lt;img /&gt;</code> con una ruta inventada que no exista (ej. <code>src=&quot;imagenes/no_existe.jpg&quot;</code>) pero con su atributo <code>alt=&quot;Esta imagen no se encontró, pero el texto alternativo funciona&quot;</code> para comprobar cómo responde el navegador ante un fallo de carga.</li>
+<li>Comprime tu carpeta completa (incluyendo el <code>.html</code> y la carpeta <code>imagenes</code>) en un archivo <code>.zip</code> y súbelo a la plataforma.</li>
+</ol>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-5"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-5">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="1" data-explain="alt=&quot;&quot; evita que las tecnologías de asistencia anuncien un adorno sin información adicional."><fieldset><legend>¿Qué texto alt conviene para una imagen puramente decorativa?</legend><label class="answer"><input type="radio" name="quiz5" value="0" required> <span>Imagen importante</span></label><label class="answer"><input type="radio" name="quiz5" value="1" required> <span>Una cadena vacía: alt=&quot;&quot;</span></label><label class="answer"><input type="radio" name="quiz5" value="2" required> <span>Siempre el nombre del archivo</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="5"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-4" data-go="4" class="button secondary">← Anterior</a><a href="#modulo-6" data-go="6" class="button">Siguiente →</a></nav></section><section id="modulo-6" class="lesson" data-index="6" aria-labelledby="title-6"><header class="lesson-head"><p class="eyebrow">MÓDULO 06 / 09</p><h2 id="title-6" tabindex="-1">Tablas de datos</h2><p>Representa información con filas y encabezados.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>En este módulo aprenderemos a organizar datos estadísticos, horarios o comparativas mediante filas y columnas, aclarando por qué jamás deben usarse las tablas para diseñar la estructura de un sitio web.</p>
+<hr>
+<h3>📖 Lección 6: Uso Correcto y Creación de Tablas</h3>
+<h4>6.1 La polémica de las Tablas: ¿Cuándo usarlas y cuándo NO?</h4>
+<p>Hace muchos años, algunas personas cometían el grave error de construir páginas web enteras dentro de una tabla gigante (usando una columna para el menú y otra columna para el contenido). <strong>Hoy en día, estructurar un sitio web con tablas es una de las peores prácticas que existen.</strong></p>
+<ul>
+<li><strong>❌ Uso Incorrecto:</strong> Maquetar el diseño o las columnas de una página web.</li>
+<li><strong>✅ Uso Correcto:</strong> <strong>Tabular datos</strong>. Es decir, mostrar horarios, listas de precios, estadísticas deportivas, calificaciones o registros financieros.</li>
+</ul>
+<h4>6.2 Etiquetas para construir una Tabla (<code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code> y <code>&lt;td&gt;</code>)</h4>
+<p>Una tabla se construye fila por fila (de arriba hacia abajo) utilizando tres etiquetas:</p>
+<ol>
+<li><strong><code>&lt;table&gt;</code>:</strong> Es el contenedor general que indica que ahí inicia y termina una tabla.</li>
+<li><strong><code>&lt;tr&gt;</code> (<em>Table Row</em>):</strong> Crea una <strong>fila horizontal</strong>.</li>
+<li><strong><code>&lt;td&gt;</code> (<em>Table Data</em>):</strong> Crea cada <strong>columna o celda</strong> dentro de esa fila.</li>
+</ol>
+<p>Veamos cómo construir una tabla de <strong>3 filas por 3 columnas (3x3)</strong>:</p>
+<pre><code class="language-html">&lt;table&gt;
+    &lt;!-- Fila número 1 --&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Elemento #1&lt;/td&gt;
+        &lt;td&gt;Elemento #2&lt;/td&gt;
+        &lt;td&gt;Elemento #3&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;!-- Fila número 2 --&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Elemento #4&lt;/td&gt;
+        &lt;td&gt;Elemento #5&lt;/td&gt;
+        &lt;td&gt;Elemento #6&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;!-- Fila número 3 --&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Elemento #7&lt;/td&gt;
+        &lt;td&gt;Elemento #8&lt;/td&gt;
+        &lt;td&gt;Elemento #9&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+</code></pre>
+<p><em>Nota:</em> usa <code>&lt;th scope=&quot;col&quot;&gt;</code> para encabezados, <code>&lt;caption&gt;</code> para el título de la tabla y <code>&lt;td&gt;</code> para los datos. Los bordes y espacios se controlan con CSS.</p>
+<hr>
+<h3>📝 Tarea 5 (Actividad de Moodle): Tabulando Datos Reales</h3>
+<ul>
+<li><strong>Instrucciones para el alumno:</strong>
+Crea un archivo <code>tabla.html</code> donde construyas una tabla de al menos <strong>4 filas (<code>&lt;tr&gt;</code>) por 3 columnas (<code>&lt;td&gt;</code>)</strong> que muestre un directorio de productos o un horario semanal.<ul>
+<li>La primera fila debe contener los títulos de las columnas (por ejemplo: <em>Producto</em>, <em>Categoría</em>, <em>Precio</em>).</li>
+<li>Las siguientes tres filas deben contener los datos correspondientes de cada producto.</li>
+</ul>
+</li>
+<li><strong>Criterios de calificación (100 pts):</strong><ul>
+<li>Apertura y cierre correcto de <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code> y <code>&lt;td&gt;</code> (60 pts).</li>
+<li>Coherencia entre el número de celdas por cada fila (40 pts).</li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-6"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-6">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="1" data-explain="th identifica la celda de encabezado; scope relaciona ese encabezado con su columna."><fieldset><legend>¿Qué elemento identifica el encabezado de una columna?</legend><label class="answer"><input type="radio" name="quiz6" value="0" required> <span>td</span></label><label class="answer"><input type="radio" name="quiz6" value="1" required> <span>th con scope=&quot;col&quot;</span></label><label class="answer"><input type="radio" name="quiz6" value="2" required> <span>div con texto en negrita</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="6"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-5" data-go="5" class="button secondary">← Anterior</a><a href="#modulo-7" data-go="7" class="button">Siguiente →</a></nav></section><section id="modulo-7" class="lesson" data-index="7" aria-labelledby="title-7"><header class="lesson-head"><p class="eyebrow">MÓDULO 07 / 09</p><h2 id="title-7" tabindex="-1">Formularios</h2><p>Recoge información con controles y etiquetas.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>Los formularios permiten que el usuario interactúe con nuestro sitio web: iniciar sesión, registrarse, realizar búsquedas o enviarnos mensajes. En este módulo dominaremos todos los controles y campos de entrada de HTML y HTML5.</p>
+<hr>
+<h3>📖 Lección 7: Creación de Formularios y Tipos de Inputs</h3>
+<h4>7.1 La etiqueta contenedora <code>&lt;form&gt;</code></h4>
+<p>Todo formulario comienza y termina con la etiqueta <strong><code>&lt;form&gt;</code></strong>. Tiene dos atributos principales que se utilizan cuando conectamos la web con un lenguaje de programación de servidor (como PHP):</p>
+<ul>
+<li><strong><code>action</code>:</strong> Indica el archivo que procesará los datos enviados (ej. <code>datos.php</code>).</li>
+<li><strong><code>method</code>:</strong> Define cómo se enviará la información (<code>POST</code> o <code>GET</code>).</li>
+</ul>
+<pre><code class="language-html">&lt;form action=&quot;datos.php&quot; method=&quot;POST&quot;&gt;
+    &lt;!-- Aquí adentro van todos los inputs y botones --&gt;
+&lt;/form&gt;
+</code></pre>
+<h4>7.2 Campos de Texto (<code>&lt;input type=&quot;text&quot;&gt;</code>) y sus Atributos</h4>
+<p>La etiqueta <code>&lt;input /&gt;</code> (que se cierra sola) cambia completamente de forma según lo que escribamos en su atributo <strong><code>type</code></strong>. Para una caja de texto normal usamos <code>type=&quot;text&quot;</code>:</p>
+<pre><code class="language-html">&lt;input type=&quot;text&quot; placeholder=&quot;Escribe tu nombre&quot; maxlength=&quot;20&quot; name=&quot;nombre&quot; id=&quot;nombre&quot; /&gt;
+</code></pre>
+<p>Atributos esenciales de un <code>&lt;input&gt;</code>:</p>
+<ul>
+<li><strong><code>placeholder</code> (De HTML5):</strong> Muestra un texto guía gris claro dentro de la caja que desaparece automáticamente en cuanto el usuario empieza a escribir. <em>(Mucho más cómodo que el atributo <code>value=&quot;Escribe tu nombre&quot;</code>, el cual obligaba al usuario a borrar el texto manualmente).</em></li>
+<li><strong><code>maxlength</code>:</strong> Limita el número máximo de caracteres que el usuario puede escribir (ej. <code>maxlength=&quot;2&quot;</code> solo deja escribir dos letras).</li>
+<li><strong><code>size</code>:</strong> Cambia el ancho visual de la caja (aunque se recomienda controlar el tamaño con CSS).</li>
+<li><strong><code>name</code>:</strong> Nombre clave con el que el servidor identificará ese dato.</li>
+<li><strong><code>id</code>:</strong> Identificador único en el documento HTML, indispensable para vincularlo con su etiqueta <code>&lt;label&gt;</code>.</li>
+</ul>
+<h4>7.3 La etiqueta <code>&lt;label&gt;</code> y el efecto <em>Focus</em></h4>
+<p>Para indicarle al usuario qué debe escribir en un campo, usamos la etiqueta <strong><code>&lt;label&gt;</code></strong> con su atributo <strong><code>for</code></strong>. Si el valor de <code>for</code> coincide exactamente con el <code>id</code> del <code>&lt;input&gt;</code>, al hacer clic sobre las palabras del texto el cursor se activará automáticamente dentro de la caja de texto (<em>focus</em>):</p>
+<pre><code class="language-html">&lt;label for=&quot;nombre&quot;&gt;Ingrese su nombre:&lt;/label&gt;
+&lt;input type=&quot;text&quot; placeholder=&quot;Escribe tu nombre&quot; name=&quot;nombre&quot; id=&quot;nombre&quot; /&gt;
+</code></pre>
+<h4>7.4 Catálogo de Controles e Inputs en HTML y HTML5</h4>
+<ol>
+<li><p><strong>Contraseña (<code>password</code>) y Correo (<code>email</code>):</strong></p>
+<ul>
+<li><code>type=&quot;password&quot;</code>: Oculta lo que el usuario escribe mostrando puntitos o asteriscos.</li>
+<li><code>type=&quot;email&quot;</code> <em>(HTML5)</em>: Valida automáticamente que el usuario haya escrito un formato de correo válido con <code>@</code> antes de permitir enviar el formulario.</li>
+</ul>
+<pre><code class="language-html">&lt;input type=&quot;password&quot; placeholder=&quot;Contraseña&quot; /&gt;
+&lt;input type=&quot;email&quot; placeholder=&quot;Correo electrónico&quot; /&gt;
+</code></pre>
+</li>
+<li><p><strong>Casillas de Verificación (<code>checkbox</code>) vs. Botones de Opción Única (<code>radio</code>):</strong></p>
+<ul>
+<li><strong><code>checkbox</code>:</strong> Cuadritos que permiten marcar o desmarcar múltiples opciones a la vez.</li>
+<li><strong><code>radio</code>:</strong> Círculos donde el usuario solo debe elegir <strong>una</strong> opción entre varias (por ejemplo, Hombre o Mujer). <em>(Nota técnica: Para que dos botones <code>radio</code> se excluyan entre sí y no dejen marcar ambos al mismo tiempo, ambos deben compartir exactamente el mismo atributo <code>name=&quot;genero&quot;</code>).</em></li>
+</ul>
+<pre><code class="language-html">&lt;!-- Checkbox (selección múltiple) --&gt;
+&lt;input type=&quot;checkbox&quot; name=&quot;terminos&quot; id=&quot;terminos&quot; /&gt; Acepto los términos
+
+&lt;!-- Radio buttons (selección única gracias a que comparten name=&quot;sexo&quot;) --&gt;
+&lt;input type=&quot;radio&quot; name=&quot;sexo&quot; value=&quot;hombre&quot; /&gt; Hombre
+&lt;input type=&quot;radio&quot; name=&quot;sexo&quot; value=&quot;mujer&quot; /&gt; Mujer
+</code></pre>
+</li>
+<li><p><strong>Listas Desplegables (<code>&lt;select&gt;</code> y <code>&lt;option&gt;</code>):</strong>
+Permiten elegir una opción de un menú desplegable (ideal para elegir un país o ciudad):</p>
+<pre><code class="language-html">&lt;select name=&quot;pais&quot; id=&quot;pais&quot;&gt;
+    &lt;option value=&quot;mexico&quot;&gt;México&lt;/option&gt;
+    &lt;option value=&quot;colombia&quot;&gt;Colombia&lt;/option&gt;
+    &lt;option value=&quot;espana&quot;&gt;España&lt;/option&gt;
+&lt;/select&gt;
+</code></pre>
+</li>
+<li><p><strong>Inputs especiales de HTML5 (<code>color</code>, <code>range</code>, etc.):</strong>
+HTML5 introdujo selectores nativos como un selector de color o una barra deslizante de rango:</p>
+<pre><code class="language-html">&lt;input type=&quot;color&quot; /&gt;
+&lt;input type=&quot;range&quot; /&gt;
+</code></pre>
+</li>
+<li><p><strong>Botones (<code>button</code> vs. <code>submit</code>):</strong></p>
+<ul>
+<li><strong><code>type=&quot;button&quot;</code>:</strong> Crea un botón simple que por sí solo no hace nada (se usa para programarle acciones con JavaScript). Su texto se define con <code>value</code>.</li>
+<li><strong><code>type=&quot;submit&quot;</code>:</strong> Es el botón encargado de <strong>enviar los datos del formulario</strong> al servidor indicado en <code>action</code>.</li>
+</ul>
+<pre><code class="language-html">&lt;input type=&quot;button&quot; value=&quot;Botón sin acción&quot; /&gt;
+&lt;input type=&quot;submit&quot; value=&quot;Enviar Formulario&quot; /&gt;
+</code></pre>
+</li>
+</ol>
+<hr>
+<h3>📝 Tarea 6 (Actividad de Moodle): Formulario Completo de Registro</h3>
+<ul>
+<li><strong>Instrucciones para el alumno:</strong>
+Crea un archivo llamado <code>formulario.html</code> que contenga un formulario de registro de usuario con los siguientes elementos separados ordenadamente con saltos de línea <code>&lt;br /&gt;&lt;br /&gt;</code>:<ol>
+<li>Un <code>&lt;label&gt;</code> vinculado mediante <code>for</code> e <code>id</code> a un <code>&lt;input type=&quot;text&quot;&gt;</code> para el Nombre Completo (con <code>placeholder</code> y <code>maxlength=&quot;40&quot;</code>).</li>
+<li>Un campo para Correo Electrónico (<code>type=&quot;email&quot;</code>) y otro para Contraseña (<code>type=&quot;password&quot;</code>), cada uno con su <code>&lt;label&gt;</code>.</li>
+<li>Tres opciones de <code>type=&quot;radio&quot;</code> para elegir &quot;Nivel de conocimientos en HTML&quot; (<em>Principiante</em>, <em>Intermedio</em>, <em>Avanzado</em>) asegurándote de que solo se pueda marcar uno a la vez.</li>
+<li>Una lista desplegable <code>&lt;select&gt;</code> con al menos 4 países (<code>&lt;option&gt;</code>).</li>
+<li>Una casilla <code>type=&quot;checkbox&quot;</code> para &quot;Deseo recibir el boletín de noticias&quot;.</li>
+<li>Un botón de envío <code>type=&quot;submit&quot;</code> con el texto &quot;Registrarme ahora&quot;.</li>
+</ol>
+</li>
+<li><strong>Criterios de calificación (100 pts):</strong><ul>
+<li>Vinculación funcional de <code>&lt;label for=&quot;...&quot;&gt;</code> con <code>&lt;input id=&quot;...&quot;&gt;</code> (25 pts).</li>
+<li>Uso correcto de <code>text</code>, <code>email</code>, <code>password</code> y <code>placeholder</code> (25 pts).</li>
+<li>Configuración correcta de <code>radio</code>, <code>checkbox</code> y lista <code>&lt;select&gt;</code> (30 pts).</li>
+<li>Inclusión del contenedor <code>&lt;form&gt;</code> y botón <code>submit</code> (20 pts).</li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-7"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-7">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="1" data-explain="Una etiqueta asociada permite identificar y activar el control; placeholder no la sustituye."><fieldset><legend>¿Cómo relacionas una etiqueta label con un campo?</legend><label class="answer"><input type="radio" name="quiz7" value="0" required> <span>Con el mismo color</span></label><label class="answer"><input type="radio" name="quiz7" value="1" required> <span>Haciendo coincidir for del label con id del campo</span></label><label class="answer"><input type="radio" name="quiz7" value="2" required> <span>Añadiendo solo placeholder</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="7"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-6" data-go="6" class="button secondary">← Anterior</a><a href="#modulo-8" data-go="8" class="button">Siguiente →</a></nav></section><section id="modulo-8" class="lesson" data-index="8" aria-labelledby="title-8"><header class="lesson-head"><p class="eyebrow">MÓDULO 08 / 09</p><h2 id="title-8" tabindex="-1">Estructura semántica</h2><p>Construye páginas con regiones claras.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>¡Llegamos al corazón de la arquitectura web! En este módulo aprenderemos a armar el esqueleto completo de un sitio web profesional (Encabezado, Menú, Contenido Principal, Barra Lateral y Pie de Página) utilizando las etiquetas semánticas de HTML5.</p>
+<hr>
+<h3>📖 Lección 8: Creando el Layout de un Sitio Web Completo</h3>
+<h4>8.1 De la era de los <code>&lt;div&gt;</code> al HTML5 Semántico</h4>
+<p>Un sitio web estándar se divide en grandes bloques:</p>
+<ol>
+<li><strong>Header (Encabezado):</strong> Arriba, con el logotipo y el menú de navegación.</li>
+<li><strong>Contenedor Principal (Wrapper / Main):</strong> En el centro, dividido en la columna de <strong>Artículos principales</strong> a la izquierda y una columna secundaria o <strong>Sidebar (Barra lateral)</strong> a la derecha.</li>
+<li><strong>Footer (Pie de página):</strong> Abajo, con los derechos de autor e información final.</li>
+</ol>
+<p><strong>¿Para qué sirve la etiqueta <code>&lt;div&gt;</code> hoy en día?</strong><br>La etiqueta <code>&lt;div&gt;</code> es un contenedor genérico sin ningún valor visual ni semántico. Antes de HTML5, los programadores usaban <code>&lt;div&gt;</code> para absolutamente todo (<code>&lt;div id=&quot;header&quot;&gt;</code>, <code>&lt;div id=&quot;menu&quot;&gt;</code>, <code>&lt;div id=&quot;footer&quot;&gt;</code>).<br>Hoy en día <strong>ya no se hace así</strong>. Actualmente, el <code>&lt;div&gt;</code> se reserva únicamente para agrupar <strong>elementos gráficos o de diseño</strong> que no tienen relevancia semántica para el buscador (por ejemplo, envolver la etiqueta <code>&lt;img /&gt;</code> del logotipo o un video).</p>
+<h4>8.2 Las Etiquetas Semánticas de Estructura en HTML5</h4>
+<p>Para que Google entienda perfectamente qué parte de nuestra página es el menú, cuál es el contenido importante y cuál es publicidad secundaria, utilizamos estas etiquetas:</p>
+<ul>
+<li><strong><code>&lt;header&gt;</code>:</strong> Define el encabezado visible de nuestra página web. <em>(No confundir con <code>&lt;head&gt;</code>, que es invisible).</em></li>
+<li><strong><code>&lt;nav&gt;</code>:</strong> Le indica a Google que la lista <code>&lt;ul&gt;</code> que está adentro es el <strong>menú de navegación principal</strong> del sitio.</li>
+<li><strong><code>&lt;section&gt;</code>:</strong> Define una sección genérica o agrupador de bloques (por ejemplo, <code>&lt;section class=&quot;wrapper&quot;&gt;</code> para encerrar el centro de la página, o <code>&lt;section class=&quot;main&quot;&gt;</code> para encerrar la zona de artículos).</li>
+<li><strong><code>&lt;article&gt;</code>:</strong> representa contenido autónomo que puede distribuirse de forma independiente, como una noticia o publicación. No recibe prioridad automática en un buscador.</li>
+<li><strong><code>&lt;aside&gt;</code>:</strong> Representa el <em>Sidebar</em> o barra lateral (&quot;hacia un lado / fuera&quot;). Le dice al buscador que ese contenido es <strong>secundario</strong> (publicidad, enlaces relacionados, biografía corta), útil para el usuario pero no relevante para el tema central de búsqueda.</li>
+<li><strong><code>&lt;footer&gt;</code>:</strong> Define el pie de página del sitio web (créditos, derechos reservados).</li>
+</ul>
+<h4>8.3 Código Completo de la Estructura de un Sitio Web (En ~60 líneas)</h4>
+<p>Observa qué limpio y legible queda un sitio web completo combinando todo lo aprendido:</p>
+<pre><code class="language-html">&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Estructura Completa de un Sitio Web&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+    &lt;!-- 1. ENCABEZADO DEL SITIO --&gt;
+    &lt;header&gt;
+        &lt;div&gt;
+            &lt;img src=&quot;imagenes/logo.jpg&quot; width=&quot;70&quot; alt=&quot;Logotipo del Sitio&quot; /&gt;
+        &lt;/div&gt;
+        &lt;nav&gt;
+            &lt;ul&gt;
+                &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Inicio&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Categoría 1&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Categoría 2&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;!-- 2. CONTENEDOR CENTRAL (CONTENIDO PRINCIPAL + BARRA LATERAL) --&gt;
+    &lt;section class=&quot;wrapper&quot;&gt;
+        
+        &lt;!-- Sección de Artículos Principales --&gt;
+        &lt;section class=&quot;main&quot;&gt;
+            &lt;article&gt;
+                &lt;h2&gt;Título de nuestro Primer Artículo&lt;/h2&gt;
+                &lt;p&gt;
+                    Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
+                    Este es el contenido de una publicación autónoma.
+                &lt;/p&gt;
+            &lt;/article&gt;
+
+            &lt;article&gt;
+                &lt;h2&gt;Título de nuestro Segundo Artículo&lt;/h2&gt;
+                &lt;p&gt;
+                    Podemos duplicar la etiqueta article tantas veces como publicaciones 
+                    tengamos en nuestro blog o página web.
+                &lt;/p&gt;
+            &lt;/article&gt;
+        &lt;/section&gt;
+
+        &lt;!-- Barra Lateral Secundaria (Sidebar) --&gt;
+        &lt;aside&gt;
+            &lt;h3&gt;Sidebar / Contenido Secundario&lt;/h3&gt;
+            &lt;p&gt;
+                Aquí suele ir información secundaria, widgets, publicidad o enlaces 
+                complementarios para el usuario.
+            &lt;/p&gt;
+        &lt;/aside&gt;
+
+    &lt;/section&gt;
+
+    &lt;!-- 3. PIE DE PÁGINA --&gt;
+    &lt;footer&gt;
+        &lt;p&gt;Carlos Arturo - FalconMasters. Todos los derechos reservados.&lt;/p&gt;
+    &lt;/footer&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p><em>(Recuerda: En el navegador, esta estructura se verá de arriba hacia abajo en una sola columna blanca. Pero gracias a que tiene esta estructura semántica con sus clases <code>wrapper</code> y <code>main</code>, al conectarle una hoja de estilos <strong>CSS</strong> se transforma instantáneamente en un sitio con diseño de columnas, colores y tipografías).</em></p>
+<hr>
+<h3>📝 Tarea 7 (Actividad de Moodle): Maquetación de Layout Semántico</h3>
+<ul>
+<li><strong>Instrucciones para el alumno:</strong>
+Reproduce y personaliza la estructura semántica completa en un archivo <code>estructura.html</code>:<ol>
+<li>Incluye el <code>&lt;header&gt;</code> con un <code>&lt;div&gt;</code> para tu imagen de logotipo y un <code>&lt;nav&gt;</code> con una lista de 4 enlaces.</li>
+<li>Crea el <code>&lt;section class=&quot;wrapper&quot;&gt;</code> que contenga adentro un <code>&lt;section class=&quot;main&quot;&gt;</code> y un <code>&lt;aside&gt;</code>.</li>
+<li>Dentro de <code>main</code>, coloca un título principal <code>&lt;h1&gt;</code> para la sección de noticias y <strong>dos etiquetas <code>&lt;article&gt;</code></strong>, cada una con su propio subtítulo <code>&lt;h2&gt;</code> y dos párrafos <code>&lt;p&gt;</code>.</li>
+<li>Dentro del <code>&lt;aside&gt;</code>, coloca un subtítulo <code>&lt;h3&gt;</code> y un párrafo descriptivo sobre el autor del sitio.</li>
+<li>Cierra con un <code>&lt;footer&gt;</code> que tenga tu nombre y el año actual.</li>
+</ol>
+</li>
+<li><strong>Criterios de calificación (100 pts):</strong><ul>
+<li>Uso correcto de <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code> y <code>&lt;div&gt;</code> para el logo (25 pts).</li>
+<li>Anidación correcta de <code>&lt;section class=&quot;wrapper&quot;&gt;</code>, <code>&lt;section class=&quot;main&quot;&gt;</code> y <code>&lt;article&gt;</code> (40 pts).</li>
+<li>Uso de <code>&lt;aside&gt;</code> y <code>&lt;footer&gt;</code> antes del cierre de <code>&lt;/body&gt;</code> (25 pts).</li>
+<li>Respeto de la jerarquía de encabezados (<code>h1</code>, <code>h2</code>, <code>h3</code>) (10 pts).</li>
+</ul>
+</li>
+</ul>
+<hr>
+<hr>
+</div><section class="practice" aria-labelledby="practice-title-8"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-8">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="0" data-explain="main identifica el contenido principal. article se utiliza para unidades autónomas."><fieldset><legend>¿Qué región contiene el contenido dominante de la página?</legend><label class="answer"><input type="radio" name="quiz8" value="0" required> <span>main</span></label><label class="answer"><input type="radio" name="quiz8" value="1" required> <span>aside</span></label><label class="answer"><input type="radio" name="quiz8" value="2" required> <span>footer</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="8"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-7" data-go="7" class="button secondary">← Anterior</a><a href="#modulo-9" data-go="9" class="button">Siguiente →</a></nav></section><section id="modulo-9" class="lesson" data-index="9" aria-labelledby="title-9"><header class="lesson-head"><p class="eyebrow">MÓDULO 09 / 09</p><h2 id="title-9" tabindex="-1">Metadatos, CSS y JS</h2><p>Completa el documento y enlaza sus recursos.</p></header><div class="reading"><h3>📌 Resumen del Tema en Moodle:</h3>
+<p>En este último módulo daremos el toque final a nuestro código: aprenderemos a configurar los metadatos dentro de <code>&lt;head&gt;</code> para mejorar el posicionamiento en Google y dejaremos lista la conexión con hojas de estilo CSS y archivos JavaScript.</p>
+<hr>
+<h3>📖 Lección 9: Etiquetas <code>&lt;meta /&gt;</code>, <code>&lt;link /&gt;</code> y <code>&lt;script&gt;</code></h3>
+<h4>9.1 ¿Qué son los Metadatos (<code>&lt;meta /&gt;</code>)?</h4>
+<p>Los metadatos son etiquetas que se escriben exclusivamente dentro de <strong><code>&lt;head&gt;</code></strong> y se cierran por sí solas (<code>&lt;meta /&gt;</code>). Sirven para entregar información técnica y de resumen a los navegadores y buscadores. Sus dos atributos principales son <strong><code>name</code></strong> (el tipo de metadato) y <strong><code>content</code></strong> (el valor o información):</p>
+<ol>
+<li><strong><code>meta description</code> (Esencial para Google):</strong><br>Es el resumen de qué trata tu sitio web. Puede usarse como resumen en resultados de búsqueda; el buscador también puede seleccionar otro fragmento. No existe una longitud obligatoria para HTML.<ul>
+<li><strong>Orientación para esta práctica:</strong> Puedes redactar entre <strong>150 y 170 caracteres</strong> (ni muy corto ni un párrafo enorme).</li>
+</ul>
+<pre><code class="language-html">&lt;meta name=&quot;description&quot; content=&quot;Aprende diseño y desarrollo web desde cero con tutoriales prácticos de HTML, CSS y JavaScript.&quot; /&gt;
+</code></pre>
+</li>
+<li><strong><code>meta keywords</code> (Palabras clave):</strong><br>Aquí se colocan palabras clave separadas por comas sobre la temática de tu sitio.<ul>
+<li><em>Nota actual:</em> <strong>Google ya no toma en cuenta los <code>meta keywords</code></strong> para posicionar (porque antes la gente abusaba de ellos), y hoy se enfoca en la <code>description</code> y en el contenido real de tus <code>&lt;article&gt;</code>. No es necesario incluirlas en un proyecto moderno; se presentan solo como referencia histórica:</li>
+</ul>
+<pre><code class="language-html">&lt;meta name=&quot;keywords&quot; content=&quot;diseño, desarrollo, páginas web, html, tutoriales&quot; /&gt;
+</code></pre>
+<p><em>(Nota adicional recomendada: También es muy común incluir <code>&lt;meta charset=&quot;UTF-8&quot; /&gt;</code> para que el navegador reconozca tildes y la letra &quot;ñ&quot; sin problemas).</em></p>
+</li>
+</ol>
+<h4>9.2 Cómo enlazar una Hoja de Estilos CSS (<code>&lt;link /&gt;</code>)</h4>
+<p>Para darle color, diseño y acomodar nuestro HTML sin ensuciar el documento, creamos un archivo aparte (por ejemplo, <code>estilos.css</code> o dentro de una carpeta <code>css/estilos.css</code>) y lo enlazamos dentro del <code>&lt;head&gt;</code> con la etiqueta <code>&lt;link /&gt;</code>:</p>
+<pre><code class="language-html">&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;css/estilos.css&quot; /&gt;
+</code></pre>
+<ul>
+<li><strong><code>rel=&quot;stylesheet&quot;</code>:</strong> Indica que estamos vinculando una hoja de estilos en cascada.</li>
+<li><strong><code>type=&quot;text/css&quot;</code>:</strong> Atributo opcional (obligatorio en versiones antiguas, opcional en HTML5).</li>
+<li><strong><code>href=&quot;...&quot;</code>:</strong> La ruta relativa (o absoluta) hacia nuestro archivo <code>.css</code>. <em>(Si al enlazarlo no ves cambios, verifica que el nombre del archivo y la carpeta estén bien escritos).</em></li>
+</ul>
+<h4>9.3 Cómo agregar o importar código JavaScript (<code>&lt;script&gt;</code>)</h4>
+<p>Para agregar dinamismo con JavaScript utilizamos la etiqueta <strong><code>&lt;script&gt;&lt;/script&gt;</code></strong> (esta etiqueta <strong>sí debe cerrarse siempre</strong> con <code>&lt;/script&gt;</code>). Existen dos formas de usarla:</p>
+<ol>
+<li><strong>Escribir código directamente adentro (No es lo más recomendado para proyectos grandes):</strong><pre><code class="language-html">&lt;script type=&quot;text/javascript&quot;&gt;
+    alert(&quot;Hola desde JavaScript&quot;);
+&lt;/script&gt;
+</code></pre>
+</li>
+<li><strong>Importar un archivo externo <code>.js</code> mediante el atributo <code>src</code> (La mejor práctica para no ensuciar el HTML):</strong><pre><code class="language-html">&lt;script type=&quot;text/javascript&quot; src=&quot;javascript.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+</li>
+</ol>
+<hr>
+<h3>Repaso del módulo</h3>
+<p>Utiliza las preguntas de autoevaluación al final de esta lección. Las evaluaciones oficiales se realizan en Moodle.</p>
+</div><section class="practice" aria-labelledby="practice-title-9"><p class="eyebrow">REPASA LO APRENDIDO</p><h3 id="practice-title-9">Comprueba tu comprensión</h3><form class="quickquiz" data-correct="0" data-explain="El enlace CSS usa href. Un script externo usa src y conserva su etiqueta de cierre."><fieldset><legend>¿Qué pareja enlaza correctamente CSS y JavaScript externos?</legend><label class="answer"><input type="radio" name="quiz9" value="0" required> <span>link con href y script con src</span></label><label class="answer"><input type="radio" name="quiz9" value="1" required> <span>link con src y script con href</span></label><label class="answer"><input type="radio" name="quiz9" value="2" required> <span>Ambos se importan con img</span></label></fieldset><button type="submit">Comprobar respuesta</button><p class="feedback" role="status"></p></form></section><section class="complete"><label><input type="checkbox" class="read-check" data-module="9"> Marcar esta lectura como revisada</label><p>Es una marca personal de esta sesión; no acredita una actividad ni envía una calificación a Moodle.</p></section><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-8" data-go="8" class="button secondary">← Anterior</a><a href="#modulo-10" data-go="10" class="button">Siguiente →</a></nav></section><section id="modulo-10" class="lesson" data-index="10" aria-labelledby="title-10"><header class="lesson-head"><p class="eyebrow">CIERRE DEL CURSO</p><h2 id="title-10" tabindex="-1">Proyecto final</h2><p>Reúne lo aprendido en un sitio de dos páginas.</p></header><div class="reading"><h3>📌 Configuración de la Actividad Tarea / Taller en Moodle:</h3>
+<p><strong>Título:</strong> Proyecto Final: Creación de un Sitio Web Multipágina en HTML5<br><strong>Peso sugerido en la calificación final del curso:</strong> 40% (60% tareas y cuestionarios previos).</p>
+<h4>📋 Instrucciones detalladas para el estudiante:</h4>
+<p>¡Felicidades por llegar al final del curso! Para demostrar todo lo aprendido en los 9 módulos, construirás la estructura completa de un sitio web compuesto por <strong>dos páginas HTML conectadas entre sí</strong> (<code>index.html</code> y <code>contacto.html</code>) y una carpeta de imágenes (<code>imagenes/</code>).</p>
+<p><strong>Requisitos de la Página Principal (<code>index.html</code>):</strong></p>
+<ol>
+<li><strong>Cabecera (<code>&lt;head&gt;</code>):</strong><ul>
+<li>Etiqueta <code>&lt;title&gt;</code> personalizada.</li>
+<li>Metadato <code>&lt;meta name=&quot;description&quot; ... /&gt;</code> redactado entre 150 y 170 caracteres.</li>
+<li>Metadato <code>&lt;meta name=&quot;keywords&quot; ... /&gt;</code>.</li>
+<li>Enlace a un icono <code>&lt;link rel=&quot;shortcut icon&quot; href=&quot;imagenes/favicon.ico&quot; /&gt;</code>.</li>
+<li>Comentario HTML dejando listo el <code>&lt;link rel=&quot;stylesheet&quot; href=&quot;css/estilos.css&quot; /&gt;</code> para tu próximo curso de CSS.</li>
+</ul>
+</li>
+<li><strong>Encabezado (<code>&lt;header&gt;</code>):</strong><ul>
+<li>Un <code>&lt;div&gt;</code> con el logotipo del sitio (<code>&lt;img /&gt;</code> con ruta relativa, <code>width</code>, <code>alt</code> y <code>title</code>).</li>
+<li>Un menú de navegación <code>&lt;nav&gt;</code> con una lista <code>&lt;ul&gt;</code> que tenga enlaces funcionales hacia <code>index.html</code> (&quot;Inicio&quot;), <code>contacto.html</code> (&quot;Contacto&quot;) y un enlace externo con <code>target=&quot;_blank&quot;</code>.</li>
+</ul>
+</li>
+<li><strong>Contenido Central (<code>&lt;section class=&quot;wrapper&quot;&gt;</code>):</strong><ul>
+<li>Una sección <code>&lt;section class=&quot;main&quot;&gt;</code> con un título <code>&lt;h1&gt;</code> general y <strong>dos <code>&lt;article&gt;</code></strong>:<ul>
+<li>El <strong>Primer Artículo</strong> debe incluir un subtítulo <code>&lt;h2&gt;</code>, dos párrafos <code>&lt;p&gt;</code> (usando <code>&lt;strong&gt;</code>, <code>&lt;b&gt;</code> e <code>&lt;i&gt;</code>), una imagen alusiva y una cita con <code>&lt;blockquote&gt;</code> y <code>&lt;cite&gt;</code>.</li>
+<li>El <strong>Segundo Artículo</strong> debe incluir un subtítulo <code>&lt;h2&gt;</code>, una lista ordenada <code>&lt;ol&gt;</code> y una <strong>tabla (<code>&lt;table&gt;</code>) de 3x3</strong> con datos sobre el tema de tu web.</li>
+</ul>
+</li>
+<li>Una barra lateral <code>&lt;aside&gt;</code> con un subtítulo <code>&lt;h3&gt;</code>, un párrafo sobre ti y una lista desordenada <code>&lt;ul&gt;</code> de temas relacionados.</li>
+</ul>
+</li>
+<li><strong>Pie de página (<code>&lt;footer&gt;</code>):</strong><ul>
+<li>Párrafo con tus créditos y derechos reservados.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Requisitos de la Página de Contacto (<code>contacto.html</code>):</strong></p>
+<ol>
+<li>Debe mantener exactamente el mismo <code>&lt;head&gt;</code>, <code>&lt;header&gt;</code> (con el menú funcional para poder regresar a <code>index.html</code>) y <code>&lt;footer&gt;</code>.</li>
+<li>En su sección principal debe contener un <strong>Formulario de Contacto (<code>&lt;form&gt;</code>)</strong> completo con:<ul>
+<li>Campo de Nombre (<code>type=&quot;text&quot;</code>), Correo (<code>type=&quot;email&quot;</code>) y Teléfono/Asunto, todos con sus respectivos <code>&lt;label for=&quot;...&quot;&gt;</code> y <code>placeholder</code>.</li>
+<li>Botones <code>type=&quot;radio&quot;</code> para calificar el sitio.</li>
+<li>Menú desplegable <code>&lt;select&gt;</code> con <code>&lt;option&gt;</code> para seleccionar el motivo del mensaje.</li>
+<li>Casilla <code>type=&quot;checkbox&quot;</code> de aceptación.</li>
+<li>Botón <code>type=&quot;submit&quot;</code> para enviar.</li>
+</ul>
+</li>
+</ol>
+<p>📦 <strong>Formato de entrega:</strong> Comprime tu carpeta del proyecto (que contiene <code>index.html</code>, <code>contacto.html</code> y la carpeta <code>imagenes/</code>) en un archivo <strong><code>.zip</code></strong> y súbelo en esta actividad.</p>
+<hr>
+<h3>📊 Rúbrica de Evaluación para configurar en Moodle (100 Puntos)</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Criterio</th>
+<th align="left">Excelente (Puntaje Máximo)</th>
+<th align="left">En Desarrollo (Puntaje Medio)</th>
+<th align="left">Insuficiente (0 Puntos)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>1. Cabecera y Metadatos (15 pts)</strong></td>
+<td align="left">Incluye <code>&lt;title&gt;</code>, <code>favicon</code>, <code>meta description</code> (150-170 caracteres) y enlaces en <code>&lt;head&gt;</code> correctamente (15 pts).</td>
+<td align="left">Faltan algunos metadatos o la descripción excede/no alcanza la longitud recomendada (8 pts).</td>
+<td align="left">No incluye <code>&lt;head&gt;</code> o carece por completo de metadatos (0 pts).</td>
+</tr>
+<tr>
+<td align="left"><strong>2. Estructura Semántica HTML5 (25 pts)</strong></td>
+<td align="left">Utiliza impecablemente <code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;aside&gt;</code> y <code>&lt;footer&gt;</code>, reservando <code>&lt;div&gt;</code> solo para imágenes (25 pts).</td>
+<td align="left">Mezcla algunas etiquetas semánticas pero abusa de <code>&lt;div&gt;</code> o anida mal el <code>aside</code>/<code>article</code> (12 pts).</td>
+<td align="left">No usa etiquetas semánticas de HTML5 o estructura el sitio con tablas (0 pts).</td>
+</tr>
+<tr>
+<td align="left"><strong>3. Textos, Listas y Tablas (20 pts)</strong></td>
+<td align="left">Respeta el uso de un único <code>&lt;h1&gt;</code> por página, aplica <code>p</code>, <code>strong</code>, <code>blockquote</code>, <code>cite</code>, listas <code>ul</code>/<code>ol</code> y una <code>table</code> de 3x3 bien formada (20 pts).</td>
+<td align="left">Usa múltiples <code>&lt;h1&gt;</code> por página o presenta errores al cerrar filas <code>&lt;tr&gt;</code> y celdas <code>&lt;td&gt;</code> (10 pts).</td>
+<td align="left">Deja texto suelto sin etiquetas <code>&lt;p&gt;</code> y no incluye tablas ni listas (0 pts).</td>
+</tr>
+<tr>
+<td align="left"><strong>4. Enlaces e Imágenes (15 pts)</strong></td>
+<td align="left">Todas las imágenes y páginas usan rutas relativas funcionales, <code>target=&quot;_blank&quot;</code> en links externos y atributos <code>alt</code>, <code>title</code> y <code>width</code> proporcional (15 pts).</td>
+<td align="left">Las imágenes se deforman por usar <code>width</code> y <code>height</code> desproporcionados o no tienen atributo <code>alt</code> (8 pts).</td>
+<td align="left">Las rutas están rotas (apuntan al disco duro local <code>C:\...</code>) o no cargan (0 pts).</td>
+</tr>
+<tr>
+<td align="left"><strong>5. Formulario Interactivo (25 pts)</strong></td>
+<td align="left">El formulario en <code>contacto.html</code> integra <code>label</code> vinculados con <code>id</code>, <code>text</code>, <code>email</code>, <code>radio</code> agrupados, <code>select</code> y <code>submit</code> (25 pts).</td>
+<td align="left">El formulario se muestra pero los <code>&lt;label&gt;</code> no hacen <em>focus</em> o los <code>radio</code> permiten selección múltiple por no compartir <code>name</code> (12 pts).</td>
+<td align="left">No incluye la página <code>contacto.html</code> ni el formulario (0 pts).</td>
+</tr>
+</tbody></table>
+</div><nav class="lesson-pager" aria-label="Navegación de lecciones"><a href="#modulo-9" data-go="9" class="button secondary">← Anterior</a><a href="#laboratorio" class="button">Abrir laboratorio</a></nav></section><section class="lab" id="laboratorio" aria-labelledby="labtitle"><p class="eyebrow">APRENDER HACIENDO</p><h2 id="labtitle">Laboratorio HTML</h2><p>Edita un ejemplo, observa su estructura y descarga tu práctica para continuar en tu editor.</p><p class="notice">Usa datos ficticios. Esta vista previa no ejecuta JavaScript, no carga archivos externos y no envía formularios. Las imágenes con rutas locales se verán cuando abras tu proyecto con sus archivos.</p><label for="example">Ejemplo de partida</label><select id="example"><option value="0">1. Fundamentos de HTML</option><option value="1">2. Texto y semántica</option><option value="2">3. Enlaces y rutas</option><option value="3">4. Listas y navegación</option><option value="4">5. Imágenes accesibles</option><option value="5">6. Tablas de datos</option><option value="6">7. Formularios</option><option value="7">8. Estructura semántica</option><option value="8">9. Metadatos, CSS y JS</option></select><label for="editor">Tu código HTML</label><textarea id="editor" spellcheck="false" autocomplete="off" aria-describedby="lab-status"></textarea><div class="tools"><button id="run" type="button">Ver resultado</button><button id="download" type="button" class="secondary">Descargar mi HTML</button><button id="reset" type="button" class="secondary">Restablecer ejemplo</button></div><p id="lab-status" class="status" role="status"></p><iframe id="preview" class="preview" sandbox="" title="Vista previa aislada del código HTML" referrerpolicy="no-referrer"></iframe></section><section class="resources" id="referencias"><p class="eyebrow">SIGUE EXPLORANDO</p><h2>Documentación de consulta</h2><ul><li><a href="https://developer.mozilla.org/es/docs/Web/HTML" target="_blank" rel="noopener noreferrer">MDN: guía y referencia de HTML</a></li><li><a href="https://html.spec.whatwg.org/multipage/" target="_blank" rel="noopener noreferrer">WHATWG: HTML Living Standard</a></li><li><a href="https://validator.w3.org/nu/" target="_blank" rel="noopener noreferrer">Nu HTML Checker: revisa tu documento HTML</a></li></ul><p class="notice">Este material desarrolla la guía de nueve módulos proporcionada por el equipo. Se actualizaron explicaciones sobre elementos vacíos, semántica, citas y posicionamiento. Las tareas, foros, matrículas, evaluaciones y su acreditación se gestionan en Moodle.</p></section></main></div><footer class="sitefoot">I²NICIA · Campus Virtual · HTML básico desde cero</footer><script>
+(()=>{'use strict';document.documentElement.classList.add('js');const lessons=[...document.querySelectorAll('.lesson')];const nav=[...document.querySelectorAll('.sidebar [data-go]')];
+function show(n,focus=false){n=Math.max(0,Math.min(10,n));lessons.forEach((s,i)=>s.hidden=i!==n);nav.forEach((a,i)=>{if(i===n)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current')});if(focus){document.querySelector('#title-'+n).focus();document.querySelector('#modulo-'+n).scrollIntoView({block:'start'})}}
+function sync(){const m=location.hash.match(/^#modulo-(\d+)$/);if(m)show(Number(m[1]));}show(0);sync();window.addEventListener('hashchange',sync);
+document.querySelectorAll('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const n=Number(a.dataset.go);history.replaceState(null,'','#modulo-'+n);show(n,true)}));
+document.querySelectorAll('.read-check').forEach(c=>c.addEventListener('change',()=>{const n=document.querySelectorAll('.read-check:checked').length;document.querySelector('#progress').value=n;document.querySelector('#progress-text').textContent=n+' de 9 lecturas revisadas';nav.forEach((a,i)=>{const checkbox=document.querySelector('.read-check[data-module="'+i+'"]');a.querySelector('.stepnum').textContent=checkbox&&checkbox.checked?'✓':i===0?'IN':i===10?'FIN':String(i).padStart(2,'0')})}));
+document.querySelectorAll('.quickquiz').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();const selected=form.querySelector('input:checked');if(!selected)return;const correct=Number(selected.value)===Number(form.dataset.correct);form.querySelector('.feedback').textContent=(correct?'Correcto. ':'Revisa tu respuesta. ')+form.dataset.explain}));
+document.querySelectorAll('.reading table').forEach(t=>{const d=document.createElement('div');d.className='table-wrap';t.before(d);d.append(t)});
+document.querySelectorAll('.reading pre').forEach(pre=>{const b=document.createElement('button');b.type='button';b.className='copy-code';b.textContent='Copiar ejemplo';pre.after(b);b.addEventListener('click',async()=>{try{if(!navigator.clipboard)throw new Error();await navigator.clipboard.writeText(pre.textContent);b.textContent='Ejemplo copiado'}catch{const selection=window.getSelection();const range=document.createRange();range.selectNodeContents(pre);selection.removeAllRanges();selection.addRange(range);b.textContent='Código seleccionado: presiona Ctrl+C'}})});
+const seeds=["\u003c!doctype html>\n\u003chtml lang=\"es\">\n\u003chead>\n  \u003cmeta charset=\"UTF-8\">\n  \u003ctitle>Mi primera página\u003c/title>\n\u003c/head>\n\u003cbody>\n  \u003ch1>Hola, mundo\u003c/h1>\n  \u003cp>Estoy aprendiendo HTML.\u003c/p>\n\u003c/body>\n\u003c/html>","\u003ch1>Mi artículo\u003c/h1>\n\u003ch2>Una idea importante\u003c/h2>\n\u003cp>Aprender requiere \u003cstrong>práctica constante\u003c/strong>.\u003c/p>\n\u003cblockquote>\u003cp>Una reflexión sobre aprender.\u003c/p>\u003c/blockquote>\n\u003cp>Fuente: \u003ccite>Mi diario de estudio\u003c/cite>.\u003c/p>","\u003ch1>Enlaces de mi sitio\u003c/h1>\n\u003cp>\u003ca href=\"#contacto\">Ir a contacto\u003c/a>\u003c/p>\n\u003csection id=\"contacto\">\n  \u003ch2>Contacto\u003c/h2>\n  \u003cp>Aquí irá mi información de contacto.\u003c/p>\n\u003c/section>","\u003cnav aria-label=\"Principal\">\n  \u003cul>\n    \u003cli>\u003ca href=\"#inicio\">Inicio\u003c/a>\u003c/li>\n    \u003cli>Cursos\n      \u003cul>\u003cli>HTML básico\u003c/li>\u003cli>CSS básico\u003c/li>\u003c/ul>\n    \u003c/li>\n  \u003c/ul>\n\u003c/nav>\n\u003ch1 id=\"inicio\">Mi ruta de aprendizaje\u003c/h1>\n\u003col>\u003cli>Leer\u003c/li>\u003cli>Practicar\u003c/li>\u003cli>Revisar\u003c/li>\u003c/ol>","\u003ch1>Galería accesible\u003c/h1>\n\u003c!-- En tu proyecto real crea la carpeta imagenes. -->\n\u003cimg src=\"imagenes/paisaje.jpg\" alt=\"Montañas al amanecer\" width=\"300\">\n\u003cp>Si la imagen no está disponible, revisa su alternativa de texto.\u003c/p>","\u003ctable>\n  \u003ccaption>Mi horario de estudio\u003c/caption>\n  \u003cthead>\u003ctr>\u003cth scope=\"col\">Día\u003c/th>\u003cth scope=\"col\">Tema\u003c/th>\u003c/tr>\u003c/thead>\n  \u003ctbody>\n    \u003ctr>\u003ctd>Lunes\u003c/td>\u003ctd>HTML\u003c/td>\u003c/tr>\n    \u003ctr>\u003ctd>Martes\u003c/td>\u003ctd>Accesibilidad\u003c/td>\u003c/tr>\n  \u003c/tbody>\n\u003c/table>","\u003ch1>Formulario de práctica\u003c/h1>\n\u003cform>\n  \u003cp>\u003clabel for=\"nombre\">Nombre\u003c/label>\n  \u003cinput id=\"nombre\" name=\"nombre\" required>\u003c/p>\n  \u003cp>\u003clabel for=\"correo\">Correo\u003c/label>\n  \u003cinput id=\"correo\" name=\"correo\" type=\"email\" required>\u003c/p>\n  \u003cbutton type=\"submit\">Enviar\u003c/button>\n\u003c/form>\n\u003cp>Esta vista previa no envía datos. Usa información ficticia.\u003c/p>","\u003cheader>\u003cp>Mi sitio académico\u003c/p>\u003c/header>\n\u003cnav aria-label=\"Principal\">\u003ca href=\"#contenido\">Contenido\u003c/a>\u003c/nav>\n\u003cmain id=\"contenido\">\n  \u003ch1>Noticias del campus\u003c/h1>\n  \u003carticle>\u003ch2>Aprendemos creando\u003c/h2>\u003cp>Una nueva actividad de HTML.\u003c/p>\u003c/article>\n  \u003caside>\u003ch2>Lecturas relacionadas\u003c/h2>\u003cp>Consulta tus apuntes.\u003c/p>\u003c/aside>\n\u003c/main>\n\u003cfooter>\u003cp>Proyecto de práctica\u003c/p>\u003c/footer>","\u003c!doctype html>\n\u003chtml lang=\"es\">\n\u003chead>\n  \u003cmeta charset=\"UTF-8\">\n  \u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  \u003cmeta name=\"description\" content=\"Un sitio académico creado para practicar HTML.\">\n  \u003ctitle>Mi proyecto HTML\u003c/title>\n  \u003c!-- En tu proyecto puedes enlazar estilos.css y app.js. -->\n\u003c/head>\n\u003cbody>\u003ch1>Mi proyecto\u003c/h1>\u003cp>Listo para seguir aprendiendo.\u003c/p>\u003c/body>\n\u003c/html>"];const editor=document.querySelector('#editor');const selector=document.querySelector('#example');const output=document.querySelector('#preview');const status=document.querySelector('#lab-status');editor.value=seeds[0];selector.addEventListener('change',()=>{editor.value=seeds[Number(selector.value)];status.textContent='Ejemplo cargado. Pulsa Ver resultado para actualizar la vista previa.'});
+function preview(){const prefix='<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src '+"'none'"+'; style-src '+"'unsafe-inline'"+'; img-src data:; form-action '+"'none'"+'; base-uri '+"'none'"+'"><style>body{font:16px/1.6 system-ui;padding:18px;color:#15251d;overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid #9eb9ab;padding:8px}img{max-width:100%}</style>';output.srcdoc=prefix+editor.value;status.textContent='Vista previa actualizada. Los scripts, las conexiones y el envío de formularios están desactivados en esta práctica.'}
+document.querySelector('#run').addEventListener('click',preview);document.querySelector('#reset').addEventListener('click',()=>{editor.value=seeds[Number(selector.value)];preview()});
+document.querySelector('#download').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([editor.value],{type:'text/html;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='practica-html.html';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent='Se preparó tu archivo HTML. Entrégalo en la tarea de Moodle que indique tu docente.'});
+document.querySelector('#print').addEventListener('click',()=>window.print());preview();
+})();</script></body></html>

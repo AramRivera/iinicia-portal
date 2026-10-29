@@ -1,0 +1,44 @@
+CURSO HTML BÁSICO · I²NICIA
+
+QUÉ INCLUYE
+Bienvenida, nueve módulos con teoría, ejemplos y propuestas de tareas; proyecto final con rúbrica; nueve preguntas de autoevaluación; laboratorio HTML con descarga; diseño claro con verde esmeralda.
+CSS y JavaScript están integrados en index.html. No usa librerías, fuentes ni imágenes remotas para funcionar.
+
+CÓMO CARGARLO
+1. Extrae este ZIP en tu computadora.
+2. En Moodle abre el curso que corresponda y activa Modo de edición.
+3. Añadir una actividad o recurso > Archivo.
+4. Nombre: HTML básico desde cero — Material interactivo.
+5. Sube únicamente index.html al selector de archivos.
+6. Si hay varios archivos, pulsa index.html > Establecer como archivo principal.
+7. Apariencia > Mostrar: Abrir. Puedes usar Nueva ventana si el administrador habilitó esa opción. Evita Forzar descarga.
+8. Guardar cambios y mostrar. Prueba con un estudiante matriculado.
+
+NO PEGAR EL DOCUMENTO COMPLETO EN TINY MCE
+El editor de Página puede eliminar los scripts. Usa el recurso Archivo para conservar la interactividad, sin cambiar filtros de seguridad del sitio.
+
+QUÉ NO HACE
+No crea automáticamente un curso, tareas, foros, cuestionarios, cuentas ni matrículas. No modifica la API, Moodle Core o Supabase. El avance es temporal en memoria: se reinicia al recargar; no es una nota oficial. El laboratorio no envía formularios y bloquea JavaScript y recursos externos en la vista previa.
+
+EVALUACIÓN OFICIAL
+Las preguntas aquí son para practicar y sus respuestas están en el código. Crea los cuestionarios oficiales en Moodle. Las consignas de tareas y la rúbrica están en las lecciones para reproducirlas como actividades nativas. Configura por separado calificaciones y finalización. La guía original incluye sugerencias; revisa la planeación con tu docente.
+
+ALINEACIÓN DEL PROYECTO
+Este recurso de HTML complementa un curso; no sustituye por sí mismo los dos cursos de TI y React solicitados en el proyecto. Elige su ubicación sin cambiar los identificadores de cursos enlazados con la API.
+
+PRIMERA PRUEBA
+- Abrir un módulo con teclado y desde el menú.
+- Contestar una pregunta y comprobar la explicación.
+- Editar un ejemplo y pulsar Ver resultado.
+- Descargar mi HTML y abrirlo localmente.
+- Marcar una lectura: el indicador cambia, sin enviar notas a Moodle.
+- Revisar el diseño en móvil y con zoom.
+
+FUENTES
+Contenido base: curso_completo_de_html_b_sico_para_moodle.md proporcionado por el usuario.
+Referencia HTML: https://html.spec.whatwg.org/multipage/
+Referencia accesible en español: https://developer.mozilla.org/es/docs/Web/HTML
+Carga de archivos web: https://docs.moodle.org/503/en/File_resource_settings
+
+CAMBIOS DIDÁCTICOS
+Se corrigieron afirmaciones sobre penalizaciones automáticas por múltiples h1, prioridad de article en buscadores, semántica de strong y b, uso de cite para obras, elementos vacíos y meta description. En el material base las prácticas de citas indicaban nombre de autor; aquí cite indica el título de la obra. Las longitudes de descripción propuestas son orientativas y no una exigencia de HTML.
