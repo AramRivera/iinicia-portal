@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
 const navItems = [
   { label: "Inicio", href: "/#inicio", id: "inicio" },
   { label: "Universidad", href: "/#universidad", id: "universidad" },
+  { label: "Licenciaturas", href: "/#licenciaturas", id: "licenciaturas" },
   { label: "Cursos", href: "/#cursos", id: "cursos" },
   { label: "Diplomados", href: "/#diplomados", id: "diplomados" },
   { label: "Certificaciones", href: "/#certificaciones", id: "certificaciones" },
@@ -84,12 +86,16 @@ export function SiteHeader() {
           onClick={(e) => handleNavClick(e, "inicio")}
           className="flex items-center gap-2.5 shrink-0"
         >
-          <LogoMark />
-          <div className="flex items-center gap-1.5">
-            <span className="text-[16px] font-bold tracking-tight text-foreground">
-              IINICIA
-            </span>
-          </div>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-welcome-panel p-1.5 shadow-minimal ring-1 ring-primary/20">
+            <Image
+              src="/inicia-nav-wordmark.png"
+              alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+              width={1563}
+              height={1563}
+              priority
+              className="h-full w-full object-contain"
+            />
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -273,25 +279,5 @@ export function SiteHeader() {
         </div>
       )}
     </header>
-  );
-}
-
-function LogoMark() {
-  return (
-    <span className="grid h-7 w-7 place-items-center rounded-[6px] bg-primary-action text-white shadow-minimal">
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2z" />
-        <path d="M12 2v9l8 4.5M12 11l-8 4.5" />
-      </svg>
-    </span>
   );
 }

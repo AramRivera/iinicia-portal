@@ -20,7 +20,7 @@ interface CampusTopBarProps {
 }
 
 export function CampusTopBar({
-  breadcrumbs = ['IINICIA', 'Panel de Control'],
+  breadcrumbs = ['INICIA', 'Panel de Control'],
   onOpenSearch,
   onLaunchMoodleSSO,
   moodleActive = true,

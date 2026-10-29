@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="INICIA">
+  <rect width="64" height="64" rx="14" fill="#172219"/>
+  <rect x="26" y="22" width="12" height="30" fill="#e9f7dd"/>
+  <text x="25" y="21" fill="#bef264" font-family="Arial, sans-serif" font-size="18" font-weight="800">2</text>
+</svg>

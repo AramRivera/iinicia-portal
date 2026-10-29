@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, enrollmentsApi, moodleApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, CourseOffering, EnrollmentRequest } from '@/types';
+import type { AuthorizedCourse, CourseOffering, EnrollmentRequest, MoodleCourseProgress } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -56,7 +56,7 @@ export default function EstudianteDashboardPage() {
   // Modales interactivos
   const [dropTarget, setDropTarget] = useState<CourseDropTarget | null>(null);
   const [syllabusTarget, setSyllabusTarget] = useState<AuthorizedCourse | null>(null);
-  const [courseProgressMap, setCourseProgressMap] = useState<Record<number, any>>({});
+  const [courseProgressMap, setCourseProgressMap] = useState<Record<number, MoodleCourseProgress>>({});
   const [moodleContents, setMoodleContents] = useState<any[]>([]);
   const [loadingContents, setLoadingContents] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -82,7 +82,7 @@ export default function EstudianteDashboardPage() {
 
       // Cargar progreso en tiempo real desde Moodle LMS para cada materia
       if (userCourses.length > 0) {
-        const progMap: Record<number, any> = {};
+        const progMap: Record<number, MoodleCourseProgress> = {};
         await Promise.all(
           userCourses.map(async (c) => {
             if (c.moodle_course_id) {
@@ -111,6 +111,10 @@ export default function EstudianteDashboardPage() {
     if (authLoading) return;
     if (!user) {
       router.push('/login');
+      return;
+    }
+    if (!user.roles.includes('estudiante') && !user.roles.includes('superadministrador')) {
+      router.replace('/dashboard');
       return;
     }
 
@@ -183,7 +187,7 @@ export default function EstudianteDashboardPage() {
     try {
       await enrollmentsApi.requestEnrollment(courseMappingId);
       setNotice(
-        `Te has inscrito exitosamente a "${courseName}". Tu aula virtual en Moodle LMS está habilitada.`,
+        `Tu solicitud para "${courseName}" quedó registrada. Un administrador debe autorizar la matrícula en Moodle.`,
       );
       await loadData();
     } catch (err: any) {
@@ -204,7 +208,7 @@ export default function EstudianteDashboardPage() {
     try {
       await enrollmentsApi.deleteEnrollment(dropTarget.enrollmentId);
       setNotice(
-        `Has dado de baja la materia "${dropTarget.courseName}" correctamente. Se desvinculó tu aula virtual en Moodle.`,
+        `La solicitud de baja de "${dropTarget.courseName}" se retiró del portal. Consulta con administración el estado del aula virtual.`,
       );
       setDropTarget(null);
       await loadData();
@@ -300,8 +304,7 @@ export default function EstudianteDashboardPage() {
       const offering = offerings.find(
         (o) => o.course_mapping_id === c.course_mapping_id || o.id === c.course_mapping_id,
       );
-      const credits = offering?.credits ?? 8;
-      totalCredits += credits;
+      totalCredits += offering?.credits ?? 0;
 
       if (c.cached_final_grade != null) {
         const num = Number(c.cached_final_grade);
@@ -323,15 +326,15 @@ export default function EstudianteDashboardPage() {
   const getBreadcrumbs = (tab: StudentTab) => {
     switch (tab) {
       case 'cursos':
-        return ['IINICIA', 'Portal Estudiante', 'Mis Materias Activas'];
+        return ['INICIA', 'Portal Estudiante', 'Mis Materias Activas'];
       case 'inscripciones':
-        return ['IINICIA', 'Portal Estudiante', 'Catálogo e Inscripción'];
+        return ['INICIA', 'Portal Estudiante', 'Catálogo e Inscripción'];
       case 'calificaciones':
-        return ['IINICIA', 'Portal Estudiante', 'Kárdex y Avance Curricular'];
+        return ['INICIA', 'Portal Estudiante', 'Kárdex y Avance Curricular'];
       case 'perfil':
-        return ['IINICIA', 'Portal Estudiante', 'Expediente Escolar'];
+        return ['INICIA', 'Portal Estudiante', 'Expediente Escolar'];
       default:
-        return ['IINICIA', 'Portal Estudiante'];
+        return ['INICIA', 'Portal Estudiante'];
     }
   };
 
@@ -546,7 +549,7 @@ export default function EstudianteDashboardPage() {
                     : 'Aún no tienes cursos inscritos en tu aula virtual.'}
                 </p>
                 <p className="text-[11px] text-muted mt-1 max-w-sm mx-auto">
-                  Explora las materias disponibles en el catálogo para matricularte con un clic.
+                  Explora las materias disponibles y solicita tu matrícula.
                 </p>
                 <div className="pt-3">
                   <button
@@ -594,26 +597,33 @@ export default function EstudianteDashboardPage() {
                         {/* Barra de Progreso Didáctico enlazada con Moodle */}
                         {(() => {
                           const prog = courseProgressMap[course.moodle_course_id];
-                          const pct = prog?.percentage != null ? prog.percentage : (course.cached_progress ?? 20);
+                          const rawProgress = prog?.progress_percentage;
+                          const pct = typeof rawProgress === 'number' && Number.isFinite(rawProgress)
+                            ? Math.min(100, Math.max(0, rawProgress))
+                            : null;
                           return (
                             <div className="mt-4 space-y-1.5">
                               <div className="flex justify-between text-[11px] text-muted">
                                 <span>Avance del Curso (Moodle)</span>
                                 <span className="font-mono font-medium text-foreground">
-                                  {pct}% completado
+                                  {pct === null ? 'Progreso no disponible' : `${pct}% completado`}
                                 </span>
                               </div>
                               <div className="h-1.5 w-full rounded-full bg-surface-muted overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-primary-action transition-all duration-300"
-                                  style={{
-                                    width: `${Math.min(pct, 100)}%`,
-                                  }}
-                                />
+                                {pct !== null && (
+                                  <div
+                                    className="h-full rounded-full bg-primary-action transition-all duration-300"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                )}
                               </div>
                               {prog?.total_modules != null && (
                                 <div className="flex justify-between text-[10px] text-muted font-mono pt-0.5">
-                                  <span>{prog.total_modules} actividades / recursos</span>
+                                  <span>
+                                    {prog.total_tracked_activities > 0
+                                      ? `${prog.completed_activities} de ${prog.total_tracked_activities} actividades completadas`
+                                      : `${prog.total_modules} actividades / recursos sin seguimiento`}
+                                  </span>
                                   {prog.grade_formatted && prog.grade_formatted !== '-' && (
                                     <span className="font-semibold text-primary">Nota: {prog.grade_formatted}</span>
                                   )}
@@ -682,7 +692,7 @@ export default function EstudianteDashboardPage() {
                     <span>Catálogo de Cursos Disponibles para Inscripción</span>
                   </h2>
                   <p className="text-xs text-muted mt-0.5">
-                    Selecciona una materia para inscribirte con un clic. La sincronización con Moodle LMS es inmediata.
+                    Selecciona una materia para solicitarla. Verás el acceso a Moodle cuando se autorice y sincronice la matrícula.
                   </p>
                 </div>
 
@@ -713,7 +723,7 @@ export default function EstudianteDashboardPage() {
                 <p className="text-xs font-semibold text-foreground">
                   {searchQuery
                     ? 'No se encontraron materias que coincidan con la búsqueda.'
-                    : '¡Estás inscrito en todas las materias disponibles actualmente!'}
+                    : 'No hay más materias disponibles en el catálogo.'}
                 </p>
                 <p className="text-[11px] text-muted mt-1 max-w-sm mx-auto">
                   Pronto se abrirán nuevas convocatorias y módulos para tu periodo académico.
@@ -724,6 +734,8 @@ export default function EstudianteDashboardPage() {
                 {availableOfferings.map((off, index) => {
                   const offeringId = off.course_mapping_id || off.id || `offering-${index}`;
                   const isSubmitting = actionLoading === `enroll-${offeringId}`;
+                  const isPending = enrollments.some((request) =>
+                    request.course_mapping_id === offeringId && request.status === 'pendiente');
 
                   return (
                     <div
@@ -735,9 +747,11 @@ export default function EstudianteDashboardPage() {
                           <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground border border-border">
                             {off.code}
                           </span>
-                          <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono text-primary border border-primary/20">
-                            {off.credits} créditos SATCA
-                          </span>
+                          {off.credits != null && (
+                            <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono text-primary border border-primary/20">
+                              {off.credits} créditos SATCA
+                            </span>
+                          )}
                         </div>
 
                         <h3 className="mt-3 text-base font-semibold text-foreground">
@@ -759,18 +773,20 @@ export default function EstudianteDashboardPage() {
                         <button
                           type="button"
                           onClick={() => handleQuickEnroll(offeringId, off.name)}
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isPending}
                           className="w-full rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-1.5"
                         >
-                          {isSubmitting ? (
+                          {isPending ? (
+                            <span>Solicitud pendiente de autorización</span>
+                          ) : isSubmitting ? (
                             <>
                               <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              <span>Matriculando en Moodle...</span>
+                              <span>Registrando solicitud...</span>
                             </>
                           ) : (
                             <>
                               <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
-                              <span>Inscribirme y Empezar Asignatura</span>
+                              <span>Solicitar inscripción</span>
                             </>
                           )}
                         </button>
@@ -852,7 +868,7 @@ export default function EstudianteDashboardPage() {
                       const offering = offerings.find(
                         (o) => o.course_mapping_id === course.course_mapping_id || o.id === course.course_mapping_id,
                       );
-                      const credits = offering?.credits ?? 8;
+                      const credits = offering?.credits;
                       const hasGrade = course.cached_final_grade != null;
                       const grade = hasGrade ? Number(course.cached_final_grade) : null;
                       const isPassing = grade != null ? grade >= 6 : null;
@@ -868,7 +884,7 @@ export default function EstudianteDashboardPage() {
                             </span>
                           </td>
                           <td className="px-5 py-3.5 font-mono text-xs">
-                            {credits} SATCA
+                            {credits != null ? `${credits} SATCA` : 'Sin dato'}
                           </td>
                           <td className="px-5 py-3.5 font-mono text-xs">
                             {hasGrade ? (
@@ -930,7 +946,7 @@ export default function EstudianteDashboardPage() {
                   <span>Expediente Escolar del Alumno</span>
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
-                  Datos de registro oficial ante la Dirección de Servicios Escolares de IINICIA.
+                  Datos de registro oficial ante la Dirección de Servicios Escolares de INICIA.
                 </p>
               </div>
               <button

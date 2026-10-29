@@ -16,6 +16,15 @@ export type MoodleSyncStatus =
 
 export type UserStatus = 'activo' | 'inactivo' | 'suspendido' | 'pendiente' | 'baja';
 
+export interface UserProgramMembership {
+  program_id: string;
+  code: string;
+  name: string;
+  type: Program['type'];
+  academic_status: string;
+  cohort: string | null;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -31,6 +40,7 @@ export interface UserProfile {
   moodle_username?: string | null;
   moodle_sync_status?: MoodleSyncStatus;
   moodle_last_sync_at?: string | null;
+  programs?: UserProgramMembership[] | null;
   created_at?: string;
 }
 
@@ -79,9 +89,9 @@ export interface CourseOffering {
   is_active?: boolean;
   term_or_module?: number;
   is_mandatory?: boolean;
-  credits: number;
-  hours_theory: number;
-  hours_practice: number;
+  credits?: number | null;
+  hours_theory?: number | null;
+  hours_practice?: number | null;
   programs?: {
     code: string;
     name: string;
@@ -173,11 +183,38 @@ export interface EnrollmentRequest {
   };
 }
 
+export interface AdmissionApplication {
+  id: string;
+  applicant_id: string;
+  program_id: string;
+  status: 'postulado' | 'en_revision' | 'admitido' | 'rechazado';
+  submitted_at?: string;
+  programs?: { code: string; name: string; slug: string } | null;
+  profiles?: { id: string; email: string; first_name: string; last_name: string; phone?: string | null } | null;
+}
+
 export interface MoodleLaunchResponse {
   course_mapping_id: string;
   course_name: string;
   moodle_course_id: number;
   access_url: string;
+}
+
+export interface MoodleCourseProgress {
+  course_id: number;
+  moodle_user_id: number;
+  total_modules: number;
+  grade_raw: number | null;
+  grade_formatted: string;
+  /** @deprecated Use grade_percentage or progress_percentage explicitly. */
+  percentage: number;
+  grade_percentage: number | null;
+  progress_percentage: number | null;
+  completed_activities: number;
+  total_tracked_activities: number;
+  is_completed: boolean;
+  completion_status: Record<string, unknown> | null;
+  grade_items: Record<string, unknown>[];
 }
 
 export interface MoodleStatusResponse {

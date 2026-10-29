@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { coursesApi, enrollmentsApi } from '@/lib/api';
-import type { CourseOffering, EnrollmentRequest } from '@/types';
+import { admissionsApi, coursesApi, enrollmentsApi, programsApi } from '@/lib/api';
+import type { AdmissionApplication, CourseOffering, EnrollmentRequest, Program } from '@/types';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
 import {
@@ -14,7 +13,6 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconPlus,
-  IconExternalLink,
 } from '@/components/campus-tech/Icons';
 
 export default function AspiranteDashboardPage() {
@@ -23,6 +21,10 @@ export default function AspiranteDashboardPage() {
 
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [applications, setApplications] = useState<AdmissionApplication[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState('');
+  const [motivation, setMotivation] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -34,16 +36,24 @@ export default function AspiranteDashboardPage() {
       router.push('/login');
       return;
     }
+    if (!user.roles.includes('aspirante') && !user.roles.includes('superadministrador')) {
+      router.replace('/dashboard');
+      return;
+    }
 
     async function loadData() {
       try {
         setLoading(true);
-        const [offData, enrData] = await Promise.all([
+        const [offData, enrData, programData, applicationData] = await Promise.all([
           coursesApi.getOfferings(),
           enrollmentsApi.getMyEnrollments(),
+          programsApi.getPrograms(),
+          admissionsApi.getMyApplications(),
         ]);
         setOfferings(offData);
         setEnrollments(enrData);
+        setPrograms(programData.filter((program) => program.is_active));
+        setApplications(applicationData);
       } catch (err: any) {
         setError(err.message || 'Error al cargar ofertas académicas.');
       } finally {
@@ -61,7 +71,7 @@ export default function AspiranteDashboardPage() {
 
     try {
       await enrollmentsApi.requestEnrollment(courseMappingId);
-      setMessage(`¡Inscripción exitosa en "${courseName}"! Ya estás matriculado en Moodle LMS y tu acceso está listo.`);
+      setMessage(`Tu solicitud para "${courseName}" quedó registrada. Un administrador revisará tu acceso antes de matricularte en Moodle.`);
 
       // Recargar solicitudes
       const updated = await enrollmentsApi.getMyEnrollments();
@@ -75,6 +85,28 @@ export default function AspiranteDashboardPage() {
 
   const isAlreadyEnrolled = (courseMappingId: string) => {
     return enrollments.some((e) => e.course_mapping_id === courseMappingId);
+  };
+
+  const handleApplication = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedProgram) return;
+    setActionLoading('admission');
+    setError(null);
+    setMessage(null);
+    try {
+      await admissionsApi.createApplication({
+        program_id: selectedProgram,
+        motivation_letter: motivation.trim() || undefined,
+      });
+      setApplications(await admissionsApi.getMyApplications());
+      setSelectedProgram('');
+      setMotivation('');
+      setMessage('Tu postulación quedó registrada. Puedes seguir su estado en esta página.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No fue posible registrar la postulación.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   if (authLoading || loading) {
@@ -92,7 +124,7 @@ export default function AspiranteDashboardPage() {
     <CampusShell
       currentTab="ofertas"
       onSelectTab={() => {}}
-      breadcrumbs={['IINICIA', 'Portal de Admisiones', 'Oferta Académica']}
+      breadcrumbs={['INICIA', 'Portal de Admisiones', 'Oferta Académica']}
       counts={{
         enrollments: enrollments.length,
       }}
@@ -104,7 +136,7 @@ export default function AspiranteDashboardPage() {
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
-                  Admisiones IINICIA
+                  Admisiones INICIA
                 </span>
                 <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-mono font-medium text-muted border border-border">
                   Rol: Aspirante
@@ -114,7 +146,7 @@ export default function AspiranteDashboardPage() {
                 Bienvenido, {user?.first_name} {user?.last_name}
               </h1>
               <p className="text-xs sm:text-sm text-muted">
-                Tu registro en la plataforma está activo. Elige un curso a continuación para inscribirte y habilitar tu aula virtual.
+                Consulta la oferta y solicita acceso. Tu matrícula en Moodle requiere autorización administrativa.
               </p>
             </div>
           </div>
@@ -126,9 +158,9 @@ export default function AspiranteDashboardPage() {
               <span>Pasos para iniciar tu formación</span>
             </p>
             <ol className="mt-2 list-decimal pl-5 space-y-1 text-muted leading-relaxed">
-              <li>Elige cualquiera de los cursos disponibles y pulsa <strong>&quot;Inscribirme y Tomar Curso&quot;</strong>.</li>
-              <li>El sistema sincronizará tu cuenta con Moodle LMS en tiempo real.</li>
-              <li>Ingresarás directamente a tu aula virtual y comenzarás a estudiar de inmediato.</li>
+              <li>Elige un curso y pulsa <strong>&quot;Solicitar acceso&quot;</strong>.</li>
+              <li>Un administrador revisará tu solicitud y te asignará el rol correspondiente.</li>
+              <li>Cuando se autorice tu matrícula, podrás entrar al aula desde tu panel de estudiante.</li>
             </ol>
           </div>
         </div>
@@ -139,12 +171,12 @@ export default function AspiranteDashboardPage() {
               <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{message}</span>
             </div>
-            <Link
-              href="/dashboard/estudiante"
+            <a
+              href="#mis-solicitudes"
               className="rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all shrink-0"
             >
-              Ir a mi Aula de Estudiante →
-            </Link>
+              Ver estado de mi solicitud →
+            </a>
           </div>
         )}
 
@@ -155,9 +187,42 @@ export default function AspiranteDashboardPage() {
           </div>
         )}
 
+        <section className="space-y-4 rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal" aria-labelledby="admisiones-heading">
+          <div>
+            <h2 id="admisiones-heading" className="text-base font-semibold text-foreground">Postulación a programas</h2>
+            <p className="mt-1 text-xs text-muted">Registra tu interés y consulta el dictamen de admisiones.</p>
+          </div>
+          {applications.length > 0 && (
+            <ul className="space-y-2">
+              {applications.map((application) => (
+                <li key={application.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-border bg-surface-muted/40 p-3 text-xs">
+                  <span className="font-medium text-foreground">{application.programs?.name || programs.find((program) => program.id === application.program_id)?.name || 'Programa académico'}</span>
+                  <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 font-medium capitalize text-primary">{application.status.replace('_', ' ')}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form onSubmit={handleApplication} className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="space-y-1.5">
+              <label htmlFor="programa-postulacion" className="block text-xs font-medium text-foreground">Programa de interés</label>
+              <select id="programa-postulacion" required value={selectedProgram} onChange={(event) => setSelectedProgram(event.target.value)} className="w-full rounded-[6px] border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none">
+                <option value="">Selecciona un programa</option>
+                {programs.map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
+              </select>
+            </div>
+            <button type="submit" disabled={actionLoading === 'admission' || programs.length === 0} className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+              {actionLoading === 'admission' ? 'Enviando...' : 'Enviar postulación'}
+            </button>
+            <div className="sm:col-span-2">
+              <label htmlFor="motivacion-postulacion" className="mb-1.5 block text-xs font-medium text-foreground">Motivación (opcional)</label>
+              <textarea id="motivacion-postulacion" maxLength={2000} rows={3} value={motivation} onChange={(event) => setMotivation(event.target.value)} className="w-full rounded-[6px] border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none" />
+            </div>
+          </form>
+        </section>
+
         {/* Mis Solicitudes Actuales */}
         {enrollments.length > 0 && (
-          <div className="space-y-4">
+          <div id="mis-solicitudes" className="space-y-4">
             <h2 className="text-base font-semibold text-foreground">
               Estado de mis Solicitudes
             </h2>
@@ -184,7 +249,7 @@ export default function AspiranteDashboardPage() {
                     </span>
                   </div>
                   <h3 className="mt-2 text-sm font-semibold text-foreground">
-                    {enr.course_mappings?.courses?.name || enr.course_mappings?.moodle_shortname || 'Curso IINICIA'}
+                    {enr.course_mappings?.courses?.name || enr.course_mappings?.moodle_shortname || 'Curso INICIA'}
                   </h3>
                   <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted">
                     <span>Moodle LMS:</span>
@@ -201,10 +266,10 @@ export default function AspiranteDashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-foreground">
-                Oferta de Cursos Disponibles para Inscripción
+                Oferta de Cursos
               </h2>
               <p className="text-xs text-muted">
-                Cursos maestros con vinculación directa al campus virtual Moodle LMS.
+                Solicita acceso a los cursos que te interesan. La matrícula requiere autorización.
               </p>
             </div>
             <span className="rounded-[4px] bg-surface-muted px-2 py-1 text-xs font-mono font-medium text-muted">
@@ -239,11 +304,14 @@ export default function AspiranteDashboardPage() {
                       Programa: {off.program_name}
                     </p>
 
-                    <div className="mt-4 flex items-center gap-3 text-xs text-muted font-mono">
-                      <span>{off.credits} créditos</span>
-                      <span>•</span>
-                      <span>{off.hours_theory + off.hours_practice} horas</span>
-                    </div>
+                    {(off.credits != null || off.hours_theory != null || off.hours_practice != null) && (
+                      <div className="mt-4 flex items-center gap-3 text-xs text-muted font-mono">
+                        {off.credits != null && <span>{off.credits} créditos</span>}
+                        {(off.hours_theory != null || off.hours_practice != null) && (
+                          <span>{(off.hours_theory ?? 0) + (off.hours_practice ?? 0)} horas</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-5 border-t border-border pt-3.5">
@@ -270,7 +338,7 @@ export default function AspiranteDashboardPage() {
                         ) : (
                           <>
                             <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
-                            <span>Inscribirme y Tomar Curso</span>
+                            <span>Solicitar acceso</span>
                           </>
                         )}
                       </button>

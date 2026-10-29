@@ -7,12 +7,13 @@
 
 :root {
   /* Brand Shared */
-  --primary: #456B19;
-  --primary-action: #365314;
-  --accent-lime: #BEF264;
-  --accent: #456B19;
-  --accent-strong: #365314;
-  --accent-soft: #EFF8DF;
+  --primary: #087654;
+  --primary-action: #087654;
+  --accent-lime: #A9E3CF;
+  --accent: #087654;
+  --accent-strong: #065C42;
+  --accent-soft: #E5F2ED;
+  --welcome-panel: #064D3B;
 
   /* Light Theme */
   --background: #FFFFFF;
@@ -47,12 +48,13 @@
 
 .dark {
   /* Dark Theme */
-  --primary: #C4EC89;
-  --primary-action: #456B19;
-  --accent-lime: #BEF264;
-  --accent: #C4EC89;
-  --accent-strong: #BEF264;
-  --accent-soft: #25351B;
+  --primary: #52D6AA;
+  --primary-action: #087654;
+  --accent-lime: #52D6AA;
+  --accent: #52D6AA;
+  --accent-strong: #065C42;
+  --accent-soft: #17392F;
+  --welcome-panel: #064D3B;
 
   --background: #101710;
   --surface: #192219;
@@ -79,12 +81,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --primary: #C4EC89;
-    --primary-action: #456B19;
-    --accent-lime: #BEF264;
-    --accent: #C4EC89;
-    --accent-strong: #BEF264;
-    --accent-soft: #25351B;
+    --primary: #52D6AA;
+    --primary-action: #087654;
+    --accent-lime: #52D6AA;
+    --accent: #52D6AA;
+    --accent-strong: #065C42;
+    --accent-soft: #17392F;
+    --welcome-panel: #064D3B;
 
     --background: #101710;
     --surface: #192219;
@@ -116,6 +119,7 @@
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
+  --color-welcome-panel: var(--welcome-panel);
 
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -171,9 +175,9 @@ body {
 /* Subtle luminous gradient used in hero */
 .bg-aurora {
   background:
-    radial-gradient(60% 55% at 50% 0%, rgba(0, 113, 227, 0.18) 0%, transparent 70%),
-    radial-gradient(50% 40% at 85% 20%, rgba(90, 200, 250, 0.14) 0%, transparent 70%),
-    radial-gradient(50% 40% at 15% 30%, rgba(191, 90, 242, 0.10) 0%, transparent 70%);
+    radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--primary-action) 16%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 85% 20%, color-mix(in srgb, var(--accent-lime) 20%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 15% 30%, color-mix(in srgb, var(--accent-strong) 12%, transparent) 0%, transparent 70%);
 }
 
 /* Apple-like dot texture */

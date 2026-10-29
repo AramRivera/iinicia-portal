@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   IconDashboard,
@@ -66,6 +67,7 @@ export function CampusSidebar({
   customSections,
 }: CampusSidebarProps) {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
   const userRoles = (user?.roles || []) as string[];
   const isSuperOrAdmin = userRoles.some((r) =>
@@ -175,17 +177,6 @@ export function CampusSidebar({
             },
           ],
         },
-        {
-          title: 'Plataforma',
-          items: [
-            {
-              id: 'moodle',
-              label: 'Campus de Nivelación',
-              icon: <IconMoodle className="w-4 h-4 shrink-0" />,
-              onClick: onLaunchCampusSSO,
-            },
-          ],
-        },
       ]
     : [
         {
@@ -219,6 +210,11 @@ export function CampusSidebar({
               label: 'Solicitudes y Matrículas',
               icon: <IconAttendance className="w-4 h-4 shrink-0" />,
               badge: counts.enrollments,
+            },
+            {
+              id: 'admisiones',
+              label: 'Postulaciones',
+              icon: <IconAttendance className="w-4 h-4 shrink-0" />,
             },
             {
               id: 'programas',
@@ -269,7 +265,9 @@ export function CampusSidebar({
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  onSelectTab(item.id);
+                  if (item.href) router.push(item.href);
+                  else if (item.onClick) item.onClick();
+                  else onSelectTab(item.id);
                   onCloseMobile();
                 }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-[6px] transition-all text-left group relative ${
@@ -320,21 +318,24 @@ export function CampusSidebar({
         <div className="h-13 border-b border-border flex items-center justify-between px-3.5 shrink-0">
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
-              <div className="h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-white font-bold text-xs shrink-0 ring-1 ring-primary/40">
-                <span className="text-accent-lime font-mono text-[11px]">I</span>
-              </div>
-              <div className="leading-none truncate">
-                <span className="font-semibold text-xs tracking-tight text-foreground block">
-                  IINICIA
-                </span>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[7px] bg-welcome-panel p-1 shadow-minimal ring-1 ring-primary/20">
+                <Image
+                  src="/inicia-nav-wordmark.png"
+                  alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+                  width={1563}
+                  height={1563}
+                  className="h-full w-full object-contain"
+                />
+              </span>
+              <div className="min-w-0 leading-none">
                 <span className="text-[10px] text-muted">
                   Portal Académico
                 </span>
               </div>
             </div>
           ) : (
-            <div className="mx-auto h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime font-bold text-xs">
-              I
+            <div className="mx-auto h-7 w-7 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime">
+              <span className="relative pt-1 text-[16px] font-black leading-none">I<sup className="absolute -top-1 left-0 text-[8px]">2</sup></span>
             </div>
           )}
 
@@ -422,10 +423,16 @@ export function CampusSidebar({
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime font-bold text-xs">
-                    I
-                  </div>
-                  <span className="font-semibold text-sm text-foreground">IINICIA Portal</span>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[7px] bg-welcome-panel p-1 shadow-minimal ring-1 ring-primary/20">
+                    <Image
+                      src="/inicia-nav-wordmark.png"
+                      alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+                      width={1563}
+                      height={1563}
+                      className="h-full w-full object-contain"
+                    />
+                  </span>
+                  <span className="text-xs font-medium text-muted">Portal Académico</span>
                 </div>
                 <button
                   type="button"

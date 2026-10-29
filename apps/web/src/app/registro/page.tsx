@@ -157,7 +157,7 @@ export default function RegistroPage() {
         </form>
 
         <div className="text-center text-xs text-muted">
-          ¿Ya tienes cuenta en IINICIA?{' '}
+          ¿Ya tienes cuenta en INICIA?{' '}
           <Link href="/login" className="font-semibold text-primary hover:underline">
             Inicia sesión aquí
           </Link>

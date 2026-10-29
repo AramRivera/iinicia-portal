@@ -48,7 +48,7 @@ export function ComingSoon({ eyebrow, title, description }: ComingSoonProps) {
           </p>
           <p className="mt-2 text-[15px] leading-relaxed text-muted">
             Estamos preparando esta sección con todo lo que necesitas. Vuelve
-            pronto para descubrir las novedades de IINICIA.
+            pronto para descubrir las novedades de INICIA.
           </p>
         </div>
 

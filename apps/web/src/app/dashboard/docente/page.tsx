@@ -38,14 +38,6 @@ interface StudentUnenrollTarget {
   courseName: string;
 }
 
-interface GradeTarget {
-  enrollmentId: string;
-  studentName: string;
-  courseName: string;
-  currentGrade: number | string;
-  status: string;
-}
-
 export default function DocenteDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();
@@ -62,9 +54,6 @@ export default function DocenteDashboardPage() {
 
   // Modales interactivos
   const [unenrollTarget, setUnenrollTarget] = useState<StudentUnenrollTarget | null>(null);
-  const [gradeTarget, setGradeTarget] = useState<GradeTarget | null>(null);
-  const [tempGrade, setTempGrade] = useState('');
-  const [tempGradeFeedback, setTempGradeFeedback] = useState('');
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<AuthorizedCourse | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
@@ -74,8 +63,6 @@ export default function DocenteDashboardPage() {
     bio: '',
   });
 
-  // Calificaciones y notas locales de seguimiento pedagógico
-  const [studentGrades, setStudentGrades] = useState<Record<string, { grade: string; notes: string }>>({});
   const [moodleCourseOverviews, setMoodleCourseOverviews] = useState<Record<number, any>>({});
 
   const loadTeacherData = async () => {
@@ -117,6 +104,10 @@ export default function DocenteDashboardPage() {
     if (authLoading) return;
     if (!user) {
       router.push('/login');
+      return;
+    }
+    if (!user.roles.includes('profesor') && !user.roles.includes('superadministrador')) {
+      router.replace('/dashboard');
       return;
     }
 
@@ -226,33 +217,6 @@ export default function DocenteDashboardPage() {
     }
   };
 
-  // Guardar calificación preliminar en la interfaz docente
-  const handleSaveGrade = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!gradeTarget) return;
-
-    const val = parseFloat(tempGrade);
-    if (isNaN(val) || val < 0 || val > 10) {
-      setError('La calificación debe ser un valor numérico entre 0 y 10.');
-      return;
-    }
-
-    setStudentGrades((prev) => ({
-      ...prev,
-      [gradeTarget.enrollmentId]: {
-        grade: tempGrade,
-        notes: tempGradeFeedback,
-      },
-    }));
-
-    setNotice(
-      `Calificación preliminar de ${tempGrade} registrada para ${gradeTarget.studentName}. Recuerda asentar el acta oficial en Moodle LMS.`,
-    );
-    setGradeTarget(null);
-    setTempGrade('');
-    setTempGradeFeedback('');
-  };
-
   // Filtrado de cursos del profesor
   const filteredCourses = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -307,15 +271,15 @@ export default function DocenteDashboardPage() {
   const getBreadcrumbs = (tab: TeacherTab) => {
     switch (tab) {
       case 'materias':
-        return ['IINICIA', 'Portal Docente', 'Mis Asignaturas'];
+        return ['INICIA', 'Portal Docente', 'Mis Asignaturas'];
       case 'estudiantes':
-        return ['IINICIA', 'Portal Docente', 'Alumnos y Grupos'];
+        return ['INICIA', 'Portal Docente', 'Alumnos y Grupos'];
       case 'calificaciones':
-        return ['IINICIA', 'Portal Docente', 'Libro de Calificaciones'];
+        return ['INICIA', 'Portal Docente', 'Libro de Calificaciones'];
       case 'perfil':
-        return ['IINICIA', 'Portal Docente', 'Perfil Institucional'];
+        return ['INICIA', 'Portal Docente', 'Perfil Institucional'];
       default:
-        return ['IINICIA', 'Portal Docente'];
+        return ['INICIA', 'Portal Docente'];
     }
   };
 
@@ -804,7 +768,7 @@ export default function DocenteDashboardPage() {
 
               <div className="mt-4 rounded-[8px] bg-surface-muted/50 border border-border/70 p-3 text-xs text-muted leading-relaxed">
                 <p>
-                  <strong className="text-foreground">Lineamiento académico oficial:</strong> Las calificaciones finales, ponderaciones de rúbricas y actas se administran de manera centralizada en Moodle LMS para validez escolar. En esta vista puedes dar seguimiento preliminar a tus estudiantes o ingresar directamente al calificador de cada asignatura.
+                  <strong className="text-foreground">Lineamiento académico oficial:</strong> Las calificaciones, ponderaciones de rúbricas y actas se administran en Moodle LMS. Desde aquí puedes consultar tus grupos y abrir el calificador oficial de cada asignatura.
                 </p>
               </div>
             </div>
@@ -821,7 +785,7 @@ export default function DocenteDashboardPage() {
                       <th className="px-5 py-3.5">Estudiante</th>
                       <th className="px-5 py-3.5">Materia</th>
                       <th className="px-5 py-3.5">Estado Moodle</th>
-                      <th className="px-5 py-3.5">Seguimiento Formativo</th>
+                      <th className="px-5 py-3.5">Calificaciones oficiales</th>
                       <th className="px-5 py-3.5 text-right">Acciones</th>
                     </tr>
                   </thead>
@@ -835,8 +799,6 @@ export default function DocenteDashboardPage() {
                         enr.course_mappings?.courses?.name || 'Materia';
                       const moodleCourseId = enr.course_mappings?.moodle_course_id;
                       const courseMappingId = enr.course_mapping_id;
-                      const localData = studentGrades[enr.id];
-                      const isPassing = localData ? parseFloat(localData.grade) >= 6 : null;
 
                       return (
                         <tr key={enr.id} className="hover:bg-surface-muted/30 transition-colors">
@@ -858,18 +820,7 @@ export default function DocenteDashboardPage() {
                             />
                           </td>
                           <td className="px-5 py-3.5 font-mono text-xs">
-                            {localData ? (
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-foreground bg-surface-muted px-2 py-0.5 rounded-[4px] border border-border">
-                                  {localData.grade} / 10
-                                </span>
-                                <span className={`text-[10px] font-semibold ${isPassing ? 'text-emerald-600' : 'text-danger'}`}>
-                                  {isPassing ? 'Aprobado' : 'Reprobado'}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-muted text-[11px]">En evaluación en Moodle</span>
-                            )}
+                            <span className="text-muted text-[11px]">Consulta el calificador de Moodle</span>
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <div className="inline-flex items-center gap-2">
@@ -892,23 +843,6 @@ export default function DocenteDashboardPage() {
                                   Calificador ↗
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setGradeTarget({
-                                    enrollmentId: enr.id,
-                                    studentName,
-                                    courseName,
-                                    currentGrade: localData?.grade || '',
-                                    status: isPassing === null ? 'Cursando' : isPassing ? 'Aprobado' : 'Reprobado',
-                                  });
-                                  setTempGrade(localData?.grade || '');
-                                  setTempGradeFeedback(localData?.notes || '');
-                                }}
-                                className="rounded-[4px] border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-all"
-                              >
-                                Nota Rápida
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -933,7 +867,7 @@ export default function DocenteDashboardPage() {
                   <span>Perfil Institucional y Credenciales Docentes</span>
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
-                  Datos de identidad académica registrados en IINICIA y vinculación con el campus virtual.
+                  Datos de identidad académica registrados en INICIA y vinculación con el campus virtual.
                 </p>
               </div>
               <button
@@ -1062,88 +996,6 @@ export default function DocenteDashboardPage() {
                     : 'Sí, desasignar alumno'}
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL: EVALUACIÓN / REGISTRO DE CALIFICACIÓN */}
-        {gradeTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-md rounded-[14px] border border-border bg-surface p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div className="flex items-center gap-2">
-                  <IconGrades className="w-5 h-5 text-primary" />
-                  <h3 className="text-base font-bold text-foreground">
-                    Evaluación de Alumno
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setGradeTarget(null)}
-                  className="text-muted hover:text-foreground"
-                >
-                  <IconClose className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="text-xs space-y-1">
-                <div>
-                  <span className="text-muted">Estudiante: </span>
-                  <strong className="text-foreground">{gradeTarget.studentName}</strong>
-                </div>
-                <div>
-                  <span className="text-muted">Materia: </span>
-                  <strong className="text-foreground">{gradeTarget.courseName}</strong>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveGrade} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-foreground mb-1">
-                    Calificación Preliminar (Escala 0 a 10) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="10"
-                    required
-                    value={tempGrade}
-                    onChange={(e) => setTempGrade(e.target.value)}
-                    placeholder="Ej. 9.5"
-                    className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3 py-2 text-xs text-foreground focus:border-primary focus:bg-surface focus:outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-foreground mb-1">
-                    Retroalimentación u Observaciones
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={tempGradeFeedback}
-                    onChange={(e) => setTempGradeFeedback(e.target.value)}
-                    placeholder="Comentarios sobre el desempeño en tareas y evaluaciones..."
-                    className="w-full rounded-[6px] border border-border bg-surface-muted/40 p-2.5 text-xs text-foreground focus:border-primary focus:bg-surface focus:outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setGradeTarget(null)}
-                    className="rounded-[6px] border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted transition-all"
-                  >
-                    Cerrar
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
-                  >
-                    Guardar Calificación
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
         )}

@@ -24,7 +24,7 @@ interface CampusShellProps {
 export function CampusShell({
   currentTab,
   onSelectTab,
-  breadcrumbs = ['IINICIA', 'Control Maestro'],
+  breadcrumbs = ['INICIA', 'Control Maestro'],
   counts,
   onLaunchCampusSSO,
   customSections,
@@ -68,7 +68,7 @@ export function CampusShell({
               <IconMenu className="w-3.5 h-3.5" />
               <span>Menú Campus</span>
             </button>
-            <span className="text-xs text-muted font-medium">IINICIA</span>
+            <span className="text-xs text-muted font-medium">INICIA</span>
           </div>
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">

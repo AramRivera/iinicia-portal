@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   auditApi,
+  admissionsApi,
   authApi,
   coursesApi,
   enrollmentsApi,
@@ -16,6 +17,7 @@ import {
 } from '@/lib/api';
 import type {
   AuditLog,
+  AdmissionApplication,
   CourseOffering,
   EnrollmentRequest,
   MoodleStatusResponse,
@@ -55,6 +57,7 @@ type AdminTab =
   | 'docentes'
   | 'cursos'
   | 'matriculas'
+  | 'admisiones'
   | 'programas'
   | 'moodle'
   | 'auditoria'
@@ -79,6 +82,7 @@ export default function AdminDashboardPage() {
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [courses, setCourses] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
+  const [applications, setApplications] = useState<AdmissionApplication[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
@@ -138,14 +142,14 @@ export default function AdminDashboardPage() {
   const [newProgDesc, setNewProgDesc] = useState('');
 
   const isAdminOrCoordinator =
-    hasRole('superadministrador') || hasRole('administrador') || hasRole('coordinador');
+    hasRole('superadministrador') || hasRole('administrador');
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [statusRes, usersRes, rolesRes, coursesRes, enrollRes, progRes, auditRes] =
+      const [statusRes, usersRes, rolesRes, coursesRes, enrollRes, progRes, auditRes, admissionsRes] =
         await Promise.all([
           moodleApi.getStatus().catch(() => ({ ok: false, message: 'No disponible' })),
           usersApi.getUsers({ limit: 50 }).catch(() => ({ data: [], meta: {} })),
@@ -154,6 +158,7 @@ export default function AdminDashboardPage() {
           enrollmentsApi.getAllEnrollments().catch(() => []),
           programsApi.getPrograms().catch(() => []),
           auditApi.getLogs({ limit: 30 }).catch(() => []),
+          admissionsApi.getMyApplications().catch(() => []),
         ]);
 
       setMoodleStatus(statusRes);
@@ -162,6 +167,7 @@ export default function AdminDashboardPage() {
       setCourses(Array.isArray(coursesRes) ? coursesRes : (coursesRes as any)?.data || []);
       const enrollList = Array.isArray(enrollRes) ? enrollRes : ((enrollRes as any)?.data || []);
       setEnrollments(enrollList);
+      setApplications(admissionsRes);
       setPrograms(Array.isArray(progRes) ? progRes : (progRes as any)?.data || []);
       const auditList = Array.isArray(auditRes)
         ? auditRes
@@ -183,7 +189,7 @@ export default function AdminDashboardPage() {
       return;
     }
     if (!isAdminOrCoordinator) {
-      router.push('/dashboard/estudiante');
+      router.push('/dashboard');
       return;
     }
 
@@ -221,6 +227,21 @@ export default function AdminDashboardPage() {
       return e.status === enrollmentStatusFilter;
     });
   }, [enrollments, enrollmentStatusFilter]);
+
+  const handleReviewApplication = async (applicationId: string, status: 'en_revision' | 'admitido' | 'rechazado') => {
+    setActionLoading(`admission-${applicationId}`);
+    setError(null);
+    setNotice(null);
+    try {
+      await admissionsApi.reviewApplication(applicationId, status);
+      setApplications(await admissionsApi.getMyApplications());
+      setNotice('El dictamen de admisión se guardó correctamente.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No fue posible actualizar la postulación.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // Acciones: Roles
   const handleAssignRole = async () => {
@@ -657,7 +678,7 @@ export default function AdminDashboardPage() {
       <CampusShell
       currentTab={activeTab}
       onSelectTab={(tabId) => setActiveTab(tabId as AdminTab)}
-      breadcrumbs={['IINICIA', 'Control Maestro', getTabLabel(activeTab)]}
+      breadcrumbs={['INICIA', 'Control Maestro', getTabLabel(activeTab)]}
       counts={{
         users: users.length,
         courses: courses.length,
@@ -1201,6 +1222,8 @@ export default function AdminDashboardPage() {
                     <th className="px-6 py-3.5">Usuario / Correo</th>
                     <th className="px-6 py-3.5">Roles Activos</th>
                     <th className="px-6 py-3.5">Estado Portal</th>
+                    <th className="px-6 py-3.5">Programa asignado</th>
+                    <th className="px-6 py-3.5">Fecha de alta</th>
                     <th className="px-6 py-3.5">Vinculación Moodle</th>
                     <th className="px-6 py-3.5 text-right">Acciones de Control</th>
                   </tr>
@@ -1208,7 +1231,7 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-border/40">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted">
+                      <td colSpan={7} className="p-8 text-center text-muted">
                         No se encontraron usuarios con los criterios de búsqueda especificados.
                       </td>
                     </tr>
@@ -1275,6 +1298,22 @@ export default function AdminDashboardPage() {
                             >
                               {u.status}
                             </span>
+                          </td>
+
+                          <td className="px-6 py-4 text-muted">
+                            {u.programs?.length ? (
+                              <div className="flex min-w-40 flex-col gap-1.5">
+                                {u.programs.map((program) => (
+                                  <span key={program.program_id} className="rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                                    {program.name}<span className="ml-1 text-muted">· {program.academic_status}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : 'Sin programa'}
+                          </td>
+
+                          <td className="px-6 py-4 text-muted">
+                            {u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : 'No disponible'}
                           </td>
 
                           <td className="px-6 py-4">
@@ -1527,7 +1566,7 @@ export default function AdminDashboardPage() {
 
                           <td className="px-6 py-4">
                             <p className="font-semibold text-foreground text-xs">
-                              {enr.course_mappings?.course_name || enr.course_mappings?.courses?.name || enr.course_mappings?.moodle_shortname || 'Curso IINICIA'}
+                              {enr.course_mappings?.course_name || enr.course_mappings?.courses?.name || enr.course_mappings?.moodle_shortname || 'Curso INICIA'}
                             </p>
                             <p className="font-mono text-[10px] text-muted mt-0.5">
                               ID Moodle: #{enr.course_mappings?.moodle_course_id || 'N/A'}
@@ -1619,6 +1658,35 @@ export default function AdminDashboardPage() {
       {/* ========================================================================= */}
       {/* PESTAÑA 5: PROGRAMAS ACADÉMICOS                                           */}
       {/* ========================================================================= */}
+      {activeTab === 'admisiones' && (
+        <section className="space-y-4 rounded-xl border border-border bg-surface p-5 shadow-minimal">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Postulaciones a programas</h2>
+            <p className="mt-1 text-sm text-muted">Revisa cada solicitud y registra el dictamen. Admitir activa el perfil del aspirante según las reglas de la API.</p>
+          </div>
+          {applications.length === 0 ? <p className="text-sm text-muted">No hay postulaciones registradas.</p> : (
+            <ul className="space-y-3">
+              {applications.map((application) => (
+                <li key={application.id} className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4">
+                  <div className="min-w-0 text-sm">
+                    <p className="font-semibold text-foreground">{application.profiles ? `${application.profiles.first_name} ${application.profiles.last_name}` : application.applicant_id}</p>
+                    <p className="text-muted">{application.profiles?.email} · {application.programs?.name || 'Programa académico'}</p>
+                    <p className="mt-1 text-xs capitalize text-primary">Estado: {application.status.replace('_', ' ')}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(['en_revision', 'admitido', 'rechazado'] as const).map((status) => (
+                      <button key={status} type="button" disabled={actionLoading === `admission-${application.id}` || application.status === status} onClick={() => handleReviewApplication(application.id, status)} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium capitalize text-foreground hover:border-primary disabled:opacity-50">
+                        {status.replace('_', ' ')}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
       {activeTab === 'programas' && (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-border/60 bg-surface/75 backdrop-blur-xl p-5 shadow-xs">
@@ -1968,7 +2036,7 @@ export default function AdminDashboardPage() {
           <div className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
             <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
               <IconSettings className="w-5 h-5 text-primary" />
-              <span>Configuración del Sistema IINICIA</span>
+              <span>Configuración del Sistema INICIA</span>
             </h2>
             <p className="mt-0.5 text-xs text-muted">
               Parámetros de entorno institucional, sincronización y arquitectura.
@@ -2007,15 +2075,15 @@ export default function AdminDashboardPage() {
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Sistema de Diseño</span>
-                  <span className="font-medium text-foreground">IINICIA</span>
+                  <span className="font-medium text-foreground">INICIA</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Color Primario</span>
-                  <span className="font-mono text-primary font-bold">#456B19 (Verde institucional)</span>
+                  <span className="font-mono text-primary font-bold">#087654 (Esmeralda principal)</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Acento de Marca</span>
-                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#BEF264 (Verde lima)</span>
+                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#065C42 (Hover esmeralda)</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Radios de Componente</span>
@@ -2542,7 +2610,7 @@ export default function AdminDashboardPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Ej: IINICIA-IA-103"
+                    placeholder="Ej: INICIA-IA-103"
                     value={newMoodleShortname}
                     onChange={(e) => setNewMoodleShortname(e.target.value)}
                     className="w-full rounded-xl border border-border/70 bg-foreground/[0.03] focus:bg-surface focus:border-accent px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted/60 transition-all outline-none"

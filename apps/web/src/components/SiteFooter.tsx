@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const linkGroups = [
@@ -23,7 +24,7 @@ const linkGroups = [
   {
     title: "Institución y Campus",
     links: [
-      { label: "Universidad IINICIA", href: "/#universidad", id: "universidad" },
+      { label: "Universidad INICIA", href: "/#universidad", id: "universidad" },
       { label: "Canales de contacto", href: "/#contacto", id: "contacto" },
       { label: "Portal de Alumnos", href: "/dashboard/estudiante" },
       { label: "Portal de Docentes", href: "/dashboard/docente" },
@@ -52,12 +53,15 @@ export function SiteFooter() {
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
-              <span className="grid h-6 w-6 place-items-center rounded-[4px] bg-primary-action text-white text-xs font-bold">
-                I
+              <span className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-welcome-panel p-2 shadow-minimal ring-1 ring-primary/20">
+                <Image
+                  src="/inicia-nav-wordmark.png"
+                  alt="Logotipo INICIA: Instituto de Innovación y Ciencias Aplicadas"
+                  width={1563}
+                  height={1563}
+                  className="h-full w-full object-contain"
+                />
               </span>
-              <p className="text-[17px] font-semibold tracking-tight text-foreground">
-                IINICIA
-              </p>
             </div>
             <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-muted">
               Instituto de Innovación y Ciencias Aplicadas. Formación universitaria y continua en línea con integración transparente al Campus Virtual Moodle LMS.
