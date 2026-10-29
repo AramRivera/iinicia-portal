@@ -22,79 +22,20 @@ export class MoodleService {
     private readonly config: ConfigService,
   ) {}
 
-  async checkStatus() {
-    return this.client.checkConnection();
+  private getMoodleRoleId(moodleRole: MoodleRoleType): number {
+    if (moodleRole === 'student') {
+      const envStudentId = this.config.get<string | number>('MOODLE_ROLE_STUDENT_ID');
+      if (envStudentId) return Number(envStudentId);
+    }
+    if (moodleRole === 'editingteacher' || moodleRole === 'teacher') {
+      const envTeacherId = this.config.get<string | number>('MOODLE_ROLE_TEACHER_ID');
+      if (envTeacherId) return Number(envTeacherId);
+    }
+    return MOODLE_ROLE_IDS[moodleRole] ?? MOODLE_ROLE_IDS.student;
   }
 
-  /** Revisa el ámbito académico antes de devolver datos obtenidos con el token de Moodle. */
-  async authorizeCourseRead(
-    accessToken: string,
-    userId: string,
-    courseId: number,
-    resource: 'contents' | 'participants' | 'progress' | 'teacher-overview',
-    requestedMoodleUserId?: number,
-  ): Promise<number | undefined> {
-    if (!Number.isInteger(courseId) || courseId <= 0) {
-      throw new BadRequestException('Identificador de curso inválido.');
-    }
-
-    const db = this.supabase.getResilientClient(accessToken);
-    const { data: assignments, error: rolesError } = await db
-      .from('user_roles')
-      .select('is_active, expires_at, roles!role_id ( slug )')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-    if (rolesError) throw new ForbiddenException('No fue posible comprobar tus permisos.');
-
-    const now = new Date().toISOString();
-    const activeRoles = (assignments ?? []).flatMap((assignment) => {
-      if (assignment.expires_at && assignment.expires_at < now) return [];
-      const role = assignment.roles as unknown as { slug: string } | { slug: string }[] | null;
-      const slug = Array.isArray(role) ? role[0]?.slug : role?.slug;
-      return slug ? [slug] : [];
-    });
-    const isAdmin = activeRoles.includes('superadministrador') || activeRoles.includes('administrador');
-
-    const { data: courses, error: courseError } = await db
-      .from('v_user_authorized_courses')
-      .select('moodle_role')
-      .eq('user_id', userId)
-      .eq('moodle_course_id', courseId);
-    if (courseError) throw new ForbiddenException('No fue posible comprobar tu matrícula.');
-
-    const enrolled = (courses ?? []).length > 0;
-    const teachesCourse = (courses ?? []).some((course) =>
-      course.moodle_role === 'teacher' || course.moodle_role === 'editingteacher',
-    );
-    const allowed = resource === 'contents'
-      ? isAdmin || enrolled
-      : resource === 'progress'
-        ? isAdmin || enrolled
-        : isAdmin || teachesCourse;
-    if (!allowed) {
-      throw new ForbiddenException('No tienes acceso autorizado a este curso.');
-    }
-
-    if (resource !== 'progress') return undefined;
-    if (isAdmin) {
-      if (!requestedMoodleUserId || !Number.isInteger(requestedMoodleUserId) || requestedMoodleUserId <= 0) {
-        throw new BadRequestException('Se requiere un usuario de Moodle válido.');
-      }
-      return requestedMoodleUserId;
-    }
-
-    const { data: profile, error: profileError } = await db
-      .from('profiles')
-      .select('moodle_user_id')
-      .eq('id', userId)
-      .maybeSingle();
-    if (profileError || !profile?.moodle_user_id) {
-      throw new ForbiddenException('Tu cuenta no está vinculada con Moodle.');
-    }
-    if (requestedMoodleUserId && requestedMoodleUserId !== profile.moodle_user_id) {
-      throw new ForbiddenException('No puedes consultar las calificaciones de otra persona.');
-    }
-    return profile.moodle_user_id;
+  async checkStatus() {
+    return this.client.checkConnection();
   }
 
   /**
@@ -315,7 +256,7 @@ export class MoodleService {
     }
 
     const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
-    const roleId = MOODLE_ROLE_IDS[moodleRole] ?? MOODLE_ROLE_IDS.student;
+    const roleId = this.getMoodleRoleId(moodleRole);
     const attempts = (enrollment.sync_attempts || 0) + 1;
 
     try {
@@ -564,7 +505,7 @@ export class MoodleService {
     if (profile?.moodle_user_id && courseMapping?.moodle_course_id) {
       try {
         const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
-        const roleId = MOODLE_ROLE_IDS[moodleRole] ?? MOODLE_ROLE_IDS.student;
+        const roleId = this.getMoodleRoleId(moodleRole);
 
         await this.client.unenrolUser({
           userId: Number(profile.moodle_user_id),
@@ -577,6 +518,85 @@ export class MoodleService {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Valida que un usuario tenga permiso para acceder a información de un curso en Moodle.
+   * - Personal staff (superadmin, admin, coordinador) tiene acceso de supervisión.
+   * - Docentes tienen acceso a participantes, contenidos y analíticas de sus cursos asignados.
+   * - Estudiantes solo tienen acceso a contenidos y a su propio progreso en cursos matriculados.
+   */
+  async validateCourseAccess(
+    userId: string,
+    moodleCourseId: number,
+    options?: { requireTeacher?: boolean },
+  ): Promise<{ isStaff: boolean; isTeacher: boolean; moodleUserId: number | null }> {
+    const admin = this.supabase.getAdminClient();
+
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('moodle_user_id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const { data: userRoles } = await admin
+      .from('user_roles')
+      .select('roles!role_id ( slug )')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    const slugs = (userRoles || [])
+      .map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.slug : r.roles?.slug))
+      .filter(Boolean);
+
+    const isStaff =
+      slugs.includes('superadministrador') ||
+      slugs.includes('administrador') ||
+      slugs.includes('coordinador');
+
+    if (isStaff) {
+      return { isStaff: true, isTeacher: true, moodleUserId: profile?.moodle_user_id ?? null };
+    }
+
+    const { data: courseMapping } = await admin
+      .from('course_mappings')
+      .select('id')
+      .eq('moodle_course_id', moodleCourseId)
+      .maybeSingle();
+
+    if (!courseMapping) {
+      throw new NotFoundException(`Curso de Moodle #${moodleCourseId} no está vinculado en el portal.`);
+    }
+
+    const { data: enrollment } = await admin
+      .from('enrollment_requests')
+      .select('id, status, moodle_role')
+      .eq('user_id', userId)
+      .eq('course_mapping_id', courseMapping.id)
+      .in('status', ['autorizada', 'sincronizada'])
+      .maybeSingle();
+
+    if (!enrollment) {
+      throw new ForbiddenException(
+        'No posees autorización ni matrícula activa en este curso de Moodle.',
+      );
+    }
+
+    const isTeacher =
+      enrollment.moodle_role === 'editingteacher' ||
+      enrollment.moodle_role === 'teacher';
+
+    if (options?.requireTeacher && !isTeacher) {
+      throw new ForbiddenException(
+        'Acceso restringido: Se requieren privilegios de docente en este curso.',
+      );
+    }
+
+    return {
+      isStaff: false,
+      isTeacher,
+      moodleUserId: profile?.moodle_user_id ?? null,
+    };
   }
 
   /**

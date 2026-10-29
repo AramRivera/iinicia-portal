@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   Controller,
+  ForbiddenException,
   Get,
   Headers,
   HttpCode,
@@ -48,7 +50,7 @@ export class MoodleController {
   @Post('sync/enrollment/:enrollmentId')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador')
+  @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('moodle.sync.execute')
   syncEnrollment(@Param('enrollmentId') enrollmentId: string) {
     return this.moodleService.syncEnrollment(enrollmentId);
@@ -96,6 +98,7 @@ export class MoodleController {
 
   /**
    * Obtiene la estructura de temas y módulos de un curso en Moodle.
+   * Requiere matrícula activa en el curso o perfil de gestión (staff).
    */
   @Get('courses/:courseId/contents')
   @UseGuards(SupabaseAuthGuard)
@@ -103,12 +106,13 @@ export class MoodleController {
     @Param('courseId') courseId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    await this.moodleService.authorizeCourseRead(req.accessToken, req.user.id, Number(courseId), 'contents');
+    await this.moodleService.validateCourseAccess(req.user.id, Number(courseId));
     return this.moodleService.getCourseContents(Number(courseId));
   }
 
   /**
    * Lista los participantes matriculados en un curso de Moodle.
+   * Reservado para docentes asignados al curso o personal administrativo.
    */
   @Get('courses/:courseId/participants')
   @UseGuards(SupabaseAuthGuard)
@@ -116,35 +120,61 @@ export class MoodleController {
     @Param('courseId') courseId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    await this.moodleService.authorizeCourseRead(req.accessToken, req.user.id, Number(courseId), 'participants');
+    await this.moodleService.validateCourseAccess(req.user.id, Number(courseId), {
+      requireTeacher: true,
+    });
     return this.moodleService.getCourseParticipants(Number(courseId));
   }
 
   /**
    * Obtiene el progreso y calificaciones de un usuario en un curso de Moodle.
+   * Los estudiantes solo pueden consultar su propio progreso.
+   * Docentes y administradores pueden auditar el progreso de otros alumnos.
    */
   @Get('courses/:courseId/progress')
   @UseGuards(SupabaseAuthGuard)
   async getCourseProgress(
     @Param('courseId') courseId: string,
     @Req() req: AuthenticatedRequest,
-    @Query('moodle_user_id') moodleUserId?: string,
+    @Query('moodle_user_id') queryMoodleUserId?: string,
   ) {
-    const targetMoodleUserId = await this.moodleService.authorizeCourseRead(
-      req.accessToken,
+    const access = await this.moodleService.validateCourseAccess(
       req.user.id,
       Number(courseId),
-      'progress',
-      moodleUserId ? Number(moodleUserId) : undefined,
     );
+
+    let targetMoodleUserId = queryMoodleUserId
+      ? Number(queryMoodleUserId)
+      : access.moodleUserId;
+
+    // Si es estudiante (no es profesor ni staff), forzar estrictamente su propio id
+    if (!access.isTeacher && !access.isStaff) {
+      if (
+        queryMoodleUserId &&
+        access.moodleUserId != null &&
+        Number(queryMoodleUserId) !== access.moodleUserId
+      ) {
+        throw new ForbiddenException(
+          'No posees autorización para consultar el progreso de otro estudiante.',
+        );
+      }
+      targetMoodleUserId = access.moodleUserId;
+    }
+
+    if (!targetMoodleUserId) {
+      throw new BadRequestException(
+        'El perfil no cuenta con un identificador de Moodle sincronizado.',
+      );
+    }
+
     return this.moodleService.getUserCourseProgress(
       Number(courseId),
-      targetMoodleUserId!,
+      targetMoodleUserId,
     );
   }
 
   /**
-   * Resumen analítico global de un curso (docentes y administradores).
+   * Resumen analítico global de un curso (docentes asignados y administradores).
    */
   @Get('courses/:courseId/teacher-overview')
   @UseGuards(SupabaseAuthGuard)
@@ -152,7 +182,9 @@ export class MoodleController {
     @Param('courseId') courseId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    await this.moodleService.authorizeCourseRead(req.accessToken, req.user.id, Number(courseId), 'teacher-overview');
+    await this.moodleService.validateCourseAccess(req.user.id, Number(courseId), {
+      requireTeacher: true,
+    });
     return this.moodleService.getCourseTeacherOverview(Number(courseId));
   }
 }

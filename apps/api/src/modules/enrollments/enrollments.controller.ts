@@ -28,7 +28,7 @@ export class EnrollmentsController {
   @Get()
   @UseGuards(SupabaseAuthGuard)
   async findEnrollments(@Req() req: AuthenticatedRequest) {
-    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id, req.accessToken);
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
 
     return this.enrollmentsService.findEnrollments(
       req.user.id,
@@ -45,17 +45,11 @@ export class EnrollmentsController {
     @Req() req: AuthenticatedRequest,
   ) {
     const isAssigningOther = Boolean(dto.user_id && dto.user_id !== req.user.id);
-    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id, req.accessToken);
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
 
     if (isAssigningOther && !isStaff) {
       throw new ForbiddenException(
         'No posees privilegios de administración para asignar cursos a otros usuarios.',
-      );
-    }
-
-    if (!isStaff && (dto.moodle_role !== 'student' || dto.program_id)) {
-      throw new ForbiddenException(
-        'La solicitud personal no puede elegir un rol de Moodle ni un programa distinto.',
       );
     }
 
@@ -71,7 +65,7 @@ export class EnrollmentsController {
   @Patch(':id/status')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador')
+  @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('enrollments.authorize')
   updateEnrollmentStatus(
     @Param('id') id: string,
@@ -84,7 +78,7 @@ export class EnrollmentsController {
   @Post(':id/sync')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador')
+  @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('moodle.sync.execute')
   syncToMoodle(@Param('id') id: string) {
     return this.enrollmentsService.syncToMoodle(id);
@@ -97,7 +91,7 @@ export class EnrollmentsController {
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id, req.accessToken);
+    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
     return this.enrollmentsService.deleteEnrollment(id, req.user.id, isStaff);
   }
 }

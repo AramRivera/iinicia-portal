@@ -25,9 +25,18 @@ export class AdmissionsController {
 
   @Get()
   @UseGuards(SupabaseAuthGuard)
-  async findApplications(@Req() req: AuthenticatedRequest) {
-    const isStaff = await this.admissionsService.checkCanReview(req.user.id, req.accessToken);
-    return this.admissionsService.findApplications(req.user.id, isStaff, req.accessToken);
+  findApplications(@Req() req: AuthenticatedRequest) {
+    const userRoles = (req as any).userRoles || [];
+    const isStaff =
+      userRoles.includes('superadministrador') ||
+      userRoles.includes('administrador') ||
+      userRoles.includes('coordinador');
+
+    return this.admissionsService.findApplications(
+      req.user.id,
+      isStaff,
+      req.accessToken,
+    );
   }
 
   @Post()
@@ -43,7 +52,7 @@ export class AdmissionsController {
   @Patch(':id/review')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('superadministrador', 'administrador')
+  @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('admissions.review')
   reviewApplication(
     @Param('id') id: string,

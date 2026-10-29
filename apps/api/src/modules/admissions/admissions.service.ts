@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -15,23 +14,6 @@ export class AdmissionsService {
   private readonly logger = new Logger(AdmissionsService.name);
 
   constructor(private readonly supabase: SupabaseService) {}
-
-  async checkCanReview(userId: string, accessToken: string): Promise<boolean> {
-    const client = this.supabase.getResilientClient(accessToken);
-    const { data, error } = await client
-      .from('user_roles')
-      .select('expires_at, roles!role_id ( slug )')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-    if (error || !data) throw new ForbiddenException('No fue posible comprobar tus permisos.');
-    const now = new Date().toISOString();
-    return data.some((assignment) => {
-      if (assignment.expires_at && assignment.expires_at < now) return false;
-      const embedded = assignment.roles as unknown as { slug: string } | { slug: string }[] | null;
-      const slug = Array.isArray(embedded) ? embedded[0]?.slug : embedded?.slug;
-      return slug === 'superadministrador' || slug === 'administrador';
-    });
-  }
 
   /**
    * Consulta solicitudes de admisión.

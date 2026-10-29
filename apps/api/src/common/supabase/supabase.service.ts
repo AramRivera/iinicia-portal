@@ -208,47 +208,6 @@ export class SupabaseService {
     }
   }
 
-  async sendPasswordRecovery(email: string): Promise<void> {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL');
-    if (!frontendUrl) {
-      throw new ServiceUnavailableException('La recuperación de cuentas no está configurada.');
-    }
-    let redirectTo: string;
-    try {
-      const parsed = new URL(frontendUrl);
-      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
-      redirectTo = new URL('/restablecer-password', parsed).toString();
-    } catch {
-      throw new ServiceUnavailableException('La recuperación de cuentas no está configurada.');
-    }
-
-    try {
-      const { error } = await this.createClient().auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) {
-        this.logger.error(`Supabase rechazó la recuperación de contraseña: [${error.status}]`);
-        throw new ServiceUnavailableException('No fue posible enviar el correo de recuperación.');
-      }
-    } catch (error) {
-      if (error instanceof ServiceUnavailableException) throw error;
-      this.logger.error('Falló la comunicación con Supabase Auth durante la recuperación.');
-      throw new ServiceUnavailableException('No fue posible enviar el correo de recuperación.');
-    }
-  }
-
-  async updatePassword(userId: string, password: string): Promise<void> {
-    try {
-      const { error } = await this.getAdminClient().auth.admin.updateUserById(userId, { password });
-      if (error) {
-        this.logger.error(`Supabase rechazó el cambio de contraseña: [${error.status}]`);
-        throw new ServiceUnavailableException('No fue posible actualizar la contraseña.');
-      }
-    } catch (error) {
-      if (error instanceof ServiceUnavailableException) throw error;
-      this.logger.error('Falló la comunicación con Supabase Auth durante el cambio de contraseña.');
-      throw new ServiceUnavailableException('No fue posible actualizar la contraseña.');
-    }
-  }
-
   async getAuthenticatedUser(accessToken: string): Promise<User> {
     try {
       const { data, error } =
@@ -378,8 +337,8 @@ export class SupabaseService {
     const secretKey = this.config.get<string>('SUPABASE_SECRET_KEY');
 
     if (!secretKey) {
-      throw new ServiceUnavailableException(
-        'Las operaciones administrativas no están configuradas en esta instancia.',
+      throw new Error(
+        'SUPABASE_SECRET_KEY es obligatoria para operaciones administrativas del servidor.',
       );
     }
 

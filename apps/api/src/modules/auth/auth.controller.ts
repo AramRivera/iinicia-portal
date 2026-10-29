@@ -16,8 +16,6 @@ import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { RecoverPasswordDto } from './dto/recover-password.dto.js';
-import { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -43,27 +41,6 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   register(@Body() data: RegisterDto) {
     return this.authService.register(data);
-  }
-
-  @Post('recover')
-  @HttpCode(200)
-  @Header('Cache-Control', 'no-store')
-  @UseGuards(ThrottlerGuard)
-  async recover(@Body() data: RecoverPasswordDto) {
-    await this.supabase.sendPasswordRecovery(data.email);
-    return { message: 'Si la cuenta existe, recibirás un enlace de recuperación.' };
-  }
-
-  @Post('reset-password')
-  @HttpCode(200)
-  @Header('Cache-Control', 'no-store')
-  @UseGuards(SupabaseAuthGuard, ThrottlerGuard)
-  async resetPassword(
-    @Req() request: AuthenticatedRequest,
-    @Body() data: ResetPasswordDto,
-  ) {
-    await this.supabase.updatePassword(request.user.id, data.password);
-    return { message: 'La contraseña se actualizó correctamente.' };
   }
 
   /**

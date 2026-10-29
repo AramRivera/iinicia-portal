@@ -70,7 +70,7 @@ export class ProgramsController {
   @Post(':id/enroll-user')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard)
-  @Roles('superadministrador', 'administrador')
+  @Roles('superadministrador', 'administrador', 'coordinador')
   assignUser(
     @Param('id') programId: string,
     @Body() dto: AssignUserProgramDto,

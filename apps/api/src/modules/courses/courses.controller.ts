@@ -30,6 +30,18 @@ export class CoursesController {
   }
 
   /**
+   * Sincroniza bajo demanda todos los cursos creados en Moodle hacia la plataforma.
+   */
+  @Post('sync-moodle')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('superadministrador', 'administrador', 'coordinador')
+  @RequirePermissions('courses.manage')
+  syncMoodleCourses() {
+    return this.coursesService.syncCoursesFromMoodle();
+  }
+
+  /**
    * Consulta cursos.
    * - Para Estudiantes y Profesores: solo devuelve sus cursos autorizados (`v_user_authorized_courses`).
    * - Para Administradores y Coordinadores: devuelve el catálogo completo de cursos mapeados.

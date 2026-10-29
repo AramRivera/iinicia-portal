@@ -6,17 +6,10 @@ import { SupabaseAuthGuard } from './supabase-auth.guard.js';
 
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;
-  let supabase: { getAuthenticatedUser: ReturnType<typeof vi.fn>; getResilientClient: ReturnType<typeof vi.fn> };
-  const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() };
+  let supabase: { getAuthenticatedUser: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    query.select.mockReturnValue(query);
-    query.eq.mockReturnValue(query);
-    query.maybeSingle.mockResolvedValue({ data: { status: 'activo' }, error: null });
-    supabase = {
-      getAuthenticatedUser: vi.fn(),
-      getResilientClient: vi.fn(() => ({ from: vi.fn(() => query) })),
-    };
+    supabase = { getAuthenticatedUser: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,14 +44,6 @@ describe('SupabaseAuthGuard', () => {
       guard.canActivate(createExecutionContext(request)),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(supabase.getAuthenticatedUser).not.toHaveBeenCalled();
-  });
-
-  it('rejects suspended accounts even with a valid Supabase token', async () => {
-    supabase.getAuthenticatedUser.mockResolvedValue({ id: 'user-1' });
-    query.maybeSingle.mockResolvedValueOnce({ data: { status: 'suspendido' }, error: null });
-    const request = { headers: { authorization: 'Bearer valid-token' } } as Request;
-    await expect(guard.canActivate(createExecutionContext(request)))
-      .rejects.toBeInstanceOf(UnauthorizedException);
   });
 });
 

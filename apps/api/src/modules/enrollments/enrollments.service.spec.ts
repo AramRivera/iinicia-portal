@@ -48,58 +48,6 @@ describe('EnrollmentsService', () => {
   });
 
   describe('createEnrollmentRequest', () => {
-    it('keeps a personal request pending without granting a role or calling Moodle', async () => {
-      const inserted = { id: 'enr-new', status: 'pendiente' };
-      const insert = vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({ data: inserted, error: null }),
-        }),
-      });
-      adminClientMock.from.mockImplementation((table: string) => {
-        if (table === 'course_mappings') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: { id: 'c1', program_id: 'p1', is_active: true, course_name: 'Curso 1' },
-                  error: null,
-                }),
-              }),
-            }),
-          };
-        }
-        if (table === 'enrollment_requests') {
-          return {
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-                }),
-              }),
-            }),
-            insert,
-          };
-        }
-        if (table === 'audit_logs') return { insert: vi.fn().mockResolvedValue({ error: null }) };
-        return {};
-      });
-
-      const result = await service.createEnrollmentRequest('usr-1', {
-        course_mapping_id: 'c1',
-        moodle_role: 'student',
-      });
-
-      expect(result.status).toBe('pendiente');
-      expect(insert).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'pendiente',
-        moodle_role: 'student',
-        authorized_by: null,
-        authorized_at: null,
-      }));
-      expect(adminClientMock.from).not.toHaveBeenCalledWith('user_roles');
-      expect(moodleServiceMock.syncEnrollment).not.toHaveBeenCalled();
-    });
-
     it('throws NotFoundException if course does not exist', async () => {
       adminClientMock.from.mockReturnValue({
         select: vi.fn().mockReturnValue({

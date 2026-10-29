@@ -33,16 +33,6 @@ export class SupabaseAuthGuard implements CanActivate {
     request.accessToken = accessToken;
     request.user = await this.supabase.getAuthenticatedUser(accessToken);
 
-    const { data: profile, error } = await this.supabase
-      .getResilientClient(accessToken)
-      .from('profiles')
-      .select('status')
-      .eq('id', request.user.id)
-      .maybeSingle();
-    if (error || !profile || ['suspendido', 'inactivo', 'baja'].includes(profile.status)) {
-      throw new UnauthorizedException('La cuenta no está activa en el portal.');
-    }
-
     return true;
   }
 }

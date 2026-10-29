@@ -20,7 +20,6 @@ describe('MoodleService', () => {
   };
   let supabaseMock: {
     getAdminClient: ReturnType<typeof vi.fn>;
-    getResilientClient: ReturnType<typeof vi.fn>;
   };
   let configMock: {
     get: ReturnType<typeof vi.fn>;
@@ -53,7 +52,6 @@ describe('MoodleService', () => {
 
     supabaseMock = {
       getAdminClient: vi.fn().mockReturnValue(adminClientMock),
-      getResilientClient: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -66,46 +64,6 @@ describe('MoodleService', () => {
     }).compile();
 
     service = module.get<MoodleService>(MoodleService);
-  });
-
-  describe('authorizeCourseRead', () => {
-    function withCourseAccess(moodleRole: string | null, moodleUserId = 42) {
-      const db = {
-        from: vi.fn((table: string) => {
-          if (table === 'user_roles') return {
-            select: () => ({ eq: () => ({ eq: async () => ({ data: [{ is_active: true, expires_at: null, roles: { slug: 'estudiante' } }], error: null }) }) }),
-          };
-          if (table === 'v_user_authorized_courses') return {
-            select: () => ({ eq: () => ({ eq: async () => ({ data: moodleRole ? [{ moodle_role: moodleRole }] : [], error: null }) }) }),
-          };
-          if (table === 'profiles') return {
-            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { moodle_user_id: moodleUserId }, error: null }) }) }),
-          };
-          return {};
-        }),
-      };
-      supabaseMock.getResilientClient.mockReturnValue(db);
-    }
-
-    it('denies course contents without an authorized enrollment', async () => {
-      withCourseAccess(null);
-      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'contents'))
-        .rejects.toBeInstanceOf(ForbiddenException);
-    });
-
-    it('uses the authenticated student Moodle ID for progress and blocks another ID', async () => {
-      withCourseAccess('student');
-      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'progress'))
-        .resolves.toBe(42);
-      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'progress', 99))
-        .rejects.toBeInstanceOf(ForbiddenException);
-    });
-
-    it('does not expose participant data to a student', async () => {
-      withCourseAccess('student');
-      await expect(service.authorizeCourseRead('token', 'usr-1', 7, 'participants'))
-        .rejects.toBeInstanceOf(ForbiddenException);
-    });
   });
 
   describe('syncUser', () => {
@@ -412,6 +370,93 @@ describe('MoodleService', () => {
         courseId: 4,
         roleId: 5,
       });
+    });
+  });
+
+  describe('validateCourseAccess', () => {
+    it('grants full access for staff members', async () => {
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { moodle_user_id: 2 }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'user_roles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({
+                  data: [{ roles: { slug: 'administrador' } }],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await service.validateCourseAccess('usr-admin', 2);
+      expect(res.isStaff).toBe(true);
+      expect(res.isTeacher).toBe(true);
+      expect(res.moodleUserId).toBe(2);
+    });
+
+    it('rejects access if user has no authorized enrollment in the course', async () => {
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { moodle_user_id: 111 }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'user_roles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({
+                  data: [{ roles: { slug: 'estudiante' } }],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'course_mappings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'cm-2' }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'enrollment_requests') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  in: vi.fn().mockReturnValue({
+                    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        return {};
+      });
+
+      await expect(service.validateCourseAccess('usr-student', 2)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

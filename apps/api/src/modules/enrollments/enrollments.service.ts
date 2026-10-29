@@ -22,31 +22,25 @@ export class EnrollmentsService {
   ) {}
 
   /**
-   * Verifica si un usuario posee rol administrativo para operar matrículas globales.
+   * Verifica si un usuario posee roles administrativos o de coordinación.
    */
-  async checkIsStaff(userId: string, accessToken: string): Promise<boolean> {
-    const client = this.supabase.getResilientClient(accessToken);
-    const { data: roles, error } = await client
+  async checkIsStaff(userId: string): Promise<boolean> {
+    const admin = this.supabase.getAdminClient();
+    const { data: roles } = await admin
       .from('user_roles')
-      .select('expires_at, roles!role_id ( slug )')
+      .select('roles!role_id ( slug )')
       .eq('user_id', userId)
       .eq('is_active', true);
 
-    if (error || !roles || !Array.isArray(roles)) {
-      throw new ForbiddenException('No fue posible comprobar los roles de tu cuenta.');
-    }
-    const now = new Date().toISOString();
+    if (!roles || !Array.isArray(roles)) return false;
     const slugs = roles
-      .filter((role) => !role.expires_at || role.expires_at >= now)
-      .map((role) => {
-        const embedded = role.roles as unknown as { slug: string } | { slug: string }[] | null;
-        return Array.isArray(embedded) ? embedded[0]?.slug : embedded?.slug;
-      })
+      .map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.slug : r.roles?.slug))
       .filter(Boolean);
 
     return (
       slugs.includes('superadministrador') ||
-      slugs.includes('administrador')
+      slugs.includes('administrador') ||
+      slugs.includes('coordinador')
     );
   }
 
@@ -122,19 +116,14 @@ export class EnrollmentsService {
         );
       }
 
-      if (existing.status === 'pendiente' && !isStaffAssignment) {
-        throw new ConflictException('Ya tienes una solicitud pendiente para este curso.');
-      }
-
-      // Una solicitud personal vuelve a revisión; solo personal autorizado puede aprobarla.
+      // Si existía como pendiente, rechazada o error, se autoriza y sincroniza de inmediato
       const { data: updated, error: updError } = await admin
         .from('enrollment_requests')
         .update({
-          status: isStaffAssignment ? 'autorizada' : 'pendiente',
-          moodle_role: isStaffAssignment ? dto.moodle_role || 'student' : 'student',
-          authorized_by: isStaffAssignment ? effectiveActor : null,
-          authorized_at: isStaffAssignment ? nowIso : null,
-          requested_by: effectiveActor,
+          status: 'autorizada',
+          moodle_role: dto.moodle_role || 'student',
+          authorized_by: effectiveActor,
+          authorized_at: nowIso,
           notes: dto.notes ?? (isStaffAssignment ? 'Asignado directamente por administrador' : null),
         })
         .eq('id', existing.id)
@@ -145,19 +134,18 @@ export class EnrollmentsService {
         throw new InternalServerErrorException('Error al reactivar solicitud de inscripción.');
       }
 
-      if (isStaffAssignment) {
-        try {
-          await this.moodleService.syncEnrollment(updated.id);
-        } catch (err: any) {
-          this.logger.warn(`Error al sincronizar matrícula existente con Moodle: ${err?.message}`);
-        }
+      try {
+        await this.moodleService.syncEnrollment(updated.id);
+      } catch (err: any) {
+        this.logger.warn(`Error al sincronizar matrícula existente con Moodle: ${err?.message}`);
       }
 
       return updated;
     }
 
-    const programId = isStaffAssignment ? dto.program_id || course.program_id : course.program_id;
-    const initialStatus = isStaffAssignment ? 'autorizada' : 'pendiente';
+    const programId = dto.program_id || course.program_id;
+    // Cursos públicos activos se autorizan de inmediato para que el alumno pueda tomarlos de forma directa
+    const initialStatus = 'autorizada';
 
     const { data, error } = await admin
       .from('enrollment_requests')
@@ -165,11 +153,11 @@ export class EnrollmentsService {
         user_id: userId,
         course_mapping_id: dto.course_mapping_id,
         program_id: programId,
-        moodle_role: isStaffAssignment ? dto.moodle_role || 'student' : 'student',
+        moodle_role: dto.moodle_role || 'student',
         status: initialStatus,
         requested_by: effectiveActor,
-        authorized_by: isStaffAssignment ? effectiveActor : null,
-        authorized_at: isStaffAssignment ? nowIso : null,
+        authorized_by: effectiveActor,
+        authorized_at: nowIso,
         notes: dto.notes ?? null,
       })
       .select()
@@ -182,30 +170,48 @@ export class EnrollmentsService {
       );
     }
 
+    // Si el usuario no tiene rol de estudiante (id: 5), asignarlo automáticamente para que acceda al aula
+    try {
+      const { data: existingRoles } = await admin
+        .from('user_roles')
+        .select('role_id')
+        .eq('user_id', userId);
+
+      const hasStudentRole = existingRoles?.some((r) => r.role_id === 5);
+      if (!hasStudentRole) {
+        await admin.from('user_roles').insert({
+          user_id: userId,
+          role_id: 5,
+          assigned_by: effectiveActor,
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`No se pudo verificar/asignar rol de estudiante al usuario ${userId}: ${err?.message}`);
+    }
+
     await admin.from('audit_logs').insert({
       actor_id: effectiveActor,
       target_user_id: userId,
       action: isStaffAssignment
         ? 'ENROLLMENT_ASSIGNED_BY_ADMIN'
-        : 'ENROLLMENT_REQUESTED',
+        : 'ENROLLMENT_PUBLIC_COURSE_SELF_REGISTERED',
       entity_name: 'enrollment_requests',
       entity_id: data.id,
       new_values: {
         course_mapping_id: dto.course_mapping_id,
         course_name: course.course_name,
-        moodle_role: isStaffAssignment ? dto.moodle_role || 'student' : 'student',
+        moodle_role: dto.moodle_role || 'student',
         status: initialStatus,
       },
     });
 
-    if (isStaffAssignment) {
-      try {
-        await this.moodleService.syncEnrollment(data.id);
-      } catch (err: any) {
-        this.logger.warn(
-          `Matrícula autorizada pero falló sincronización inmediata a Moodle: ${err?.message}`,
-        );
-      }
+    // Sincronizar inmediatamente la matrícula con Moodle LMS
+    try {
+      await this.moodleService.syncEnrollment(data.id);
+    } catch (err: any) {
+      this.logger.warn(
+        `Matrícula autorizada pero falló sincronización inmediata a Moodle: ${err?.message}`,
+      );
     }
 
     return data;
@@ -293,7 +299,7 @@ export class EnrollmentsService {
 
   /**
    * Elimina / desasigna una matrícula de un curso:
-   * - Si es administrador, puede desasignar cualquier curso a cualquier usuario.
+   * - Si es staff (admin/coordinador), puede desasignar cualquier curso a cualquier usuario.
    * - Si es alumno o profesor, puede dar de baja su propio curso.
    * - Llama a Moodle unenrolStudent para desmatricular en el aula virtual.
    * - Elimina el registro de enrollment_requests y registra la acción en audit_logs.

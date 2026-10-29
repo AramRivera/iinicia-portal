@@ -281,6 +281,19 @@ export class MoodleClient {
   }
 
   /**
+   * Obtiene todos los cursos disponibles en Moodle LMS (`core_course_get_courses`).
+   */
+  async getAllCourses(): Promise<any[]> {
+    try {
+      const courses = await this.callFunction<any[]>('core_course_get_courses');
+      return Array.isArray(courses) ? courses : [];
+    } catch (err: any) {
+      this.logger.warn(`No fue posible obtener el catálogo global de Moodle: ${err?.message}`);
+      return [];
+    }
+  }
+
+  /**
    * Obtiene los detalles de un curso en Moodle por su ID (`core_course_get_courses_by_field`).
    */
   async getCourseById(courseId: number): Promise<MoodleCourseResponse | null> {
@@ -333,13 +346,21 @@ export class MoodleClient {
    */
   async getUserCourseGrades(courseId: number, moodleUserId: number): Promise<any | null> {
     try {
-      const res = await this.callFunction<any>('gradereport_user_get_grade_items', {
-        courseid: courseId,
-        userid: moodleUserId,
-      });
+      const res = await this.callFunction<any>(
+        'gradereport_user_get_grade_items',
+        {
+          courseid: courseId,
+          userid: moodleUserId,
+        },
+        {
+          silentErrors: ['cannotviewreport', 'notenroled', 'usernotenroled'],
+        },
+      );
       return res?.usergrades?.[0] || null;
     } catch (err: any) {
-      this.logger.warn(`No fue posible obtener calificaciones de usuario #${moodleUserId} en curso #${courseId}: ${err.message}`);
+      this.logger.warn(
+        `No fue posible obtener calificaciones de usuario #${moodleUserId} en curso #${courseId}: ${err.message}`,
+      );
       return null;
     }
   }
@@ -349,12 +370,18 @@ export class MoodleClient {
    */
   async getCourseCompletionStatus(courseId: number, moodleUserId: number): Promise<any | null> {
     try {
-      const status = await this.callFunction<any>('core_completion_get_course_completion_status', {
-        courseid: courseId,
-        userid: moodleUserId,
-      });
+      const status = await this.callFunction<any>(
+        'core_completion_get_course_completion_status',
+        {
+          courseid: courseId,
+          userid: moodleUserId,
+        },
+        {
+          silentErrors: ['cannotviewreport', 'nocriteriaset', 'notenroled', 'usernotenroled'],
+        },
+      );
       return status?.completionstatus || null;
-    } catch (err: any) {
+    } catch {
       // Si el curso no tiene criterios de terminación configurados en Moodle, no se considera error crítico
       return null;
     }
@@ -366,6 +393,7 @@ export class MoodleClient {
   private async callFunction<T>(
     wsfunction: string,
     params: Record<string, any> = {},
+    options?: { silentErrors?: string[] },
   ): Promise<T> {
     const token = this.getToken();
     const baseUrl = await this.getEffectiveBaseUrl();
@@ -418,9 +446,22 @@ export class MoodleClient {
 
     // Moodle devuelve excepciones con `{ exception: "...", errorcode: "...", message: "..." }`
     if (json && typeof json === 'object' && ('exception' in json || 'errorcode' in json)) {
-      this.logger.error(
-        `Error de Moodle Web Service (${wsfunction}): [${json.errorcode}] ${json.message}`,
+      const isSilent = Boolean(
+        options?.silentErrors &&
+          json.errorcode &&
+          options.silentErrors.includes(json.errorcode),
       );
+
+      if (!isSilent) {
+        this.logger.error(
+          `Error de Moodle Web Service (${wsfunction}): [${json.errorcode}] ${json.message}`,
+        );
+      } else {
+        this.logger.debug?.(
+          `Aviso de Moodle Web Service (${wsfunction}): [${json.errorcode}] ${json.message}`,
+        );
+      }
+
       throw new InternalServerErrorException(
         `Error en Moodle LMS: ${json.message || json.errorcode || 'Error desconocido'}`,
       );
