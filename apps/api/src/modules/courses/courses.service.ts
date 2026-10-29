@@ -23,7 +23,7 @@ export class CoursesService {
   /**
    * Cursos del usuario:
    * - Si es estudiante o profesor: consulta exclusivamente los cursos autorizados en `v_user_authorized_courses`.
-   * - Si es staff: consulta el catálogo completo de mapeos en `course_mappings`.
+   * - Si es staff: sincroniza automáticamente nuevos cursos desde Moodle y consulta el catálogo completo en `course_mappings`.
    */
   async findCourses(userId: string, isStaff: boolean, accessToken: string) {
     const client = this.supabase.getResilientClient(accessToken);
@@ -43,6 +43,13 @@ export class CoursesService {
       return data || [];
     }
 
+    // Auto-sincronización automática de cursos creados en Moodle LMS
+    try {
+      await this.syncCoursesFromMoodle();
+    } catch (syncErr: any) {
+      this.logger.warn(`Auto-sync de cursos Moodle reportó advertencia: ${syncErr?.message}`);
+    }
+
     const { data, error } = await client
       .from('course_mappings')
       .select('*, programs!program_id ( code, name, slug )')
@@ -55,6 +62,117 @@ export class CoursesService {
       );
     }
     return data || [];
+  }
+
+  /**
+   * Sincroniza automáticamente los cursos de Moodle hacia `course_mappings` en Supabase:
+   * 1. Consulta todos los cursos en Moodle LMS vía `core_course_get_courses`.
+   * 2. Omite el curso de sitio (id: 1).
+   * 3. Para cada curso que no exista en `course_mappings`:
+   *    - Busca si existe un programa con nombre/código similar o crea uno nuevo en `programs`.
+   *    - Inserta el registro correspondiente en `course_mappings`.
+   */
+  async syncCoursesFromMoodle() {
+    const admin = this.supabase.getAdminClient();
+    const moodleCourses = await this.moodleClient.getAllCourses();
+    const moodleBaseUrl = await this.moodleClient.getEffectiveBaseUrl();
+
+    // Descartar el curso global de sitio (id: 1)
+    const activeMoodleCourses = moodleCourses.filter((c) => Number(c.id) > 1);
+
+    if (activeMoodleCourses.length === 0) {
+      return { total: 0, imported: 0 };
+    }
+
+    // Obtener los mappings existentes
+    const { data: existingMappings } = await admin
+      .from('course_mappings')
+      .select('moodle_course_id');
+
+    const existingMoodleIds = new Set(
+      (existingMappings || []).map((m) => Number(m.moodle_course_id)),
+    );
+
+    let importedCount = 0;
+
+    for (const mc of activeMoodleCourses) {
+      const courseId = Number(mc.id);
+      if (existingMoodleIds.has(courseId)) {
+        continue;
+      }
+
+      const cleanName = (mc.fullname || `Curso #${courseId}`).trim();
+      const cleanShortname = (mc.shortname || `CUR-${courseId}`).trim();
+      const code = (mc.idnumber || cleanShortname).replace(/\s+/g, '-').toUpperCase();
+      const baseSlug = cleanName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const slug = `${baseSlug}-${courseId}`;
+
+      // Buscar si ya existe un programa para asociarlo
+      const { data: existingProgram } = await admin
+        .from('programs')
+        .select('id')
+        .or(`name.ilike.%${cleanName}%,code.ilike.%${code}%`)
+        .maybeSingle();
+
+      let programId = existingProgram?.id;
+
+      if (!programId) {
+        // Crear el programa en programs si no existía
+        const { data: newProgram, error: progErr } = await admin
+          .from('programs')
+          .insert({
+            name: cleanName,
+            code,
+            slug,
+            description: mc.summary?.replace(/<[^>]*>/g, '').trim() || cleanName,
+            type: 'curso',
+            modality: 'en_linea',
+            is_active: true,
+          })
+          .select('id')
+          .single();
+
+        if (!progErr && newProgram) {
+          programId = newProgram.id;
+        } else if (progErr) {
+          this.logger.warn(`No se pudo crear programa automático para ${cleanName}: ${progErr.message}`);
+        }
+      }
+
+      if (programId) {
+        const { error: insertErr } = await admin.from('course_mappings').insert({
+          program_id: programId,
+          portal_course_code: code,
+          slug,
+          course_name: cleanName,
+          course_description: mc.summary?.replace(/<[^>]*>/g, '').trim() || cleanName,
+          moodle_course_id: courseId,
+          moodle_shortname: cleanShortname,
+          moodle_course_url: `${moodleBaseUrl}/course/view.php?id=${courseId}`,
+          is_active: true,
+          term_or_module: 1,
+          is_mandatory: true,
+        });
+
+        if (!insertErr) {
+          importedCount++;
+          existingMoodleIds.add(courseId);
+          this.logger.log(`Curso #${courseId} ("${cleanName}") sincronizado exitosamente desde Moodle.`);
+        } else {
+          this.logger.warn(`Error al insertar mapping para curso #${courseId}: ${insertErr.message}`);
+        }
+      }
+    }
+
+    return {
+      total: activeMoodleCourses.length,
+      imported: importedCount,
+    };
   }
 
   /**

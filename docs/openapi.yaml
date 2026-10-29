@@ -376,6 +376,35 @@ paths:
   # =========================================================================
   # CURSOS Y MAPEOS CON MOODLE
   # =========================================================================
+  /courses/offerings:
+    get:
+      summary: Catálogo de cursos ofertados para asignación y matrícula
+      description: Auto-sincroniza en segundo plano cualquier nuevo curso creado en Moodle y retorna la lista completa de course_mappings con su programa asociado.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de cursos disponibles para asignación.
+
+  /courses/sync-moodle:
+    post:
+      summary: Sincronización bajo demanda de cursos desde Moodle hacia Supabase
+      description: Escanea Moodle LMS (core_course_get_courses), importa nuevos cursos omitiendo el sitio y genera automáticamente los registros correspondientes en course_mappings y programs.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Resumen de cursos detectados e importados.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  imported:
+                    type: integer
+
   /courses:
     get:
       summary: Cursos accesibles para el usuario o catálogo para staff

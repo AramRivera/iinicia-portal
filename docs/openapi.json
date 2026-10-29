@@ -1,0 +1,1392 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "IINICIA API",
+    "version": "1.0.0",
+    "description": "API REST oficial de la Plataforma Digital Universitaria IINICIA (NestJS + Supabase + Moodle). Gestiona la identidad con Supabase Auth, roles RBAC, oferta acad\u00e9mica, solicitudes de admisi\u00f3n, matr\u00edculas y sincronizaci\u00f3n bidireccional con Moodle LMS.\n"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Servidor de desarrollo local"
+    },
+    {
+      "url": "http://192.168.191.171:3000/api/v1",
+      "description": "Servidor de desarollo remoto"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Verificaci\u00f3n de salud y estado de integraciones",
+        "description": "Devuelve el estado del backend, de Supabase PostgreSQL y de Moodle Web Services.",
+        "responses": {
+          "200": {
+            "description": "Estado general del sistema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "services": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Iniciar sesi\u00f3n en el portal",
+        "description": "Autentica al usuario contra Supabase Auth y devuelve tokens de sesi\u00f3n.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesi\u00f3n iniciada correctamente."
+          },
+          "401": {
+            "description": "Credenciales incorrectas."
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Registro de nuevo aspirante / usuario",
+        "description": "Crea la cuenta en Supabase Auth y genera perfil con rol inicial 'aspirante' y estado 'pendiente'.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "first_name",
+                  "last_name"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  },
+                  "first_name": {
+                    "type": "string"
+                  },
+                  "last_name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente."
+          },
+          "409": {
+            "description": "Correo electr\u00f3nico ya registrado."
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Identidad del usuario autenticado",
+        "description": "Devuelve el perfil institucional, roles activos, permisos consolidados y estado de Moodle.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil y permisos del usuario autenticado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token no v\u00e1lido o cuenta suspendida."
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Listado paginado y filtrado de usuarios",
+        "description": "Consulta usuarios con soporte para b\u00fasqueda difusa, filtro por estado o rol. Requiere permiso users.read.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "activo",
+                "suspendido",
+                "inactivo",
+                "baja"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listado paginado de usuarios."
+          }
+        }
+      },
+      "post": {
+        "summary": "Creaci\u00f3n administrativa de usuario con asignaci\u00f3n directa de rol",
+        "description": "Permite al personal administrativo crear una cuenta con un rol espec\u00edfico (estudiante, profesor, coordinador, etc.) y sincronizarla opcionalmente con Moodle de forma inmediata sin suplantar la sesi\u00f3n del administrador.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "first_name",
+                  "last_name",
+                  "role_id"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  },
+                  "first_name": {
+                    "type": "string"
+                  },
+                  "last_name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "role_id": {
+                    "type": "integer",
+                    "description": "Identificador num\u00e9rico del rol en Supabase (ej. 3=coordinador, 4=profesor, 5=estudiante)."
+                  },
+                  "sync_to_moodle": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Si es true, aprovisiona la cuenta inmediatamente en Moodle LMS v\u00eda Web Services."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado y rol asignado exitosamente."
+          },
+          "400": {
+            "description": "Datos de entrada inv\u00e1lidos o correo ya registrado."
+          },
+          "403": {
+            "description": "No posees permisos para crear usuarios administrativos (requiere users.manage)."
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Detalle consolidado de usuario",
+        "description": "Devuelve datos completos de perfil, roles y programas. Los estudiantes solo ven su propio perfil.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del usuario."
+          },
+          "403": {
+            "description": "Acceso no autorizado al perfil de otro usuario."
+          }
+        }
+      }
+    },
+    "/users/{id}/status": {
+      "patch": {
+        "summary": "Cambiar estado de usuario (activar, suspender, baja)",
+        "description": "Actualiza el estado administrativo y sincroniza suspensi\u00f3n en Moodle. Requiere permiso users.manage.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pendiente",
+                      "activo",
+                      "suspendido",
+                      "inactivo",
+                      "baja"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado actualizado exitosamente."
+          }
+        }
+      }
+    },
+    "/users/me/profile": {
+      "patch": {
+        "summary": "Actualizar perfil propio",
+        "description": "Actualiza campos editables propios (nombre, apellidos, tel\u00e9fono, avatar, bio) bajo RLS.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "first_name": {
+                    "type": "string"
+                  },
+                  "last_name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "avatar_url": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado."
+          }
+        }
+      }
+    },
+    "/roles": {
+      "get": {
+        "summary": "Cat\u00e1logo de roles",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de roles del sistema."
+          }
+        }
+      }
+    },
+    "/roles/users/{userId}": {
+      "post": {
+        "summary": "Asignar rol a usuario",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role_id"
+                ],
+                "properties": {
+                  "role_id": {
+                    "type": "integer"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rol asignado."
+          }
+        }
+      }
+    },
+    "/roles/users/{userId}/{roleId}": {
+      "delete": {
+        "summary": "Revocar rol de usuario",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rol revocado."
+          }
+        }
+      }
+    },
+    "/permissions": {
+      "get": {
+        "summary": "Cat\u00e1logo de permisos del sistema",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de permisos granulares."
+          }
+        }
+      }
+    },
+    "/programs": {
+      "get": {
+        "summary": "Cat\u00e1logo de programas acad\u00e9micos",
+        "description": "Consulta p\u00fablica de programas activos; administradores pueden visualizar inactivos.",
+        "responses": {
+          "200": {
+            "description": "Lista de programas."
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear nuevo programa",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Programa creado."
+          }
+        }
+      }
+    },
+    "/programs/{idOrSlug}": {
+      "get": {
+        "summary": "Detalle de programa por ID o Slug",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idOrSlug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del programa."
+          }
+        }
+      }
+    },
+    "/programs/{id}/enroll-user": {
+      "post": {
+        "summary": "Vincular usuario a programa acad\u00e9mico",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuario vinculado a programa."
+          }
+        }
+      }
+    },
+    "/courses/offerings": {
+      "get": {
+        "summary": "Cat\u00e1logo de cursos ofertados para asignaci\u00f3n y matr\u00edcula",
+        "description": "Auto-sincroniza en segundo plano cualquier nuevo curso creado en Moodle y retorna la lista completa de course_mappings con su programa asociado.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de cursos disponibles para asignaci\u00f3n."
+          }
+        }
+      }
+    },
+    "/courses/sync-moodle": {
+      "post": {
+        "summary": "Sincronizaci\u00f3n bajo demanda de cursos desde Moodle hacia Supabase",
+        "description": "Escanea Moodle LMS (core_course_get_courses), importa nuevos cursos omitiendo el sitio y genera autom\u00e1ticamente los registros correspondientes en course_mappings y programs.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen de cursos detectados e importados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "imported": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses": {
+      "get": {
+        "summary": "Cursos accesibles para el usuario o cat\u00e1logo para staff",
+        "description": "Los estudiantes y profesores \u00fanicamente ven cursos donde tienen matr\u00edcula autorizada (CA-11, CA-12, CA-13).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de cursos correspondientes."
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear mapeo entre curso portal y curso Moodle",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Mapeo creado."
+          }
+        }
+      }
+    },
+    "/courses/{id}": {
+      "get": {
+        "summary": "Detalle de curso mapeado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del curso."
+          }
+        }
+      }
+    },
+    "/enrollments": {
+      "get": {
+        "summary": "Consultar solicitudes de inscripci\u00f3n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de solicitudes."
+          }
+        }
+      },
+      "post": {
+        "summary": "Solicitar inscripci\u00f3n a un curso",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Solicitud registrada en estado 'pendiente'."
+          }
+        }
+      }
+    },
+    "/enrollments/{id}": {
+      "delete": {
+        "summary": "Desasignar curso o dar de baja matr\u00edcula",
+        "description": "Permite al estudiante darse de baja de su curso o al personal docente/administrativo revocar una matr\u00edcula. Desmatricula al usuario de Moodle LMS v\u00eda Web Services oficiales (enrol_manual_unenrol_users).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Identificador UUID de la matr\u00edcula",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matr\u00edcula revocada y desasignada exitosamente en el portal y en Moodle LMS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No autorizado para dar de baja esta matr\u00edcula."
+          },
+          "404": {
+            "description": "Matr\u00edcula no encontrada."
+          }
+        }
+      }
+    },
+    "/enrollments/{id}/status": {
+      "patch": {
+        "summary": "Autorizar o rechazar inscripci\u00f3n",
+        "description": "Requiere permiso enrollments.authorize. Si se autoriza, puede sincronizar autom\u00e1ticamente con Moodle.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "autorizada",
+                      "rechazada",
+                      "pendiente",
+                      "desmatriculada"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "sync_to_moodle": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inscripci\u00f3n actualizada."
+          }
+        }
+      }
+    },
+    "/enrollments/{id}/sync": {
+      "post": {
+        "summary": "Sincronizar matr\u00edcula individual con Moodle",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matr\u00edcula sincronizada con Moodle."
+          }
+        }
+      }
+    },
+    "/admissions": {
+      "get": {
+        "summary": "Consultar solicitudes de admisi\u00f3n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solicitudes de admisi\u00f3n."
+          }
+        }
+      },
+      "post": {
+        "summary": "Postularse a un programa acad\u00e9mico (Aspirantes)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Postulaci\u00f3n registrada."
+          }
+        }
+      }
+    },
+    "/admissions/{id}/review": {
+      "patch": {
+        "summary": "Dictaminar postulaci\u00f3n (admitir, rechazar)",
+        "description": "Al admitir, activa la cuenta y asigna rol estudiante. Requiere admissions.review.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Postulaci\u00f3n dictaminada."
+          }
+        }
+      }
+    },
+    "/contact": {
+      "post": {
+        "summary": "Enviar mensaje de contacto",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "full_name",
+                  "email",
+                  "subject",
+                  "message"
+                ],
+                "properties": {
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "program_of_interest": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mensaje recibido."
+          }
+        }
+      }
+    },
+    "/moodle/status": {
+      "get": {
+        "summary": "Estado de conexi\u00f3n con Moodle Web Services",
+        "responses": {
+          "200": {
+            "description": "Estado del servicio Moodle."
+          }
+        }
+      }
+    },
+    "/moodle/sync/user/{userId}": {
+      "post": {
+        "summary": "Sincronizar o crear usuario en Moodle evitando duplicados",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuario sincronizado en Moodle."
+          }
+        }
+      }
+    },
+    "/moodle/sync/users": {
+      "post": {
+        "summary": "Sincronizaci\u00f3n masiva de todos los usuarios no vinculados con Moodle",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen de sincronizaci\u00f3n por lotes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "synced": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "integer"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/moodle/sync/enrollment/{enrollmentId}": {
+      "post": {
+        "summary": "Sincronizar matr\u00edcula autorizada en Moodle",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollmentId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matr\u00edcula sincronizada."
+          }
+        }
+      }
+    },
+    "/moodle/launch": {
+      "post": {
+        "summary": "Salto directo con SSO al campus general de Moodle",
+        "description": "Genera una URL de acceso directo de un solo uso para ingresar a la portada del campus virtual sin pedir credenciales.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enlace de acceso autorizado mediante token ef\u00edmero al campus.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_url": {
+                      "type": "string",
+                      "example": "http://localhost/moodle/auth/userkey/login.php?key=123abc456&wantsurl=http://localhost/moodle/"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autenticado."
+          }
+        }
+      }
+    },
+    "/moodle/courses/{courseMappingId}/launch": {
+      "post": {
+        "summary": "Salto seguro al curso de Moodle desde el portal (Mi IINICIA)",
+        "description": "Valida matr\u00edcula autorizada, registra en campus_access_logs y devuelve la URL del curso en Moodle.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseMappingId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enlace de acceso autorizado al campus Moodle."
+          },
+          "403": {
+            "description": "Usuario sin matr\u00edcula autorizada en el curso."
+          }
+        }
+      }
+    },
+    "/moodle/courses/{courseId}/contents": {
+      "get": {
+        "summary": "Estructura de temas, secciones y m\u00f3dulos de un curso",
+        "description": "Obtiene los recursos y actividades configuradas en Moodle LMS (core_course_get_contents). Requiere que el usuario est\u00e9 matriculado activamente en el curso o pertenezca al personal de supervisi\u00f3n/staff.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "description": "Identificador num\u00e9rico del curso en Moodle (ej. 2)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estructura de secciones y m\u00f3dulos obtenida de Moodle."
+          },
+          "403": {
+            "description": "No posees autorizaci\u00f3n ni matr\u00edcula activa en este curso."
+          },
+          "404": {
+            "description": "Curso de Moodle no encontrado o no mapeado en el portal."
+          }
+        }
+      }
+    },
+    "/moodle/courses/{courseId}/participants": {
+      "get": {
+        "summary": "Listado de participantes matriculados en un curso",
+        "description": "Retorna alumnos matriculados, roles y marcas de \u00faltimo acceso (core_enrol_get_enrolled_users). Exclusivo para docentes titulares del curso y personal administrativo/coordinador.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "description": "Identificador num\u00e9rico del curso en Moodle (ej. 2)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de participantes con estatus y accesos."
+          },
+          "403": {
+            "description": "Acceso restringido. Se requieren privilegios docentes o administrativos en este curso."
+          }
+        }
+      }
+    },
+    "/moodle/courses/{courseId}/progress": {
+      "get": {
+        "summary": "Progreso, actividades y calificaciones de un usuario en un curso",
+        "description": "Consulta calificaciones oficiales (gradereport_user_get_grade_items) y estado de compleci\u00f3n (core_completion_get_course_completion_status). Los estudiantes solo pueden consultar su propio progreso. Docentes y administradores pueden auditar el progreso de otros alumnos pasando el par\u00e1metro moodle_user_id.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "description": "Identificador num\u00e9rico del curso en Moodle",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moodle_user_id",
+            "required": false,
+            "description": "ID de usuario en Moodle (opcional para estudiantes, se autocompleta con su perfil).",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen de avance, calificaci\u00f3n ponderada y desglose de actividades evaluadas."
+          },
+          "403": {
+            "description": "No posees autorizaci\u00f3n para consultar el avance de otro estudiante."
+          }
+        }
+      }
+    },
+    "/moodle/courses/{courseId}/teacher-overview": {
+      "get": {
+        "summary": "Resumen anal\u00edtico global de curso para docentes y administradores",
+        "description": "Consolida el total de alumnos matriculados, profesores, m\u00f3dulos interactivos, secciones y listas de estudiantes con fecha de \u00faltima visita.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "description": "Identificador num\u00e9rico del curso en Moodle",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen anal\u00edtico integral del aula virtual."
+          },
+          "403": {
+            "description": "Acceso restringido a docentes o coordinadores del curso."
+          }
+        }
+      }
+    },
+    "/audit": {
+      "get": {
+        "summary": "Bit\u00e1cora inmutable de auditor\u00eda",
+        "description": "Requiere permiso audit.logs.read o rol administrador.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registros de auditor\u00eda con paginaci\u00f3n."
+          }
+        }
+      }
+    },
+    "/cms/contents": {
+      "get": {
+        "summary": "Contenidos institucionales (noticias, p\u00e1ginas, avisos)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de contenidos p\u00fablicos."
+          }
+        }
+      }
+    },
+    "/cms/contents/{slug}": {
+      "get": {
+        "summary": "Contenido institucional por slug (Misi\u00f3n, Visi\u00f3n, Modelo Educativo)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenido p\u00fablico."
+          }
+        }
+      }
+    },
+    "/directory": {
+      "get": {
+        "summary": "Directorio institucional de autoridades y docentes",
+        "responses": {
+          "200": {
+            "description": "Miembros del directorio."
+          }
+        }
+      }
+    },
+    "/migration/redirects": {
+      "get": {
+        "summary": "Mapa de redirecciones 301/302 para migraci\u00f3n desde WordPress",
+        "description": "Consumido por el middleware de Next.js para preservar SEO de las URLs hist\u00f3ricas.",
+        "responses": {
+          "200": {
+            "description": "Lista de mapeos de redirecci\u00f3n."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "MeResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "status",
+          "roles",
+          "permissions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatar_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "activo",
+              "suspendido",
+              "inactivo",
+              "baja"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "estudiante"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "campus.access"
+            ]
+          },
+          "moodle_user_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "moodle_username": {
+            "type": "string",
+            "nullable": true
+          },
+          "moodle_sync_status": {
+            "type": "string",
+            "enum": [
+              "no_vinculado",
+              "pendiente",
+              "sincronizado",
+              "error",
+              "suspendido_en_moodle"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
