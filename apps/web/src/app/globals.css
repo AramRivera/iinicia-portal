@@ -1,26 +1,441 @@
 @import "tailwindcss";
 
+/* -------------------------------------------------------------------------- */
+/* CAMPUS TECH OS — DESIGN SYSTEM TOKENS                                      */
+/* Identity: Tech Estudiantil + SaaS Productivo + Minimalismo Editorial       */
+/* -------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Shared */
+  --primary: #087654;
+  --primary-action: #087654;
+  --accent-lime: #A9E3CF;
+  --accent: #087654;
+  --accent-strong: #065C42;
+  --accent-soft: #E5F2ED;
+  --welcome-panel: #064D3B;
+
+  /* Light Theme */
+  --background: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-muted: #F5F8EF;
+  --surface-elevated: #FFFFFF;
+  --foreground: #1F2C21;
+  --text-secondary: #536050;
+  --muted: #536050;
+  --border: #DCE5D2;
+  --border-subtle: #E8EEDF;
+
+  /* Semantics Light */
+  --success: #18794E;
+  --success-bg: rgba(24, 121, 78, 0.08);
+  --warning: #996000;
+  --warning-bg: rgba(153, 96, 0, 0.08);
+  --danger: #C43F48;
+  --danger-bg: rgba(196, 63, 72, 0.08);
+
+  /* System Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* Elevation */
+  --shadow-minimal: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-panel: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  --shadow-soft: 0 8px 24px -4px rgba(31, 44, 33, 0.06);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  /* Dark Theme */
+  --primary: #52D6AA;
+  --primary-action: #087654;
+  --accent-lime: #52D6AA;
+  --accent: #52D6AA;
+  --accent-strong: #065C42;
+  --accent-soft: #17392F;
+  --welcome-panel: #064D3B;
+
+  --background: #101710;
+  --surface: #192219;
+  --surface-muted: #141E15;
+  --surface-elevated: #192219;
+  --foreground: #EDF5E7;
+  --text-secondary: #BAC8B1;
+  --muted: #BAC8B1;
+  --border: #354632;
+  --border-subtle: #2B3A29;
+
+  /* Semantics Dark */
+  --success: #63D9A0;
+  --success-bg: rgba(99, 217, 160, 0.12);
+  --warning: #F5C56B;
+  --warning-bg: rgba(245, 197, 107, 0.12);
+  --danger: #FF858B;
+  --danger-bg: rgba(255, 133, 139, 0.12);
+
+  --shadow-minimal: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-panel: 0 4px 12px -2px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-soft: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not(.light) {
+    --primary: #52D6AA;
+    --primary-action: #087654;
+    --accent-lime: #52D6AA;
+    --accent: #52D6AA;
+    --accent-strong: #065C42;
+    --accent-soft: #17392F;
+    --welcome-panel: #064D3B;
+
+    --background: #101710;
+    --surface: #192219;
+    --surface-muted: #141E15;
+    --surface-elevated: #192219;
+    --foreground: #EDF5E7;
+    --text-secondary: #BAC8B1;
+    --muted: #BAC8B1;
+    --border: #354632;
+    --border-subtle: #2B3A29;
+
+    --success: #63D9A0;
+    --success-bg: rgba(99, 217, 160, 0.12);
+    --warning: #F5C56B;
+    --warning-bg: rgba(245, 197, 107, 0.12);
+    --danger: #FF858B;
+    --danger-bg: rgba(255, 133, 139, 0.12);
+
+    --shadow-minimal: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-panel: 0 4px 12px -2px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+    --shadow-soft: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
   }
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-action: var(--primary-action);
+  --color-accent-lime: var(--accent-lime);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-welcome-panel: var(--welcome-panel);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-foreground: var(--foreground);
+  --color-text-secondary: var(--text-secondary);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+/* Frosted glass surface (Apple-style translucency) */
+.glass {
+  background: var(--surface-elevated);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Very soft diffuse shadow */
+.shadow-apple {
+  box-shadow: var(--shadow-soft);
+}
+
+/* Subtle luminous gradient used in hero */
+.bg-aurora {
+  background:
+    radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--primary-action) 16%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 85% 20%, color-mix(in srgb, var(--accent-lime) 20%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 15% 30%, color-mix(in srgb, var(--accent-strong) 12%, transparent) 0%, transparent 70%);
+}
+
+/* Apple-like dot texture */
+.bg-dot-grid {
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+}
+
+/* Text balance utilities */
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Expandable double underline on hover (menu / footer links) */
+.hover-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-underline::after,
+.hover-underline::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1.5px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent-strong) 60%,
+    color-mix(in srgb, var(--accent) 50%, transparent) 100%
+  );
+  bottom: -4px;
+  left: 0;
+  border-radius: 9999px;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hover-underline::before {
+  top: -4px;
+  transform-origin: left;
+}
+
+.hover-underline:hover::after,
+.hover-underline:hover::before,
+.hover-underline:focus-visible::after,
+.hover-underline:focus-visible::before {
+  transform: scaleX(1);
+}
+
+/* ---------------------------------------------------------------
+   Skewed "glass panel" program cards
+   --------------------------------------------------------------- */
+.program-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320px;
+  margin: 16px 20px;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.program-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50px;
+  width: 50%;
+  height: 100%;
+  border-radius: 12px;
+  transform: skewX(15deg);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.program-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50px;
+  width: 50%;
+  height: 100%;
+  border-radius: 12px;
+  transform: skewX(15deg);
+  filter: blur(30px);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0.55;
+}
+
+.program-card--blue::before,
+.program-card--blue::after {
+  background: linear-gradient(315deg, #0a84ff, #5ac8fa);
+}
+.program-card--violet::before,
+.program-card--violet::after {
+  background: linear-gradient(315deg, #bf5af2, #0a84ff);
+}
+.program-card--cyan::before,
+.program-card--cyan::after {
+  background: linear-gradient(315deg, #64d2ff, #0a84ff);
+}
+
+.program-card:hover::before,
+.program-card:hover::after,
+.program-card:focus-within::before,
+.program-card:focus-within::after {
+  transform: skewX(0deg);
+  left: 20px;
+  width: calc(100% - 90px);
+}
+
+.program-card .card-glow {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.program-card .card-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: top 0.4s ease, left 0.4s ease, opacity 0.4s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  animation: program-glow 2s ease-in-out infinite;
+}
+
+.program-card .card-glow::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: bottom 0.4s ease, right 0.4s ease, opacity 0.4s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  animation: program-glow 2s ease-in-out infinite;
+  animation-delay: -1s;
+}
+
+.program-card:hover .card-glow::before,
+.program-card:focus-within .card-glow::before {
+  top: -24px;
+  left: 24px;
+  opacity: 1;
+}
+
+.program-card:hover .card-glow::after,
+.program-card:focus-within .card-glow::after {
+  bottom: -24px;
+  right: 24px;
+  opacity: 1;
+}
+
+@keyframes program-glow {
+  0%,
+  100% {
+    transform: translateY(4px);
+  }
+  50% {
+    transform: translateX(-4px);
+  }
+}
+
+.program-card .card-content {
+  position: relative;
+  z-index: 1;
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+  color: #fff;
+  transition: padding 0.4s ease;
+}
+
+.program-card:hover .card-content,
+.program-card:focus-within .card-content {
+  padding: 32px 28px;
+}
+
+@media (hover: none) {
+  .program-card::before,
+  .program-card::after {
+    transform: skewX(0deg);
+    left: 20px;
+    width: calc(100% - 90px);
+  }
+  .program-card .card-glow::before {
+    top: -24px;
+    left: 24px;
+    opacity: 1;
+  }
+  .program-card .card-glow::after {
+    bottom: -24px;
+    right: 24px;
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Scroll-reveal text (Apple-style sticky reveal, PER SECTION)
+   `--reveal` goes 0% -> 100% as the section enters -> leaves view.
+   --------------------------------------------------------------- */
+.scroll-reveal-text {
+  --reveal: 100%;
+  background: linear-gradient(
+    -60deg,
+    color-mix(in srgb, var(--foreground) 15%, transparent) 30%,
+    var(--foreground) 60%
+  );
+  background-size: 300% 100%;
+  background-position-x: calc(100% - var(--reveal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* Ensure it looks solid if JS never runs (progressive enhancement). */
+  transition: background-position-x 0.05s linear;
+}
+
+/* On no-JS, show the text fully. */
+.no-js .scroll-reveal-text {
+  background: none;
+  -webkit-text-fill-color: var(--foreground);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-text {
+    background: none;
+    -webkit-text-fill-color: var(--foreground);
+    color: var(--foreground);
+    transition: none;
+  }
 }
