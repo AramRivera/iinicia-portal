@@ -1,5 +1,7 @@
 # Documentación Técnica de Actualizaciones: Backend API y Portal Web
 
+> Registro histórico de cambios de código, no reporte de aceptación vigente. Las descripciones de SSO, Moodle, métricas y resultados de pruebas reflejan el momento en que se redactaron; deben verificarse antes de presentarlas como operación actual. Consulta [estado-actual.md](estado-actual.md) para el estado comprobado del repositorio y de las validaciones pendientes.
+
 Documento de referencia para el equipo de desarrollo, administración de sistemas y diseño de producto sobre las nuevas capacidades, endpoints, arquitectura de Single Sign-On (SSO) y componentes de interfaz implementados en el proyecto IINICIA.
 
 ---
@@ -281,7 +283,7 @@ Se ampliaron los métodos tipados exportados:
 | :--- | :--- | :--- |
 | `PORT` | Puerto de escucha de la API NestJS | `3000` |
 | `SUPABASE_URL` | URL del proyecto Supabase | `https://[id].supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave privilegiada (NUNCA en frontend) | `eyJhbGci...` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave privilegiada (NUNCA en frontend) | `<configurar-solo-en-servidor>` |
 | `MOODLE_BASE_URL` | URL base canónica de la instalación Moodle | `http://192.168.191.171/moodle` |
 | `MOODLE_URL` | URL alternativa de Moodle para compatibilidad | `http://192.168.191.171/moodle` |
 | `MOODLE_WS_TOKEN` | Token de acceso de Web Services Moodle | Token generado en Moodle |

@@ -1,6 +1,6 @@
 # Guía de Integración para el Frontend (Next.js / React) — IINICIA Portal
 
-> Documento histórico. La guía vigente del frontend está en [frontend.md](frontend.md) y el contrato verificable en [openapi.yaml](openapi.yaml). Las rutas, colores, identificadores y ejemplos de este documento pueden no corresponder a la implementación actual.
+> Documento histórico. La guía vigente del frontend está en [frontend.md](frontend.md), el contrato documentado en [openapi.yaml](openapi.yaml) y el estado de aceptación en [estado-actual.md](estado-actual.md). Los ejemplos, IDs y URLs de Moodle de este documento no prueban que existan recursos externos ni deben usarse como configuración. El PDF original indicaba dos cursos, pero el alcance vigente comunicado por el profesor se redujo a un curso de prueba.
 
 > **Audiencia**: Equipo de Desarrollo Frontend (Next.js 14+ / React / Tailwind CSS)  
 > **Backend API**: NestJS + Supabase (PostgreSQL 15+) + Moodle LMS (Web Services)  
@@ -19,8 +19,8 @@
 NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
 
 # Supabase Auth para el cliente del navegador (NUNCA incluir Service Role Key aquí)
-NEXT_PUBLIC_SUPABASE_URL=https://mmtuaangwbsdtddeplfv.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_B-Q9_19Fj_gdw0tkg6c4IA_ctO7Rz-V
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable-key-del-ambiente>
 
 # URL de Moodle para enlaces institucionales
 NEXT_PUBLIC_MOODLE_URL=http://localhost/moodle
@@ -192,18 +192,8 @@ flowchart LR
 
 ---
 
-### 3.2 Cursos Oficiales Configurados en Moodle
-En la base de datos y en Moodle local ya existen los dos cursos maestros obligatorios:
-1. **Curso 1: Introducción a las Tecnologías de la Información**
-   - **Moodle Course ID**: `3`
-   - **Moodle Shortname**: `IINICIA-TI-101`
-   - **Código en Portal**: `CUR-MOO-001`
-   - **UUID de mapeo en BD**: `671820a5-88fc-4158-a3e8-c2d2dfcc9ffb`
-2. **Curso 2: Desarrollo Web con React**
-   - **Moodle Course ID**: `2`
-   - **Moodle Shortname**: `IINICIA-REACT-102`
-   - **Código en Portal**: `CUR-MOO-002`
-   - **UUID de mapeo en BD**: `1617d4b7-920d-439b-aa16-bb8d2e7516b7`
+### 3.2 Curso de prueba vigente
+El alcance vigente requiere **un curso de prueba completo**. El nombre, Moodle Course ID, shortname y UUID del mapeo se deben registrar después de confirmarlos en la instancia real. Los dos cursos e IDs que aparecían en esta guía son ejemplos históricos y no confirman que esos cursos existan o sigan siendo los seleccionados. Para los criterios mínimos vigentes, consulta [estado-actual.md](estado-actual.md).
 
 ---
 
@@ -324,7 +314,7 @@ Permite al administrador sincronizar con un solo clic a todos los usuarios que a
   "results": [
     {
       "id": "dda494b9-c639-4f55-8848-011b53cbac38",
-      "email": "admin@iinicia.org",
+      "email": "admin@example.org",
       "status": "sincronizado",
       "moodle_user_id": 105,
       "moodle_username": "admin_iinicia"

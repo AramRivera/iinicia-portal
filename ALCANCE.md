@@ -1,5 +1,7 @@
 \# ALCANCE — Portal IINICIA
 
+El estado comprobado del código y las validaciones externas se resume en [`docs/estado-actual.md`](docs/estado-actual.md). Este documento define el alcance objetivo; no se debe interpretar como prueba de que Supabase o Moodle ya estén configurados.
+
 
 
 \## 1. Propósito
@@ -134,7 +136,7 @@ Moodle será responsable de:
 
 
 
-La instalación, configuración y contenido de los dos cursos de ejemplo forman parte del proyecto global, aunque no todo corresponda al código del backend.
+La instalación, configuración y contenido de **un curso de prueba** forman parte del proyecto global, aunque no todo corresponda al código del backend. Este cambio de alcance, comunicado por el profesor después de la versión del PDF adjunto, sustituye el requisito anterior de dos cursos.
 
 
 
@@ -458,7 +460,7 @@ Requisitos obligatorios:
 
 
 
-\## 10. Entrega parcial — 29 de octubre de 2026, 07:00 h
+\## 10. Entrega parcial — 29 de octubre de 2026, 07:00 h (fecha objetivo histórica)
 
 
 
@@ -484,7 +486,7 @@ El avance deberá contemplar:
 
 \- Conexión inicial con Moodle mediante Web Services.
 
-\- Dos cursos de ejemplo configurados en Moodle.
+\- Un curso de prueba completo y configurado en Moodle.
 
 \- Usuario de prueba con rol de profesor y al menos dos estudiantes.
 
@@ -608,7 +610,7 @@ Cada funcionalidad deberá tener criterios de aceptación, pruebas y documentaci
 
 
 
-Las siguientes decisiones deberán resolverse antes de implementar las integraciones correspondientes. OpenCode no debe inventar valores, credenciales, versiones instaladas ni funcionalidades disponibles.
+Las siguientes decisiones deberán resolverse antes de implementar o aceptar las integraciones correspondientes. El equipo no debe inventar valores, credenciales, versiones instaladas ni funcionalidades disponibles.
 
 
 
@@ -616,27 +618,25 @@ Las siguientes decisiones deberán resolverse antes de implementar las integraci
 
 
 
-Estado: proyecto pendiente de creación.
+Estado documentado: el equipo informó que el proyecto de Supabase fue creado. La conexión desde la API y la aplicación de la migración inicial siguen pendientes de validación; la guía de configuración registra la migración como pendiente de aplicación manual.
 
 
 
-Antes de implementar el acceso a datos:
+Antes de aceptar el acceso a datos en el ambiente objetivo:
 
 
 
-1\. Confirmar el proyecto de Supabase que se utilizará.
+1\. Confirmar el proyecto y el ambiente de Supabase que se utilizarán.
 
-2\. Obtener la URL del proyecto y configurar las claves necesarias en variables de entorno.
+2\. Configurar las variables de entorno necesarias sin compartir credenciales.
 
-3\. Definir el modelo de acceso desde NestJS.
+3\. Aplicar la migración aprobada en el ambiente correspondiente y registrar el resultado.
 
-4\. Documentar si cada operación utilizará el contexto autenticado del usuario o un cliente privilegiado del servidor.
+4\. Probar RLS con JWT de usuarios de distintos roles y documentar los resultados.
 
-5\. Explicar qué operaciones eluden RLS y cómo se protegerán.
+5\. Confirmar que la estrategia de acceso corresponde al modelo mixto acordado en `docs/decisiones/ADR-001-acceso-supabase.md`.
 
-6\. Crear migraciones SQL versionadas.
 
-7\. Definir políticas RLS, privilegios de base de datos y pruebas de acceso.
 
 
 
@@ -648,11 +648,11 @@ No se necesitan credenciales reales para diseñar el modelo ni planificar las mi
 
 
 
-Estado: instalación y configuración pendientes.
+Estado documentado: el código incluye un cliente Moodle y flujos de integración, pero este repositorio no demuestra que una instalación Moodle esté disponible ni que los Web Services, permisos o SSO estén habilitados en una instancia real. La versión objetivo y el estado del entorno deben confirmarse con el equipo.
 
 
 
-Antes de implementar la integración, identificar:
+Antes de aceptar la integración con Moodle, identificar y registrar:
 
 
 
@@ -674,7 +674,7 @@ Antes de implementar la integración, identificar:
 
 \- Mecanismo de acceso del estudiante a Moodle.
 
-\- Necesidad de SSO, pendiente de confirmar con los requisitos del proyecto.
+\- Configuración de SSO y compatibilidad del plugin/mecanismo elegido, pendientes de verificación en la instancia objetivo.
 
 
 
@@ -694,11 +694,11 @@ El acceso por enlace y el inicio de sesión único son requisitos distintos.
 
 
 
-La primera fase podrá presentar enlaces a cursos y gestionar las matrículas mediante Web Services.
+El código actual contempla generación de enlaces de acceso tipo SSO. Su existencia en el backend no prueba que el plugin, servicio externo y permisos correspondientes estén configurados ni que el flujo funcione en Moodle. Validar el acceso con una cuenta autorizada y el curso de prueba antes de declarar el SSO operativo.
 
 
 
-Si se requiere SSO, deberá diseñarse y validarse como una integración independiente. No se implementarán mecanismos de autenticación improvisados ni se enviarán contraseñas o tokens administrativos al navegador.
+El PDF de alcance requiere un mecanismo seguro de acceso al campus compatible con la arquitectura elegida. El flujo SSO contemplado por el código debe validarse de manera independiente en Moodle. No se implementarán mecanismos de autenticación improvisados ni se enviarán contraseñas o tokens administrativos al navegador.
 
 
 
@@ -766,7 +766,7 @@ El contrato compartido será la referencia común para frontend y backend.
 
 
 
-OpenCode deberá separar:
+El equipo deberá separar:
 
 
 
