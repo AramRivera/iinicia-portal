@@ -2,6 +2,8 @@
 
 > Referencia histórica. Para rutas, configuración y límites de la implementación actual consulta [frontend.md](frontend.md).
 
+> Los ejemplos de SSO, cursos, pantallas y conteos de pruebas de este documento no acreditan la configuración actual de Moodle ni la aceptación del sistema. El alcance vigente contiene un curso de prueba; revisa [estado-actual.md](estado-actual.md).
+
 Documento de referencia operativa y arquitectónica para el portal universitario IINICIA, cubriendo páginas públicas, roles académicos, resolución de doble rol y espacios de trabajo.
 
 ---

@@ -2,7 +2,9 @@
 
 **Proyecto:** Rediseño y Migración del Portal IINICIA  
 **Versión:** 1.0.0 (Octubre 2026)  
-**Stack Backend:** Node.js, NestJS, TypeScript, Supabase (PostgreSQL 15+ & Auth), Moodle LMS 5.3+ Web Services.
+**Stack Backend:** Node.js, NestJS, TypeScript, Supabase (PostgreSQL y Auth) y Moodle Web Services. La versión de Moodle objetivo debe confirmarse con el equipo.
+
+> Estado y límites: consulta [estado-actual.md](estado-actual.md). Esta arquitectura describe el diseño y las capacidades que se encuentran en el código; no acredita que una instancia Supabase o Moodle esté conectada ni configurada.
 
 ---
 
@@ -33,9 +35,11 @@ El backend de IINICIA está construido como una API modular y reactiva con NestJ
 
 ---
 
-## 2. Base de Datos Oficial: `IINICIA_DATABASE`
+## 2. Esquema de datos
 
-La base de datos se encuentra versionada en `apps/api/db/IINICIA_DATABASE.sql` y se divide en 6 áreas principales:
+El repositorio contiene varios artefactos SQL bajo `apps/api/db/` y migraciones bajo `supabase/migrations/`. La estructura que se despliegue debe reproducirse desde migraciones revisadas; los scripts históricos no acreditan el estado remoto. El equipo debe mantener una única secuencia aprobada de migraciones. Para el estado conocido, consulta [estado-actual.md](estado-actual.md).
+
+El modelo de referencia se divide en estas áreas. Los nombres y relaciones deben contrastarse con la migración que el equipo apruebe como fuente reproducible:
 
 1. **Identidad y Perfiles (`profiles`):**
    - Vínculo 1:1 con `auth.users(id)`.
@@ -49,9 +53,7 @@ La base de datos se encuentra versionada en `apps/api/db/IINICIA_DATABASE.sql` y
 
 3. **Oferta Académica y Mapeo Moodle (`programs` y `course_mappings`):**
    - `programs`: Licenciaturas, diplomados, certificaciones y cursos formativos.
-   - `course_mappings`: Enlace exacto entre materias del portal y cursos de Moodle LMS. Incluye los 2 cursos de ejemplo obligatorios:
-     - `CUR-MOO-001` -> *Curso 1: Introducción a las Tecnologías de la Información* (`moodle_course_id: 2`).
-     - `CUR-MOO-002` -> *Curso 2: Desarrollo Web con React* (`moodle_course_id: 3`).
+   - `course_mappings`: Enlace entre materias del portal y cursos de Moodle LMS. El alcance vigente contempla un solo curso de prueba. Su nombre e identificador Moodle deben verificarse en la instancia elegida; los IDs presentes en ejemplos históricos no son una fuente vigente.
 
 4. **Inscripciones y Admisiones (`enrollment_requests` y `admission_applications`):**
    - Flujo de admisión para aspirantes con dictaminación administrativa.
@@ -67,7 +69,9 @@ La base de datos se encuentra versionada en `apps/api/db/IINICIA_DATABASE.sql` y
 
 ---
 
-## 3. Módulos Implementados en NestJS
+## 3. Módulos presentes en el código NestJS
+
+La tabla describe módulos y rutas encontradas en `apps/api/src`. La presencia de un controller o service no garantiza por sí sola que sus integraciones externas estén configuradas ni que todos los criterios de aceptación estén validados.
 
 | Módulo | Responsabilidad | Endpoints Clave |
 |---|---|---|
@@ -88,7 +92,9 @@ La base de datos se encuentra versionada en `apps/api/db/IINICIA_DATABASE.sql` y
 
 ## 4. Integración con Moodle LMS
 
-### Funciones Oficiales de Web Services Utilizadas
+### Funciones Web Services referenciadas por el código
+
+Antes de habilitarlas, confirmar que la versión objetivo de Moodle las ofrece y que el servicio externo las permite con los permisos mínimos necesarios. Los IDs de rol descritos a continuación son valores configurables/de referencia, no una validación de la instalación.
 - `core_webservice_get_site_info`: Comprobación de disponibilidad del servicio Moodle.
 - `core_user_get_users_by_field`: Búsqueda de usuarios por correo electrónico o ID para prevenir duplicados.
 - `core_user_create_users`: Creación segura de cuentas en Moodle con usuario institucional y contraseña generada.
@@ -112,16 +118,16 @@ MOODLE_WS_TOKEN=tu_token_de_servicio_moodle
 
 ## 5. Pruebas y Verificación
 
-El proyecto cuenta con suites de pruebas unitarias automatizadas con Vitest que cubren:
+El repositorio contiene pruebas unitarias con Vitest que cubren:
 - Autenticación y obtención de perfil/roles/permisos.
 - Validación de DTOs y guards RBAC (`RolesGuard` y `PermissionsGuard`).
 - Sincronización de usuarios y matrículas con Moodle (evitando duplicados).
 - Autorizaciones de cursos y control de acceso al campus.
 - Manejo de fallos en Supabase y Moodle.
 
-Comandos de verificación:
+Comandos disponibles (no implican que se hayan ejecutado en esta revisión):
 ```bash
 cd apps/api
-npm run test    # Ejecuta las 13 suites de pruebas (54 tests unitarios)
+npm run test    # Ejecuta las pruebas unitarias actuales
 npm run build   # Compila el backend de NestJS
 ```

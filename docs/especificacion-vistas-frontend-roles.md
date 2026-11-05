@@ -1,5 +1,7 @@
 # Especificación Técnica de Vistas y Opciones por Rol para Frontend (Next.js / React)
 
+> Este documento contiene requisitos de interfaz, no evidencia de que todas las pantallas o permisos estén implementados y validados. Para el estado actual consulta [estado-actual.md](estado-actual.md). El requisito de cursos de prueba se actualizó a uno.
+
 Este documento define la arquitectura de navegación, páginas, componentes, formularios y opciones exactas requeridas en la capa de frontend (`apps/web`) para cada uno de los roles establecidos en el documento de alcance técnico y funcional del proyecto **IINICIA (React + Moodle)**.
 
 ---

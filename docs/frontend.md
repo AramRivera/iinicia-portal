@@ -1,6 +1,6 @@
 # Frontend INICIA — guía vigente
 
-Estado del código: 29 de octubre de 2026, rama `feature-frontend-portal`. Esta guía describe `apps/web`. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Para solicitudes y respuestas exactas consulta [openapi.yaml](openapi.yaml).
+Revisión del código en `main`: 5 de noviembre de 2026. Esta guía describe `apps/web`. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Para solicitudes y respuestas documentadas consulta [openapi.yaml](openapi.yaml); para el estado de validación de integraciones externas consulta [estado-actual.md](estado-actual.md).
 
 ## Arquitectura
 
@@ -23,8 +23,8 @@ Desde PowerShell, en `apps/web`, ejecuta `npm.cmd ci`, copia `.env.example` a `.
 
 | Variable | Uso |
 | --- | --- |
-| `NEXT_PUBLIC_API_URL` | Base de NestJS con `/api/v1`. Si falta, el código usa `http://localhost:3000/api/v1`. Para la API compartida: `http://192.168.191.171:3000/api/v1`. |
-| `NEXT_PUBLIC_MOODLE_URL` | Base de Moodle accesible desde el navegador, por ejemplo `http://192.168.191.171/moodle`. |
+| `NEXT_PUBLIC_API_URL` | Base de NestJS con `/api/v1`. Si falta, el código usa `http://localhost:3000/api/v1`. Para otros ambientes, define la URL correspondiente en la configuración local. |
+| `NEXT_PUBLIC_MOODLE_URL` | Base de Moodle accesible desde el navegador; configúrala por ambiente después de confirmar la URL real. |
 | `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Están en `.env.example`, pero el frontend actual autentica a través de NestJS y no importa el SDK de Supabase. Nunca pongas claves secretas aquí. |
 
 El puerto 4000 corresponde a Next.js; el 3000 en los ejemplos corresponde a NestJS. Comprueba la API en `<NEXT_PUBLIC_API_URL>/health` y la documentación en `<NEXT_PUBLIC_API_URL>/docs`. `.env.local` se mantiene local, fuera de Git.
@@ -56,13 +56,15 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 
 **Oferta.** La portada usa `GET /programs`; el detalle usa `GET /programs/:idOrSlug`. `GET /courses/offerings` requiere sesión. `coursesApi` normaliza los campos de la API para las tarjetas.
 
-**Inscripciones.** El estudiante pide acceso con `POST /enrollments`, consulta su estado con `GET /enrollments` y sus cursos autorizados con `GET /courses`. Administración usa `PATCH /enrollments/:id/status` y `POST /enrollments/:id/sync` según permisos. Una solicitud pendiente no confirma matrícula en Moodle.
+**Inscripciones.** El cliente permite solicitar acceso con `POST /enrollments`, consultar solicitudes con `GET /enrollments` y cursos autorizados con `GET /courses`. Administración usa `PATCH /enrollments/:id/status` y `POST /enrollments/:id/sync` según permisos. Existe una discrepancia entre el texto de interfaz y el comportamiento de autorización automática de algunos flujos del servicio; no asumir que toda solicitud queda pendiente hasta acordar y alinear la regla.
 
 **Campus.** `POST /moodle/launch` y `POST /moodle/courses/:courseMappingId/launch` devuelven URLs de acceso. `moodle-window.ts` abre una ventana durante el clic y luego la dirige a la URL devuelta. Los permisos y el enlace temporal dependen del backend.
 
 **Avance.** El estudiante consulta `GET /moodle/courses/:courseId/progress`. `grade_percentage` significa calificación y `progress_percentage` significa finalización del curso. La barra usa solo `progress_percentage` y muestra “Progreso no disponible” si vale `null`. `completed_activities` y `total_tracked_activities` muestran el desglose cuando Moodle rastrea actividades. El campo heredado `percentage` no debe alimentar la barra. La API desplegada y Moodle deben tener disponibles el contrato y el seguimiento de finalización.
 
 **Cliente HTTP.** `api.ts` exporta `authApi`, `coursesApi`, `enrollmentsApi`, `admissionsApi`, `contactApi`, `rolesApi`, `auditApi`, `moodleApi`, `programsApi` y `usersApi`. `ApiError` conserva código HTTP y respuesta. Ante `401`, revisa la sesión; ante `403`, el rol, permiso y ámbito. Si no hay cursos, revisa la sesión, la API y las publicaciones/mapeos.
+
+**Recuperación de acceso.** Existen páginas de recuperación y el cliente llama a `/auth/recover` y `/auth/reset-password`. Esas operaciones no están implementadas en el controlador actual ni en el contrato OpenAPI; el flujo no debe considerarse integrado hasta cerrar la API y probar correo y restablecimiento.
 
 ## Identidad visual y tema
 
@@ -85,5 +87,6 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 - La barra depende del backend desplegado y de la finalización de actividades configurada en Moodle.
 - Las vistas de coordinación y soporte requieren cuentas con permisos y ámbito reales para una comprobación completa.
 - Las secciones públicas cubren la estructura del portal anterior, pero la migración de textos y archivos necesita inventario editorial.
+- El código de interfaz no acredita por sí solo pruebas de accesibilidad, contenido aprobado ni conexión real a Moodle/Supabase.
 
 Cuando cambie un contrato, actualiza `docs/openapi.yaml`, `src/types/index.ts`, `src/lib/api.ts` y la pantalla que consume el dato. Prueba con un rol autorizado y otro denegado.

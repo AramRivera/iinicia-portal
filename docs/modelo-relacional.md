@@ -1,5 +1,7 @@
 # Modelo relacional inicial
 
+> Modelo de referencia del repositorio. No confirma que el esquema esté aplicado en Supabase. Antes de desplegar cambios, compara este modelo con la migración versionada y el proyecto de destino. El estado de aplicación y las discrepancias conocidas están en [estado-actual.md](estado-actual.md).
+
 - **Estado:** Aprobado como base de la migración inicial
 - **Fecha:** 2026-10-20
 - **Fuente de requisitos:** [ALCANCE.md](../ALCANCE.md), secciones 5, 6, 7, 9 y 15

@@ -1,5 +1,7 @@
 # Manual de Uso del Panel de Superadministrador (IINICIA Portal)
 
+> Borrador operativo basado en la interfaz del repositorio. No prueba que los servicios externos estén configurados ni que todas las acciones funcionen en producción. Consulta [estado-actual.md](estado-actual.md) y [frontend.md](frontend.md). No uses ni publiques credenciales de demostración aquí.
+
 Este manual documenta el funcionamiento y operación integral del panel de administración del portal **IINICIA**, ubicado en la ruta web `/dashboard/admin`.
 
 ---
@@ -9,9 +11,8 @@ Este manual documenta el funcionamiento y operación integral del panel de admin
 - **URL de Acceso:** `http://localhost:4000/login`
 - **Ruta del Panel:** `http://localhost:4000/dashboard/admin`
 - **Requisitos de Acceso:** Cuenta de usuario con rol activo de `superadmin` o `admin`.
-- **Credenciales Maestras de Demostración:**
-  - **Superadministrador 1:** `admin@iinicia.org` / `Admin.2026!`
-  - **Superadministrador 2:** `aram@iinicia.org` / `123456789`
+
+Las cuentas de prueba deben crearse en el ambiente autorizado y recibir sus roles por el flujo administrativo establecido. No se documentan contraseñas en este manual.
 
 > Si un usuario con rol exclusivo de aspirante o estudiante intenta navegar directamente a esta URL, el sistema validará sus permisos mediante `AuthContext` y lo redirigirá a su panel correspondiente (`/dashboard/estudiante` o `/dashboard/aspirante`).
 
@@ -200,5 +201,5 @@ Pestaña **Auditoría**:
 | **Frontend Portal** | `http://localhost:4000` | Aplicación Next.js (Tailwind CSS, App Router) |
 | **Backend REST API** | `http://localhost:3000/api/v1` | Servidor NestJS con autenticación y Moodle Web Services |
 | **Documentación OpenAPI** | `http://localhost:3000/docs` | Swagger UI interactivo de la API |
-| **Campus Virtual Moodle** | `http://localhost/moodle` | LMS Moodle 5.3+ con MariaDB y plugin `auth_userkey` |
-| **Base de Datos & Auth** | `https://mmtuaangwbsdtddeplfv.supabase.co` | Proyecto Supabase PostgreSQL con RLS |
+| **Campus Virtual Moodle** | URL definida por ambiente | Versión, base de datos, Web Services y SSO deben confirmarse con la instalación objetivo |
+| **Base de Datos & Auth** | URL definida por ambiente | Aplicación de migraciones y políticas RLS debe verificarse en el proyecto Supabase seleccionado |
