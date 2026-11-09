@@ -56,9 +56,11 @@ describe('Supabase password recovery', () => {
     expect(updateUser).not.toHaveBeenCalled();
   });
   it('requests a standard PKCE link with the portal URL and S256 challenge', async () => {
-    upstream.mockResolvedValue(Response.json({}));
+    upstream.mockResolvedValueOnce(Response.json({}))
+      .mockResolvedValueOnce(Response.json({ error_code: 'over_email_send_rate_limit' }, { status: 429 }));
     const challenge = 'a'.repeat(43);
-    await service.requestPkcePasswordRecovery(email, challenge);
+    const accepted = await service.requestPkcePasswordRecovery(email, challenge);
+    await expect(service.requestPkcePasswordRecovery(email, challenge)).resolves.toEqual(accepted);
 
     const [url, options] = upstream.mock.calls[0];
     expect(url.pathname).toBe('/auth/v1/recover');

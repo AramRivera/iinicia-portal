@@ -13,7 +13,7 @@ import { Database } from './database.types.js';
 
 /** Primer segmento de la URL a la que PostgREST sirve `/rest/v1/<tabla>`. */
 const RECOVERY_MESSAGE =
-  'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.';
+  'Solicitud recibida. Si podemos enviar un enlace para esa dirección, lo recibirás por correo.';
 
 const REST_PATH = '/rest/v1/';
 
@@ -261,9 +261,7 @@ export class SupabaseService {
     const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
       redirectTo: this.getAuthRedirect('/restablecer-password'),
     });
-    if (error && (error.status === undefined || error.status >= 500)) {
-      this.logger.warn('Supabase Auth no pudo procesar la recuperación.');
-    }
+    if (error) this.logRecoveryFailure(error.status);
     // Una respuesta uniforme evita revelar si el correo existe o si alcanzó su cuota.
     return { message: RECOVERY_MESSAGE };
   }
@@ -275,10 +273,16 @@ export class SupabaseService {
       code_challenge: challenge,
       code_challenge_method: 's256',
     });
-    if (response.status >= 500) {
-      this.logger.warn('Supabase Auth no pudo procesar la recuperación PKCE.');
-    }
+    if (!response.ok) this.logRecoveryFailure(response.status);
     return { message: RECOVERY_MESSAGE };
+  }
+
+  private logRecoveryFailure(status?: number): void {
+    if (status === 429) {
+      this.logger.warn('Supabase Auth limitó una solicitud de recuperación (HTTP 429).');
+    } else if (status === undefined || status >= 500) {
+      this.logger.warn('Supabase Auth no pudo procesar una solicitud de recuperación.');
+    }
   }
 
   async resetPasswordWithCode(

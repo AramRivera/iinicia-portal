@@ -63,16 +63,16 @@ export default function RecuperarPasswordPage() {
                 <IconCheck className="w-5 h-5" />
               </div>
               <h3 className="text-sm font-bold text-foreground">
-                Instrucciones enviadas
+                Solicitud recibida
               </h3>
               <p className="text-xs text-muted leading-relaxed">
-                Si la dirección <strong className="text-foreground">{email}</strong> corresponde a una cuenta registrada en INICIA, recibirás un enlace de restablecimiento seguro en los próximos minutos.
+                Si podemos enviar un enlace de recuperación a <strong className="text-foreground">{email}</strong>, lo recibirás por correo.
               </p>
             </div>
 
             <div className="rounded-[8px] bg-surface-muted/50 border border-border p-3 text-[11px] text-muted space-y-1">
               <p>Revisa tu bandeja de entrada y la carpeta de correo no deseado (spam). Abre el enlace en este mismo navegador.</p>
-              <p>Si el enlace caduca, solicita uno nuevo desde esta página.</p>
+              <p>Si no llega el correo, espera antes de solicitar otro. Si el enlace caduca, puedes pedir uno nuevo desde aquí.</p>
             </div>
 
             <div className="pt-2 flex flex-col gap-2">
