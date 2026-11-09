@@ -18,6 +18,7 @@ import { RolesGuard } from '../../common/auth/roles.guard.js';
 import { PermissionsGuard } from '../../common/auth/permissions.guard.js';
 import { Roles } from '../../common/auth/roles.decorator.js';
 import { RequirePermissions } from '../../common/auth/permissions.decorator.js';
+import { isScopedCoordinator } from '../../common/auth/program-scope.js';
 import { MoodleService } from './moodle.service.js';
 
 @Controller('moodle')
@@ -52,8 +53,9 @@ export class MoodleController {
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('moodle.sync.execute')
-  syncEnrollment(@Param('enrollmentId') enrollmentId: string) {
-    return this.moodleService.syncEnrollment(enrollmentId);
+  syncEnrollment(@Param('enrollmentId') enrollmentId: string, @Req() req: AuthenticatedRequest) {
+    const coordinatorId = isScopedCoordinator(req.userRoles ?? []) ? req.user.id : undefined;
+    return this.moodleService.syncEnrollment(enrollmentId, coordinatorId);
   }
 
   /**

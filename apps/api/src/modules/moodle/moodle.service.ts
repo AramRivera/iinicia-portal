@@ -7,6 +7,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  hasGlobalAcademicAccess,
+  hasProgramScope,
+  isScopedCoordinator,
+  loadActiveRoleSlugs,
+  requireProgramScope,
+} from '../../common/auth/program-scope.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { MoodleClient } from './moodle.client.js';
 import { MOODLE_ROLE_IDS } from './moodle.types.js';
@@ -220,7 +227,7 @@ export class MoodleService {
    * 3. Llama a enrol_manual_enrol_users en Moodle con el rol correspondiente.
    * 4. Actualiza enrollment_requests a 'sincronizada' y registra fecha e intentos.
    */
-  async syncEnrollment(enrollmentId: string) {
+  async syncEnrollment(enrollmentId: string, scopedCoordinatorId?: string) {
     const admin = this.supabase.getAdminClient();
 
     const { data: enrollment, error } = await admin
@@ -231,6 +238,10 @@ export class MoodleService {
 
     if (error || !enrollment) {
       throw new NotFoundException('Solicitud de inscripción no encontrada.');
+    }
+
+    if (scopedCoordinatorId) {
+      await requireProgramScope(admin, scopedCoordinatorId, enrollment.course_mappings?.program_id);
     }
 
     if (
@@ -531,7 +542,7 @@ export class MoodleService {
 
   /**
    * Valida que un usuario tenga permiso para acceder a información de un curso en Moodle.
-   * - Personal staff (superadmin, admin, coordinador) tiene acceso de supervisión.
+   * - Administración tiene acceso global y coordinación supervisa sus programas asignados.
    * - Docentes tienen acceso a participantes, contenidos y analíticas de sus cursos asignados.
    * - Estudiantes solo tienen acceso a contenidos y a su propio progreso en cursos matriculados.
    */
@@ -548,33 +559,24 @@ export class MoodleService {
       .eq('id', userId)
       .maybeSingle();
 
-    const { data: userRoles } = await admin
-      .from('user_roles')
-      .select('roles!role_id ( slug )')
-      .eq('user_id', userId)
-      .eq('is_active', true);
+    const roles = await loadActiveRoleSlugs(admin, userId);
 
-    const slugs = (userRoles || [])
-      .map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.slug : r.roles?.slug))
-      .filter(Boolean);
-
-    const isStaff =
-      slugs.includes('superadministrador') ||
-      slugs.includes('administrador') ||
-      slugs.includes('coordinador');
-
-    if (isStaff) {
+    if (hasGlobalAcademicAccess(roles)) {
       return { isStaff: true, isTeacher: true, moodleUserId: profile?.moodle_user_id ?? null };
     }
 
     const { data: courseMapping } = await admin
       .from('course_mappings')
-      .select('id')
+      .select('id, program_id')
       .eq('moodle_course_id', moodleCourseId)
       .maybeSingle();
 
     if (!courseMapping) {
       throw new NotFoundException(`Curso de Moodle #${moodleCourseId} no está vinculado en el portal.`);
+    }
+
+    if (isScopedCoordinator(roles) && await hasProgramScope(admin, userId, courseMapping.program_id)) {
+      return { isStaff: true, isTeacher: false, moodleUserId: profile?.moodle_user_id ?? null };
     }
 
     const { data: enrollment } = await admin

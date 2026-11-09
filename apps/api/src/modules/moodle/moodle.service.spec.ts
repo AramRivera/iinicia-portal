@@ -432,6 +432,40 @@ describe('MoodleService', () => {
   });
 
   describe('validateCourseAccess', () => {
+    it('rejects direct Moodle sync outside the coordinator program before contacting Moodle', async () => {
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'enrollment_requests') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    status: 'autorizada',
+                    course_mappings: { moodle_course_id: 2, program_id: 'other' },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
+            }),
+          }),
+        };
+      });
+
+      await expect(service.syncEnrollment('enr-1', 'coordinator')).rejects.toBeInstanceOf(ForbiddenException);
+      expect(clientMock.enrolUser).not.toHaveBeenCalled();
+    });
+
     it('grants full access for staff members', async () => {
       adminClientMock.from.mockImplementation((table: string) => {
         if (table === 'profiles') {
@@ -462,6 +496,75 @@ describe('MoodleService', () => {
       expect(res.isStaff).toBe(true);
       expect(res.isTeacher).toBe(true);
       expect(res.moodleUserId).toBe(2);
+    });
+
+    it.each([true, false])('limits coordinator supervision to the assigned program (%s)', async (assigned) => {
+      const findAssignment = vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: assigned ? { program_id: 'p1' } : null,
+          error: null,
+        }),
+      });
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { moodle_user_id: 10 }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'user_roles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({
+                  data: [{ expires_at: null, roles: { slug: 'coordinador' } }],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'course_mappings') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'cm-2', program_id: 'p1' }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'user_programs') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                in: vi.fn().mockReturnValue({ eq: findAssignment }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                in: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+              }),
+            }),
+          }),
+        };
+      });
+
+      const result = service.validateCourseAccess('coordinator', 2, { requireTeacher: true });
+      if (assigned) {
+        await expect(result).resolves.toEqual({ isStaff: true, isTeacher: false, moodleUserId: 10 });
+      } else {
+        await expect(result).rejects.toBeInstanceOf(ForbiddenException);
+      }
+      expect(findAssignment).toHaveBeenCalledWith('program_id', 'p1');
     });
 
     it('rejects access if user has no authorized enrollment in the course', async () => {

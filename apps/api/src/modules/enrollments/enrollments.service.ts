@@ -6,6 +6,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  hasGlobalAcademicAccess,
+  isScopedCoordinator,
+  listAssignedProgramIds,
+  loadActiveRoleSlugs,
+  requireProgramScope,
+} from '../../common/auth/program-scope.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import type { Database } from '../../common/supabase/database.types.js';
 import { MoodleService } from '../moodle/moodle.service.js';
@@ -21,46 +28,17 @@ export class EnrollmentsService {
     private readonly moodleService: MoodleService,
   ) {}
 
-  /**
-   * Verifica si un usuario posee roles administrativos o de coordinación.
-   */
-  async checkIsStaff(userId: string): Promise<boolean> {
+  async findEnrollments(userId: string, accessToken: string) {
     const admin = this.supabase.getAdminClient();
-    const { data: roles } = await admin
-      .from('user_roles')
-      .select('roles!role_id ( slug )')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    if (!roles || !Array.isArray(roles)) return false;
-    const slugs = roles
-      .map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.slug : r.roles?.slug))
-      .filter(Boolean);
-
-    return (
-      slugs.includes('superadministrador') ||
-      slugs.includes('administrador') ||
-      slugs.includes('coordinador')
-    );
-  }
-
-  /**
-   * Consulta de inscripciones y solicitudes:
-   * - Personal administrativo (staff): puede consultar todas las solicitudes.
-   * - Alumnos / aspirantes: únicamente consultan sus propias solicitudes.
-   */
-  async findEnrollments(
-    userId: string,
-    isStaff: boolean,
-    accessToken: string,
-  ) {
+    const roles = await loadActiveRoleSlugs(admin, userId);
+    const coordinator = isScopedCoordinator(roles);
     const client = this.supabase.getResilientClient(accessToken);
     let query = client
       .from('enrollment_requests')
       .select('*, course_mappings!course_mapping_id (*), profiles!user_id ( id, email, first_name, last_name )')
       .order('created_at', { ascending: false });
 
-    if (!isStaff) {
+    if (!coordinator && !hasGlobalAcademicAccess(roles)) {
       query = query.eq('user_id', userId);
     }
 
@@ -72,7 +50,13 @@ export class EnrollmentsService {
       );
     }
 
-    return data || [];
+    const enrollments = data ?? [];
+    if (!coordinator) return enrollments;
+
+    const programs = new Set(await listAssignedProgramIds(admin, userId));
+    return enrollments.filter(({ user_id, course_mappings }) =>
+      user_id === userId || (course_mappings?.program_id && programs.has(course_mappings.program_id)),
+    );
   }
 
   async createEnrollmentRequest(
@@ -126,7 +110,7 @@ export class EnrollmentsService {
         if (!isCoordinator || !course.program_id) {
           throw new ForbiddenException('El curso está fuera de tu ámbito.');
         }
-        await this.requireProgramScope(actorId, course.program_id);
+        await requireProgramScope(admin, actorId, course.program_id);
       }
     }
 
@@ -205,7 +189,7 @@ export class EnrollmentsService {
 
     const { data: current, error: findError } = await admin
       .from('enrollment_requests')
-      .select('*')
+      .select('*, course_mappings!course_mapping_id (program_id)')
       .eq('id', enrollmentId)
       .maybeSingle();
 
@@ -213,8 +197,8 @@ export class EnrollmentsService {
       throw new NotFoundException('Solicitud de inscripción no encontrada.');
     }
 
-    if (this.isScopedCoordinator(actorRoles)) {
-      await this.requireProgramScope(actorId, current.program_id);
+    if (isScopedCoordinator(actorRoles)) {
+      await requireProgramScope(admin, actorId, current.course_mappings?.program_id);
     }
 
     const now = new Date().toISOString();
@@ -273,16 +257,17 @@ export class EnrollmentsService {
   }
 
   async syncToMoodle(enrollmentId: string, actorId: string, actorRoles: string[] = []) {
-    const { data: enrollment, error } = await this.supabase.getAdminClient()
+    const admin = this.supabase.getAdminClient();
+    const { data: enrollment, error } = await admin
       .from('enrollment_requests')
-      .select('user_id, moodle_role, program_id')
+      .select('user_id, moodle_role, course_mappings!course_mapping_id (program_id)')
       .eq('id', enrollmentId)
       .maybeSingle();
     if (error || !enrollment) {
       throw new NotFoundException('Solicitud de inscripción no encontrada.');
     }
-    if (this.isScopedCoordinator(actorRoles)) {
-      await this.requireProgramScope(actorId, enrollment.program_id);
+    if (isScopedCoordinator(actorRoles)) {
+      await requireProgramScope(admin, actorId, enrollment.course_mappings?.program_id);
     }
 
     const result = await this.moodleService.syncEnrollment(enrollmentId);
@@ -290,25 +275,6 @@ export class EnrollmentsService {
       await this.ensureStudentRole(enrollment.user_id, actorId);
     }
     return result;
-  }
-
-  private isScopedCoordinator(roles: string[]): boolean {
-    return roles.includes('coordinador') &&
-      !roles.some((role) => role === 'administrador' || role === 'superadministrador');
-  }
-
-  private async requireProgramScope(userId: string, programId: string | null) {
-    if (!programId) {
-      throw new ForbiddenException('El curso está fuera de tu ámbito.');
-    }
-    const { data: scope } = await this.supabase.getAdminClient()
-      .from('user_programs')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('program_id', programId)
-      .in('status', ['admitido', 'inscrito', 'cursando'])
-      .maybeSingle();
-    if (!scope) throw new ForbiddenException('El curso está fuera de tu ámbito.');
   }
 
   private async ensureStudentRole(userId: string, actorId: string) {
@@ -331,12 +297,12 @@ export class EnrollmentsService {
 
   /**
    * Elimina / desasigna una matrícula de un curso:
-   * - Si es staff (admin/coordinador), puede desasignar cualquier curso a cualquier usuario.
+   * - Coordinación puede desasignar matrículas de sus programas. Administración tiene alcance global.
    * - Si es alumno o profesor, puede dar de baja su propio curso.
    * - Llama a Moodle unenrolStudent para desmatricular en el aula virtual.
    * - Elimina el registro de enrollment_requests y registra la acción en audit_logs.
    */
-  async deleteEnrollment(enrollmentId: string, actorId: string, isStaff: boolean) {
+  async deleteEnrollment(enrollmentId: string, actorId: string) {
     const admin = this.supabase.getAdminClient();
 
     const { data: enrollment, error } = await admin
@@ -349,10 +315,14 @@ export class EnrollmentsService {
       throw new NotFoundException('Matrícula o solicitud no encontrada.');
     }
 
-    if (!isStaff && enrollment.user_id !== actorId) {
-      throw new ForbiddenException(
-        'No posees autorización para desasignar esta matrícula.',
-      );
+    const isOwnEnrollment = enrollment.user_id === actorId;
+    if (!isOwnEnrollment) {
+      const roles = await loadActiveRoleSlugs(admin, actorId);
+      if (isScopedCoordinator(roles)) {
+        await requireProgramScope(admin, actorId, enrollment.course_mappings?.program_id);
+      } else if (!hasGlobalAcademicAccess(roles)) {
+        throw new ForbiddenException('No posees autorización para desasignar esta matrícula.');
+      }
     }
 
     // Desmatricular en Moodle LMS
@@ -374,11 +344,11 @@ export class EnrollmentsService {
     }
 
     // Registrar en auditoría
-    const courseMapping = (enrollment as any).course_mappings;
+    const courseMapping = enrollment.course_mappings;
     await admin.from('audit_logs').insert({
       actor_id: actorId,
       target_user_id: enrollment.user_id,
-      action: isStaff ? 'ENROLLMENT_UNASSIGNED_BY_ADMIN' : 'ENROLLMENT_DROPPED_BY_STUDENT',
+      action: isOwnEnrollment ? 'ENROLLMENT_DROPPED_BY_STUDENT' : 'ENROLLMENT_UNASSIGNED_BY_ADMIN',
       entity_name: 'enrollment_requests',
       entity_id: enrollmentId,
       old_values: {

@@ -714,7 +714,22 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'enrollment_requests_course_mapping_id_fkey';
+            columns: ['course_mapping_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_mappings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'enrollment_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       campus_access_logs: {
         Row: CampusAccessLogRecord;

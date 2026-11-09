@@ -543,6 +543,7 @@ paths:
   /enrollments:
     get:
       summary: Consultar solicitudes de inscripción
+      description: Coordinación ve sus solicitudes propias y las de cursos de sus programas asignados.
       security:
         - bearerAuth: []
       responses:
@@ -589,7 +590,7 @@ paths:
   /enrollments/{id}:
     delete:
       summary: Desasignar curso o dar de baja matrícula
-      description: Permite al estudiante darse de baja de su curso o al personal docente/administrativo revocar una matrícula. Desmatricula al usuario de Moodle LMS vía Web Services oficiales (enrol_manual_unenrol_users).
+      description: Permite cancelar una matrícula propia. Administración puede revocar matrículas de otras cuentas y coordinación puede hacerlo en los cursos de sus programas asignados.
       security:
         - bearerAuth: []
       parameters:
@@ -792,6 +793,7 @@ paths:
   /moodle/sync/enrollment/{enrollmentId}:
     post:
       summary: Sincronizar matrícula autorizada en Moodle
+      description: Coordinación solo puede sincronizar matrículas de cursos en sus programas asignados.
       security:
         - bearerAuth: []
       parameters:
@@ -803,6 +805,8 @@ paths:
       responses:
         "200":
           description: Matrícula sincronizada.
+        "403":
+          description: La matrícula corresponde a un curso fuera del ámbito autorizado.
 
   /moodle/launch:
     post:
@@ -845,7 +849,7 @@ paths:
   /moodle/courses/{courseId}/contents:
     get:
       summary: Estructura de temas, secciones y módulos de un curso
-      description: Obtiene los recursos y actividades configuradas en Moodle LMS (core_course_get_contents). Requiere que el usuario esté matriculado activamente en el curso o pertenezca al personal de supervisión/staff.
+      description: Obtiene los recursos y actividades configuradas en Moodle LMS (core_course_get_contents). Requiere que el usuario esté matriculado activamente en el curso o pertenezca al personal de supervisión/staff. Coordinación puede supervisar los cursos de sus programas asignados.
       security:
         - bearerAuth: []
       parameters:
@@ -866,7 +870,7 @@ paths:
   /moodle/courses/{courseId}/participants:
     get:
       summary: Listado de participantes matriculados en un curso
-      description: Retorna alumnos matriculados, roles y marcas de último acceso (core_enrol_get_enrolled_users). Exclusivo para docentes titulares del curso y personal administrativo/coordinador.
+      description: Retorna alumnos matriculados, roles y marcas de último acceso (core_enrol_get_enrolled_users). Exclusivo para docentes titulares del curso y personal administrativo/coordinador. Coordinación puede supervisar los cursos de sus programas asignados.
       security:
         - bearerAuth: []
       parameters:
@@ -885,7 +889,7 @@ paths:
   /moodle/courses/{courseId}/progress:
     get:
       summary: Progreso, actividades y calificaciones de un usuario en un curso
-      description: Consulta calificaciones oficiales (gradereport_user_get_grade_items) y estado de compleción (core_completion_get_course_completion_status). Los estudiantes solo pueden consultar su propio progreso. Docentes y administradores pueden auditar el progreso de otros alumnos pasando el parámetro moodle_user_id.
+      description: Consulta calificaciones oficiales (gradereport_user_get_grade_items) y estado de compleción (core_completion_get_course_completion_status). Los estudiantes solo pueden consultar su propio progreso. Docentes y administradores pueden auditar el progreso de otros alumnos pasando el parámetro moodle_user_id. Coordinación puede supervisar los cursos de sus programas asignados.
       security:
         - bearerAuth: []
       parameters:
@@ -959,7 +963,7 @@ paths:
   /moodle/courses/{courseId}/teacher-overview:
     get:
       summary: Resumen analítico global de curso para docentes y administradores
-      description: Consolida el total de alumnos matriculados, profesores, módulos interactivos, secciones y listas de estudiantes con fecha de última visita.
+      description: Consolida el total de alumnos matriculados, profesores, módulos interactivos, secciones y listas de estudiantes con fecha de última visita. Coordinación puede supervisar los cursos de sus programas asignados.
       security:
         - bearerAuth: []
       parameters:

@@ -719,7 +719,8 @@
           "200": {
             "description": "Lista de solicitudes."
           }
-        }
+        },
+        "description": "Coordinaci\u00f3n ve sus solicitudes propias y las de cursos de sus programas asignados."
       },
       "post": {
         "summary": "Solicitar inscripci\u00f3n o asignar un curso",
@@ -786,7 +787,7 @@
     "/enrollments/{id}": {
       "delete": {
         "summary": "Desasignar curso o dar de baja matr\u00edcula",
-        "description": "Permite al estudiante darse de baja de su curso o al personal docente/administrativo revocar una matr\u00edcula. Desmatricula al usuario de Moodle LMS v\u00eda Web Services oficiales (enrol_manual_unenrol_users).",
+        "description": "Permite cancelar una matr\u00edcula propia. Administraci\u00f3n puede revocar matr\u00edculas de otras cuentas y coordinaci\u00f3n puede hacerlo en los cursos de sus programas asignados.",
         "security": [
           {
             "bearerAuth": []
@@ -1091,8 +1092,12 @@
         "responses": {
           "200": {
             "description": "Matr\u00edcula sincronizada."
+          },
+          "403": {
+            "description": "La matr\u00edcula corresponde a un curso fuera del \u00e1mbito autorizado."
           }
-        }
+        },
+        "description": "Coordinaci\u00f3n solo puede sincronizar matr\u00edculas de cursos en sus programas asignados."
       }
     },
     "/moodle/launch": {
@@ -1159,7 +1164,7 @@
     "/moodle/courses/{courseId}/contents": {
       "get": {
         "summary": "Estructura de temas, secciones y m\u00f3dulos de un curso",
-        "description": "Obtiene los recursos y actividades configuradas en Moodle LMS (core_course_get_contents). Requiere que el usuario est\u00e9 matriculado activamente en el curso o pertenezca al personal de supervisi\u00f3n/staff.",
+        "description": "Obtiene los recursos y actividades configuradas en Moodle LMS (core_course_get_contents). Requiere que el usuario est\u00e9 matriculado activamente en el curso o pertenezca al personal de supervisi\u00f3n/staff. Coordinaci\u00f3n puede supervisar los cursos de sus programas asignados.",
         "security": [
           {
             "bearerAuth": []
@@ -1192,7 +1197,7 @@
     "/moodle/courses/{courseId}/participants": {
       "get": {
         "summary": "Listado de participantes matriculados en un curso",
-        "description": "Retorna alumnos matriculados, roles y marcas de \u00faltimo acceso (core_enrol_get_enrolled_users). Exclusivo para docentes titulares del curso y personal administrativo/coordinador.",
+        "description": "Retorna alumnos matriculados, roles y marcas de \u00faltimo acceso (core_enrol_get_enrolled_users). Exclusivo para docentes titulares del curso y personal administrativo/coordinador. Coordinaci\u00f3n puede supervisar los cursos de sus programas asignados.",
         "security": [
           {
             "bearerAuth": []
@@ -1222,7 +1227,7 @@
     "/moodle/courses/{courseId}/progress": {
       "get": {
         "summary": "Progreso, actividades y calificaciones de un usuario en un curso",
-        "description": "Consulta calificaciones oficiales (gradereport_user_get_grade_items) y estado de compleci\u00f3n (core_completion_get_course_completion_status). Los estudiantes solo pueden consultar su propio progreso. Docentes y administradores pueden auditar el progreso de otros alumnos pasando el par\u00e1metro moodle_user_id.",
+        "description": "Consulta calificaciones oficiales (gradereport_user_get_grade_items) y estado de compleci\u00f3n (core_completion_get_course_completion_status). Los estudiantes solo pueden consultar su propio progreso. Docentes y administradores pueden auditar el progreso de otros alumnos pasando el par\u00e1metro moodle_user_id. Coordinaci\u00f3n puede supervisar los cursos de sus programas asignados.",
         "security": [
           {
             "bearerAuth": []
@@ -1261,7 +1266,7 @@
     "/moodle/courses/{courseId}/teacher-overview": {
       "get": {
         "summary": "Resumen anal\u00edtico global de curso para docentes y administradores",
-        "description": "Consolida el total de alumnos matriculados, profesores, m\u00f3dulos interactivos, secciones y listas de estudiantes con fecha de \u00faltima visita.",
+        "description": "Consolida el total de alumnos matriculados, profesores, m\u00f3dulos interactivos, secciones y listas de estudiantes con fecha de \u00faltima visita. Coordinaci\u00f3n puede supervisar los cursos de sus programas asignados.",
         "security": [
           {
             "bearerAuth": []
