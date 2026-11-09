@@ -93,6 +93,75 @@ paths:
         "409":
           description: Correo electrónico ya registrado.
 
+  /auth/recover:
+    post:
+      summary: Solicitar un correo de recuperación
+      description: Responde con el mismo mensaje para cualquier correo válido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+      responses:
+        "200":
+          description: Solicitud recibida.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Correo inválido.
+        "429":
+          description: Límite de solicitudes alcanzado.
+  /auth/reset-password:
+    post:
+      summary: Restablecer contraseña con el token de un solo uso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token_hash, password]
+              properties:
+                token_hash:
+                  type: string
+                  pattern: '^[A-Za-z0-9_-]{16,256}$'
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 72
+                  description: Debe ocupar como máximo 72 bytes en UTF-8.
+      responses:
+        "200":
+          description: Contraseña actualizada.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Datos inválidos, token caducado o contraseña rechazada.
+        "429":
+          description: Límite de solicitudes alcanzado.
+        "503":
+          description: El servicio de recuperación no pudo completar la operación.
+
   /auth/me:
     get:
       summary: Identidad del usuario autenticado
@@ -449,12 +518,42 @@ paths:
         "200":
           description: Lista de solicitudes.
     post:
-      summary: Solicitar inscripción a un curso
+      summary: Solicitar inscripción o asignar un curso
+      description: Las solicitudes propias quedan pendientes como estudiante. La asignación a otra cuenta requiere el permiso enrollments.authorize y acceso al ámbito del curso.
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [course_mapping_id]
+              properties:
+                course_mapping_id:
+                  type: string
+                  format: uuid
+                user_id:
+                  type: string
+                  format: uuid
+                  description: Cuenta destinataria en asignaciones administrativas.
+                program_id:
+                  type: string
+                  format: uuid
+                  description: Si se proporciona, debe coincidir con el programa del curso.
+                moodle_role:
+                  type: string
+                  enum: [student, editingteacher, teacher]
+                  default: student
+                notes:
+                  type: string
       responses:
         "201":
-          description: Solicitud registrada en estado 'pendiente'.
+          description: Solicitud pendiente o asignación administrativa registrada. El estado sincronizada indica confirmación de Moodle.
+        "403":
+          description: Rol, permiso o ámbito insuficiente para la operación.
+        "409":
+          description: Ya existe una matrícula activa o el registro cambió durante la solicitud.
 
   /enrollments/{id}:
     delete:

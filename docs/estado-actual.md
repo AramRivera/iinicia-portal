@@ -1,7 +1,7 @@
 # Estado actual del proyecto IINICIA
 
-**Revisión documental y del código:** 5 de noviembre de 2026  
-**Rama de referencia:** `main`  
+**Revisión documental y del código:** 9 de noviembre de 2026
+**Rama de referencia:** `main`
 **Alcance vigente del curso de prueba:** un curso
 
 Este documento separa lo que se observa en el repositorio de lo que requiere confirmación en servicios externos. Los módulos, variables de entorno, mocks, ejemplos y documentos por sí solos no prueban que Supabase o Moodle estén conectados ni que una operación real haya funcionado.
@@ -14,28 +14,43 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 
 ## Estado por componente
 
-| Componente | Evidencia en el repositorio | Pendiente para aceptar el componente |
+| Componente | Evidencia | Validación pendiente |
 | --- | --- | --- |
-| Frontend | Aplicación Next.js/React con páginas públicas, registro, login, rutas de recuperación y paneles por rol. La guía vigente está en [`frontend.md`](frontend.md). | Comparar y aprobar los contenidos migrados desde WordPress; revisar textos, imágenes, SEO y redirecciones; validar pantallas responsive y accesibilidad; probar flujos con servicios y usuarios reales. |
-| Backend | API NestJS modular con módulos de auth, users, roles, permissions, programs, courses, enrollments, admissions, Moodle, audit y CMS. Hay DTOs, guards, migraciones, contrato OpenAPI y pruebas unitarias. | Resolver discrepancias de flujos y contratos; verificar todas las rutas con Supabase/Moodle reales; comprobar autorizaciones por rol y ámbito; ejecutar y registrar las comprobaciones de build, lint y pruebas del equipo. |
-| Supabase | Hay una migración versionada con tablas iniciales y RLS, además de la decisión de acceso mixto. La guía manual informa que la migración está pendiente de aplicación. | Confirmar ambiente, aplicar y registrar la migración, validar configuración de Auth y correo, probar RLS con JWT de distintos roles y verificar las operaciones privilegiadas. No se afirma aquí que haya conectividad activa. |
-| Moodle | Existe código para Web Services, sincronización de usuarios/matrículas, consulta de datos académicos y generación de enlaces de acceso. Hay configuración de ejemplo y documentación sobre `auth_userkey`. | Confirmar instalación y versión objetivo, URL accesible, servicio y funciones habilitadas, permisos, plugin/mecanismo SSO y mapeo de roles. Configurar y probar un solo curso completo con una cuenta docente y al menos dos estudiantes de prueba. |
-| Migración desde WordPress | El frontend contiene rutas institucionales y el backend contempla un endpoint para consultar redirecciones. | Completar inventario editorial y técnico, decidir qué migrar/actualizar/reescribir, validar redirecciones y conservar evidencia. El endpoint no demuestra que exista un inventario completo ni que ya se hayan aplicado redirecciones. |
-| Operación y entrega | Hay ejemplos de variables de entorno, guías de instalación y varios documentos de operación. | Preparar ambientes separados, despliegue reproducible, HTTPS, respaldos y recuperación; retirar datos de acceso de desarrollo; registrar resultados de pruebas y demostración integral. |
+| Frontend | Rediseño de navegación y catálogo integrado. Pantallas de recuperación conectadas a la API y accesos rápidos retirados del login. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. |
+| Backend | Las solicitudes propias quedan pendientes. Las asignaciones a terceros exigen permiso y ámbito. OpenAPI incluye recuperación y restablecimiento. | Validar autorización y revocación de acceso con las cuentas reales de demostración. |
+| Supabase | La API local consultó la tabla de roles y reportó `ok` en `GET /api/v1/health`. El SQL inicial usa `roles.code` y `user_roles.role_code`; la API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`. | Comparar el esquema activo y acordar una migración compatible antes de aplicar SQL. Verificar RLS con JWT de diferentes roles. Configurar URL y plantilla de recuperación de acuerdo con [la guía del portal](frontend.md). |
+| Moodle | El Web Service respondió a la comprobación de salud de la API local. Hay [un recurso didáctico candidato](cursos/html-basico/GUIA-MOODLE.txt) para el curso único. | Confirmar nombre e ID del curso, versión, permisos, SSO y mapeo de roles. Registrar evidencia de las actividades y de acceso por rol. |
+| Operación | Compilaciones de API y portal y suites unitarias y de API ejecutadas localmente. | Cerrar configuración de despliegue, HTTPS, respaldos y recuperación. |
 
-## Diferencias conocidas que deben resolverse
+## Comprobaciones del 9 de noviembre
 
-1. La API no expone actualmente `POST /auth/recover` ni `POST /auth/reset-password`, aunque el cliente web invoca esas rutas. El flujo visual de recuperación existe, pero no debe anunciarse como funcional hasta cerrar el contrato y probarlo.
-2. El cliente web describe una solicitud de inscripción pendiente de autorización; el servicio de inscripciones contiene flujos que autorizan y sincronizan inmediatamente. El equipo debe definir la regla y alinear API, frontend y OpenAPI.
-3. El código SSO con Moodle existe, pero su operación depende de configuración externa que no se verifica desde el repositorio.
-4. El PDF adjunto y varios documentos históricos todavía mencionan dos cursos, versiones de Moodle y/o identificadores de cursos. Se deben considerar referencias antiguas hasta confirmarlas con el equipo y el entorno real.
-5. Hay varios scripts SQL bajo `apps/api/db/` y una migración bajo `supabase/migrations/`. Antes de aplicar cambios al esquema, el equipo debe mantener claro cuál migración es la fuente reproducible y evitar ejecutar scripts históricos sin revisión.
+- API: 68 pruebas unitarias y 24 pruebas HTTP de extremo a extremo con servicios simulados. Compilación correcta.
+- Portal: compilación correcta. ESLint reportó 93 errores y 41 avisos, los mismos totales que en `main` antes de integrar los cambios de la API.
+- Conectividad: `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local que estaba en ejecución. El envío de correo, RLS, SSO y las actividades del curso requieren sus propias comprobaciones.
 
-## Revisión de integraciones
+## Demostración del curso único
 
-La guía [`supabase-configuracion-manual.md`](supabase-configuracion-manual.md) describe la aplicación manual de la migración y las pruebas de RLS pendientes. Las variables de [`apps/api/.env.example`](../apps/api/.env.example) y [`apps/web/.env.example`](../apps/web/.env.example) son plantillas; no acreditan configuración real. No se deben copiar valores secretos a documentación.
+1. Confirmar el curso y su mapeo existente. Si el equipo elige HTML básico, cargar el recurso y usar sus consignas como base para las actividades nativas.
+2. Configurar una lectura o recurso, un foro, una tarea y una evaluación. Definir la calificación y activar el seguimiento de finalización de actividades.
+3. Asignar un docente y matricular a dos estudiantes de prueba mediante el flujo autorizado. Confirmar la matrícula en Moodle y comprobar que otra cuenta no pueda entrar al aula.
+4. Verificar acceso SSO y calificador docente. Completar una actividad con un estudiante y comprobar que el avance y la calificación se reflejen por separado.
+5. Registrar fecha, ambiente, resultados y evidencia sin secretos. Probar también el correo de recuperación con una cuenta de prueba.
 
-Para Moodle, la integración se considera validada únicamente cuando se registra evidencia de una llamada real a la instancia elegida y de los flujos de creación/vinculación, matrícula, acceso y permisos del curso único. Las pruebas con mocks solo validan el comportamiento local del código.
+## Inventario inicial de WordPress
+
+El [portal público de WordPress](https://iinicia.org/) mostró estos enlaces en portada el 9 de noviembre de 2026. El endpoint local `GET /api/v1/migration/redirects` devolvió una lista vacía. Los destinos son propuestas para revisar con el equipo editorial.
+
+| Enlace publicado | Etiqueta | Destino propuesto |
+| --- | --- | --- |
+| `/` | Inicio | `/` |
+| `/?page_id=1172` | Universidad IINICIA | `/universidad` |
+| `/?page_id=1202` | Cursos | `/cursos` |
+| `/?page_id=1652` | Certificaciones | `/certificaciones` |
+| `/?page_id=1653` | Diplomados | `/diplomados` |
+| `/?page_id=16` | Regístrate | `/registro` |
+| `/?page_id=2179` | Iniciar sesión | `/login` |
+
+La revisión cubrió la navegación visible en la portada. Completar el inventario con una exportación de WordPress, comparar contenidos y metadatos y verificar las redirecciones al publicar el portal.
 
 ## Criterio para marcar una tarea como terminada
 

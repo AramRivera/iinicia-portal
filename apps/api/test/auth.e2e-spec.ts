@@ -12,10 +12,14 @@ import { SupabaseService } from '../src/common/supabase/supabase.service.js';
 describe('POST /api/v1/auth/login', () => {
   let app: INestApplication<App>;
   const login = vi.fn();
+  const recover = vi.fn();
+  const reset = vi.fn();
   const credentials = { email: 'user@example.com', password: 'password' };
 
   beforeEach(async () => {
     login.mockReset();
+    recover.mockReset().mockResolvedValue({ message: 'Solicitud recibida' });
+    reset.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
     login.mockResolvedValue({
       access_token: 'access',
       refresh_token: 'refresh',
@@ -25,7 +29,7 @@ describe('POST /api/v1/auth/login', () => {
     });
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(SupabaseService)
-      .useValue({ signInWithPassword: login })
+      .useValue({ signInWithPassword: login, requestPasswordRecovery: recover, resetPassword: reset })
       .compile();
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1');
@@ -89,4 +93,29 @@ describe('POST /api/v1/auth/login', () => {
     expect(login).toHaveBeenCalledTimes(5);
     await request(app.getHttpServer()).get('/api/v1').expect(200);
   });
+  it('passes the recovery email and one-time token to Supabase without caching', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/recover')
+      .send({ email: credentials.email })
+      .expect(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(recover).toHaveBeenCalledWith(credentials.email);
+
+    const tokenHash = 'a'.repeat(56);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ token_hash: tokenHash, password: credentials.password })
+      .expect(200);
+    expect(reset).toHaveBeenCalledWith(tokenHash, credentials.password);
+  });
+
+  it('does not accept a regular Bearer token in place of a recovery token', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .set('Authorization', 'Bearer regular-session')
+      .send({ password: credentials.password })
+      .expect(400);
+    expect(reset).not.toHaveBeenCalled();
+  });
+
 });

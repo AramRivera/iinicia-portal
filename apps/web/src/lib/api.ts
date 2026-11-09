@@ -89,8 +89,7 @@ export const authApi = {
   resetPassword: async (recoveryToken: string, password: string): Promise<{ message: string }> =>
     apiFetch<{ message: string }>('/auth/reset-password', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${recoveryToken}` },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ token_hash: recoveryToken, password }),
     }),
 
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {

@@ -144,13 +144,15 @@ export default function AsignacionesPage() {
     setError(null);
 
     try {
-      await enrollmentsApi.requestEnrollment(selectedCourseId, {
+      const assignment = await enrollmentsApi.requestEnrollment(selectedCourseId, {
         user_id: assignCourseUser.id,
         moodle_role: selectedMoodleRole,
         notes: assignNotes || 'Asignado administrativamente desde panel de Asignaciones',
       });
       setNotice(
-        `Curso asignado y matriculado exitosamente para ${assignCourseUser.first_name} ${assignCourseUser.last_name} (${assignCourseUser.email}).`,
+        assignment.status === 'sincronizada'
+          ? 'Curso asignado y matriculado en Moodle LMS.'
+          : 'Asignación registrada. Moodle aún no confirma la matrícula.',
       );
       setAssignCourseUser(null);
       setSelectedCourseId('');

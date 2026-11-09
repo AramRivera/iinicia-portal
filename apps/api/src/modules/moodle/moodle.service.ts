@@ -27,7 +27,7 @@ export class MoodleService {
       const envStudentId = this.config.get<string | number>('MOODLE_ROLE_STUDENT_ID');
       if (envStudentId) return Number(envStudentId);
     }
-    if (moodleRole === 'editingteacher' || moodleRole === 'teacher') {
+    if (moodleRole === 'editingteacher') {
       const envTeacherId = this.config.get<string | number>('MOODLE_ROLE_TEACHER_ID');
       if (envTeacherId) return Number(envTeacherId);
     }
@@ -233,7 +233,11 @@ export class MoodleService {
       throw new NotFoundException('Solicitud de inscripción no encontrada.');
     }
 
-    if (enrollment.status !== 'autorizada' && enrollment.status !== 'sincronizada') {
+    if (
+      enrollment.status !== 'autorizada' &&
+      enrollment.status !== 'sincronizada' &&
+      !(enrollment.status === 'error_sincronizacion' && enrollment.authorized_at)
+    ) {
       throw new BadRequestException(
         `La solicitud debe estar autorizada para sincronizarse (estado actual: ${enrollment.status}).`,
       );
@@ -248,18 +252,17 @@ export class MoodleService {
       );
     }
 
-    // Asegurar que el usuario esté sincronizado en Moodle
-    let moodleUserId = profile.moodle_user_id;
-    if (!moodleUserId) {
-      const syncResult = await this.syncUser(profile.id);
-      moodleUserId = syncResult.moodle_user_id;
-    }
-
     const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
     const roleId = this.getMoodleRoleId(moodleRole);
     const attempts = (enrollment.sync_attempts || 0) + 1;
 
     try {
+      // Resolver el usuario también forma parte del intento de sincronización.
+      let moodleUserId = profile.moodle_user_id;
+      if (!moodleUserId) {
+        const syncResult = await this.syncUser(profile.id);
+        moodleUserId = syncResult.moodle_user_id;
+      }
       try {
         await this.client.enrolUser({
           userId: Number(moodleUserId),
@@ -288,7 +291,7 @@ export class MoodleService {
       }
 
       const now = new Date().toISOString();
-      await admin
+      const { error: persistenceError } = await admin
         .from('enrollment_requests')
         .update({
           status: 'sincronizada',
@@ -297,6 +300,12 @@ export class MoodleService {
           sync_error_message: null,
         })
         .eq('id', enrollmentId);
+
+      if (persistenceError) {
+        throw new InternalServerErrorException(
+          'No fue posible registrar el resultado de la matrícula en el portal.',
+        );
+      }
 
       await admin.from('audit_logs').insert({
         actor_id: enrollment.authorized_by || enrollment.user_id,

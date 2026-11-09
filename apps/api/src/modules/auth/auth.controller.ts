@@ -9,12 +9,13 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard.js';
 import type { AuthenticatedRequest } from '../../common/auth/supabase-auth.guard.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
+import { RecoverPasswordDto, ResetPasswordDto } from './dto/password-recovery.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 
 @Controller('auth')
@@ -25,6 +26,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
   @UseGuards(ThrottlerGuard)
@@ -41,6 +43,24 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   register(@Body() data: RegisterDto) {
     return this.authService.register(data);
+  }
+
+  @Post('recover')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  recoverPassword(@Body() dto: RecoverPasswordDto) {
+    return this.supabase.requestPasswordRecovery(dto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.supabase.resetPassword(dto.token_hash, dto.password);
   }
 
   /**

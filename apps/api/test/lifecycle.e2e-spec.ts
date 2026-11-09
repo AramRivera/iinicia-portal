@@ -49,6 +49,7 @@ describe('Portal Lifecycle E2E Test Suite', () => {
   const mockMoodleClient = {
     checkConnection: vi.fn(),
     getSiteInfo: vi.fn(),
+    getEffectiveBaseUrl: vi.fn().mockResolvedValue('http://moodle.test'),
     getUserByField: vi.fn(),
     getUserByEmail: vi.fn(),
     createUsers: vi.fn(),
@@ -228,6 +229,14 @@ describe('Portal Lifecycle E2E Test Suite', () => {
       mockSupabase.getAuthenticatedUser.mockResolvedValue({ id: studentUserId, email: 'student@example.com' });
       mockSupabase.getUserRoleSlugs.mockResolvedValue(['estudiante']);
 
+      const insertEnrollment = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { id: 'enr-999', status: 'pendiente' },
+            error: null,
+          }),
+        }),
+      });
       mockAdminClient.from.mockImplementation((table: string) => {
         if (table === 'course_mappings') {
           return {
@@ -250,20 +259,7 @@ describe('Portal Lifecycle E2E Test Suite', () => {
                 }),
               }),
             }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: {
-                    id: 'enr-999',
-                    user_id: studentUserId,
-                    course_mapping_id: courseMappingId,
-                    status: 'pendiente',
-                    moodle_sync_status: 'pendiente',
-                  },
-                  error: null,
-                }),
-              }),
-            }),
+            insert: insertEnrollment,
           };
         }
         if (table === 'audit_logs') {
@@ -282,7 +278,14 @@ describe('Portal Lifecycle E2E Test Suite', () => {
 
       expect(res.body.id).toBe('enr-999');
       expect(res.body.status).toBe('pendiente');
-      expect(res.body.moodle_sync_status).toBe('pendiente');
+      expect(insertEnrollment).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'pendiente',
+        moodle_role: 'student',
+        authorized_by: null,
+        authorized_at: null,
+      }));
+      expect(mockMoodleClient.enrolUser).not.toHaveBeenCalled();
+      expect(mockAdminClient.from).not.toHaveBeenCalledWith('user_roles');
     });
 
     it('PATCH /api/v1/enrollments/:id/status authorizes and enrols user in Moodle', async () => {
@@ -384,6 +387,15 @@ describe('Portal Lifecycle E2E Test Suite', () => {
             }),
             update: vi.fn().mockReturnValue({
               eq: vi.fn().mockResolvedValue({ error: null }),
+            }),
+          };
+        }
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
             }),
           };
         }

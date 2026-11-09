@@ -5,6 +5,8 @@
 - **Migración:** [`20261020110000_initial_schema.sql`](../supabase/migrations/20261020110000_initial_schema.sql)
 - **Herramientas locales comprobadas:** Docker disponible; `psql` y Supabase CLI no disponibles
 
+> La migración de esta guía corresponde al diseño inicial. La API vigente consulta campos como `roles.id`, `roles.slug` y `user_roles.role_id`, que la migración no crea. Compara primero el esquema del ambiente activo con el contrato de la API y prepara una migración compatible revisada antes de seguir los pasos de aplicación.
+
 ## Alcance
 
 El responsable del proyecto aplica las migraciones desde el dashboard oficial de Supabase. Este documento y el archivo SQL son preparación local; no prueban conexión con Supabase ni que el SQL haya sido ejecutado.

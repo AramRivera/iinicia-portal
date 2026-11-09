@@ -248,6 +248,56 @@ export class SupabaseService {
     return this.createClient(accessToken);
   }
 
+  async requestPasswordRecovery(email: string): Promise<{ message: string }> {
+    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4000';
+    let redirectTo: URL;
+    try {
+      redirectTo = new URL('/restablecer-password', frontendUrl);
+      if (!['http:', 'https:'].includes(redirectTo.protocol)) {
+        throw new Error('Protocolo no válido.');
+      }
+    } catch {
+      throw new ServiceUnavailableException('La recuperación no está configurada.');
+    }
+
+    const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
+      redirectTo: redirectTo.href,
+    });
+    if (error && (error.status === undefined || error.status >= 500)) {
+      this.logger.warn('Supabase Auth no pudo procesar la recuperación.');
+    }
+    // Una respuesta uniforme evita revelar si el correo existe o si alcanzó su cuota.
+    return { message: 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.' };
+  }
+
+  async resetPassword(tokenHash: string, password: string): Promise<{ message: string }> {
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+      throw new BadRequestException('La contraseña no debe superar 72 bytes.');
+    }
+
+    const { auth } = this.createClient();
+    const { data, error } = await auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+    if (error && (error.status === undefined || error.status >= 500)) {
+      throw new ServiceUnavailableException('No fue posible verificar el enlace de recuperación.');
+    }
+    if (error || !data.session) {
+      throw new BadRequestException('El enlace de recuperación es inválido o ya caducó.');
+    }
+
+    const { error: updateError } = await auth.updateUser({ password });
+    if (updateError) {
+      if (updateError.code === 'weak_password' || updateError.code === 'same_password') {
+        throw new BadRequestException(
+          'Elige una contraseña segura y distinta de la anterior. Solicita un nuevo enlace para continuar.',
+        );
+      }
+      throw new ServiceUnavailableException(
+        'No fue posible cambiar la contraseña. Solicita un nuevo enlace para reintentar.',
+      );
+    }
+    return { message: 'Tu contraseña se actualizó.' };
+  }
+
   /**
    * Obtiene el cliente privilegiado (Service Role) aislado en el servidor.
    * Utilizar ÚNICAMENTE tras validación explícita de guards/permisos en NestJS

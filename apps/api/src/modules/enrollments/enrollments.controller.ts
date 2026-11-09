@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   Param,
@@ -44,21 +43,11 @@ export class EnrollmentsController {
     @Body() dto: CreateEnrollmentRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const isAssigningOther = Boolean(dto.user_id && dto.user_id !== req.user.id);
-    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
-
-    if (isAssigningOther && !isStaff) {
-      throw new ForbiddenException(
-        'No posees privilegios de administración para asignar cursos a otros usuarios.',
-      );
-    }
-
-    const targetUserId = isAssigningOther ? dto.user_id! : req.user.id;
     return this.enrollmentsService.createEnrollmentRequest(
-      targetUserId,
+      dto.user_id ?? req.user.id,
       dto,
       req.user.id,
-      isStaff,
+      req.accessToken,
     );
   }
 
@@ -72,7 +61,7 @@ export class EnrollmentsController {
     @Body() dto: UpdateEnrollmentStatusDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.enrollmentsService.updateEnrollmentStatus(id, dto, req.user.id);
+    return this.enrollmentsService.updateEnrollmentStatus(id, dto, req.user.id, req.userRoles);
   }
 
   @Post(':id/sync')
@@ -80,8 +69,8 @@ export class EnrollmentsController {
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('moodle.sync.execute')
-  syncToMoodle(@Param('id') id: string) {
-    return this.enrollmentsService.syncToMoodle(id);
+  syncToMoodle(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.enrollmentsService.syncToMoodle(id, req.user.id, req.userRoles);
   }
 
   @Delete(':id')

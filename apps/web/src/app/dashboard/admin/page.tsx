@@ -312,13 +312,15 @@ export default function AdminDashboardPage() {
     setError(null);
 
     try {
-      await enrollmentsApi.authorizeEnrollment(enrollmentId, {
+      const result = await enrollmentsApi.authorizeEnrollment(enrollmentId, {
         status,
         sync_to_moodle: true,
       });
       setNotice(
         status === 'autorizada'
-          ? 'Matrícula autorizada y sincronizada con Moodle LMS.'
+          ? result.moodle_sync?.success
+            ? 'Matrícula autorizada y sincronizada con Moodle LMS.'
+            : 'Matrícula autorizada. La sincronización con Moodle sigue pendiente.'
           : 'Solicitud rechazada.',
       );
       await loadData();
@@ -362,12 +364,16 @@ export default function AdminDashboardPage() {
     setError(null);
 
     try {
-      await enrollmentsApi.requestEnrollment(assignCourseId, {
+      const assignment = await enrollmentsApi.requestEnrollment(assignCourseId, {
         user_id: assignTargetUserId,
         moodle_role: assignMoodleRole,
         notes: 'Asignado directamente desde el panel de Superadministrador',
       });
-      setNotice('Curso asignado y matriculado en Moodle LMS exitosamente.');
+      setNotice(
+        assignment.status === 'sincronizada'
+          ? 'Curso asignado y matriculado en Moodle LMS.'
+          : 'Asignación registrada. Moodle aún no confirma la matrícula.',
+      );
       setShowAssignCourseModal(false);
       setAssignTargetUserId('');
       setAssignCourseId('');
