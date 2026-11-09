@@ -7,6 +7,8 @@
 
 > La migración de esta guía corresponde al diseño inicial. La API vigente consulta campos como `roles.id`, `roles.slug` y `user_roles.role_id`, que la migración no crea. Compara primero el esquema del ambiente activo con el contrato de la API y prepara una migración compatible revisada antes de seguir los pasos de aplicación.
 
+Consulta [Identidad y Supabase](validacion-identidad-supabase.md) para los resultados del proyecto conectado, las consultas de diagnóstico y los pasos de confirmación y recuperación.
+
 ## Alcance
 
 El responsable del proyecto aplica las migraciones desde el dashboard oficial de Supabase. Este documento y el archivo SQL son preparación local; no prueban conexión con Supabase ni que el SQL haya sido ejecutado.

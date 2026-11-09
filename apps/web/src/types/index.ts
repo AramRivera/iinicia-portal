@@ -66,10 +66,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterResponse {
-  id: string;
-  email: string;
-  session: AuthSession | null;
-  access_token?: string;
+  message: string;
 }
 
 export interface CourseOffering {

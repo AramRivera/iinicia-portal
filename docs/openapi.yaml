@@ -66,7 +66,7 @@ paths:
   /auth/register:
     post:
       summary: Registro de nuevo aspirante / usuario
-      description: Crea la cuenta en Supabase Auth y genera perfil con rol inicial 'aspirante' y estado 'pendiente'.
+      description: Inicia el registro público en Supabase Auth. El usuario debe confirmar su correo antes de iniciar sesión. El trigger de base de datos aprovisiona el perfil inicial de aspirante.
       requestBody:
         required: true
         content:
@@ -89,9 +89,21 @@ paths:
                   type: string
       responses:
         "201":
-          description: Usuario registrado exitosamente.
-        "409":
-          description: Correo electrónico ya registrado.
+          description: Solicitud recibida. Devuelve un mensaje sin credenciales de sesión.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Datos inválidos o contraseña rechazada.
+        "429":
+          description: Límite de solicitudes alcanzado.
+        "503":
+          description: Supabase Auth o la confirmación por correo no están disponibles.
 
   /auth/recover:
     post:

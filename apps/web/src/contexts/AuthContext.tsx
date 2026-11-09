@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authApi, getToken, removeToken } from '@/lib/api';
-import type { RoleSlug, UserProfile } from '@/types';
+import type { RegisterResponse, RoleSlug, UserProfile } from '@/types';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -14,7 +14,7 @@ interface AuthContextType {
     first_name: string;
     last_name: string;
     phone?: string;
-  }) => Promise<void>;
+  }) => Promise<RegisterResponse>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   hasRole: (role: RoleSlug) => boolean;
@@ -69,12 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     first_name: string;
     last_name: string;
     phone?: string;
-  }): Promise<void> => {
+  }): Promise<RegisterResponse> => {
     setLoading(true);
     try {
-      await authApi.register(payload);
-      const profile = await authApi.getMe();
-      setUser(profile);
+      return await authApi.register(payload);
     } finally {
       setLoading(false);
     }

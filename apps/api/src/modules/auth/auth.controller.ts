@@ -38,6 +38,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(201)
   @Header('Cache-Control', 'no-store')
   @UseGuards(ThrottlerGuard)
