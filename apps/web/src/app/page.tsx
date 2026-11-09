@@ -447,46 +447,53 @@ export default function HomePage() {
       {/* =================================================================== */}
       {/* SECTION 4: CURSOS Y ASIGNATURAS                                     */}
       {/* =================================================================== */}
-      <section id="cursos" className="border-b border-border py-20 px-4 sm:px-6 lg:px-8 bg-surface-muted/20">
-        <div className="mx-auto max-w-6xl space-y-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-                <span>Oferta académica</span>
+      {/* SECCIÓN CURSOS - REDISEÑO SEGÚN APPLE HIG (MATERIALS & CARDS)       */}
+      {/* =================================================================== */}
+      <section id="cursos" className="relative border-b border-border/80 py-24 px-4 sm:px-6 lg:px-8 bg-surface-muted/30 overflow-hidden">
+        {/* Glow sutil de fondo (depth material) */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative mx-auto max-w-6xl space-y-10">
+          {/* Header con jerarquía Apple HIG */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-[11px] font-semibold text-primary shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent-lime animate-pulse" />
+                <span>Oferta académica en línea</span>
               </div>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                 Cursos y Asignaturas
               </h2>
-              <p className="mt-1 text-xs sm:text-sm text-muted max-w-xl">
-                Conoce los programas publicados y solicita acceso al iniciar sesión.
+              <p className="text-sm text-muted max-w-xl font-normal leading-relaxed">
+                Programas curriculares sincronizados con Moodle LMS. Inscríbete con un clic o accede a tu contenido si ya estás matriculado.
               </p>
             </div>
 
-            {/* Course search */}
-            <div className="relative w-full max-w-xs">
+            {/* Buscador estilo macOS / iOS Search Capsule */}
+            <div className="relative w-full md:w-72">
               <input
                 type="text"
-                placeholder="Buscar por código o materia..."
+                placeholder="Buscar por código o nombre..."
                 value={courseSearch}
                 onChange={(e) => setCourseSearch(e.target.value)}
-                className="w-full rounded-[6px] border border-border bg-surface px-3 py-1.5 pl-8 text-xs text-foreground placeholder:text-muted focus:border-primary focus:outline-none"
+                className="w-full rounded-full border border-border/70 bg-surface/80 backdrop-blur-md px-4 py-2 pl-9 text-xs text-foreground placeholder:text-muted/80 shadow-xs focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
               />
-              <IconSearch className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted pointer-events-none" />
+              <IconSearch className="absolute left-3.5 top-2.5 w-3.5 h-3.5 text-muted pointer-events-none" />
             </div>
           </div>
 
           {/* Feedback banners */}
           {enrollMessage && (
-            <div className="rounded-[8px] border border-success/30 bg-success/10 p-3 text-xs text-foreground flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <IconCheck className="w-4 h-4 text-success shrink-0" />
-                <span>{enrollMessage}</span>
+            <div className="rounded-2xl border border-success/30 bg-success/10 backdrop-blur-md p-4 text-xs text-foreground flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="h-6 w-6 rounded-full bg-success/20 grid place-items-center shrink-0">
+                  <IconCheck className="w-3.5 h-3.5 text-success" />
+                </div>
+                <span className="font-medium">{enrollMessage}</span>
               </div>
               <Link
                 href="/dashboard"
-                className="rounded-[4px] bg-success text-white px-2.5 py-1 text-xs font-semibold shrink-0"
+                className="rounded-full bg-success text-white px-3 py-1.5 text-xs font-semibold shrink-0 shadow-xs hover:opacity-90 transition-opacity"
               >
                 Ver mi panel
               </Link>
@@ -494,102 +501,185 @@ export default function HomePage() {
           )}
 
           {enrollError && (
-            <div className="rounded-[8px] border border-danger/30 bg-danger/10 p-3 text-xs text-danger flex items-center gap-2">
-              <IconAlertTriangle className="w-4 h-4 text-danger shrink-0" />
-              <span>{enrollError}</span>
+            <div className="rounded-2xl border border-danger/30 bg-danger/10 backdrop-blur-md p-4 text-xs text-danger flex items-center gap-2.5 shadow-xs">
+              <div className="h-6 w-6 rounded-full bg-danger/20 grid place-items-center shrink-0">
+                <IconAlertTriangle className="w-3.5 h-3.5 text-danger" />
+              </div>
+              <span className="font-medium">{enrollError}</span>
             </div>
           )}
 
-          {/* Courses list */}
+          {/* Lista de cursos en Grid con estética Apple Card */}
           {coursesLoading ? (
-            <div className="flex min-h-[200px] items-center justify-center">
-              <div className="flex items-center gap-2 text-xs text-muted">
+            <div className="flex min-h-[220px] items-center justify-center rounded-3xl border border-border/60 bg-surface/40 backdrop-blur-md">
+              <div className="flex items-center gap-3 text-xs text-muted font-medium">
                 <IconRefresh className="w-4 h-4 animate-spin text-primary" />
-                <span>Cargando catálogo curricular...</span>
+                <span>Cargando catálogo curricular desde el servidor...</span>
               </div>
             </div>
           ) : !user && filteredPublicCourses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredPublicCourses.map((course) => (
-                <div key={course.id} className="flex flex-col justify-between rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-4 hover:border-primary/40 transition-all">
-                  <div className="space-y-2.5">
+                <div
+                  key={course.id}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-border/70 bg-surface p-6 shadow-sm hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.4)] hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <div className="space-y-3.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-mono font-medium text-foreground">{course.code}</span>
-                      {course.duration_text && <span className="text-[11px] text-muted">{course.duration_text}</span>}
+                      <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
+                        {course.code}
+                      </span>
+                      {course.duration_text && (
+                        <span className="text-[11px] font-medium text-muted">
+                          {course.duration_text}
+                        </span>
+                      )}
                     </div>
-                    <h3 className="text-base font-semibold text-foreground leading-snug">{course.name}</h3>
-                    {(course.short_description || course.description) && <p className="text-xs text-muted leading-relaxed">{course.short_description || course.description}</p>}
+                    <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
+                      {course.name}
+                    </h3>
+                    {(course.short_description || course.description) && (
+                      <p className="text-xs text-muted leading-relaxed line-clamp-3">
+                        {course.short_description || course.description}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-                    <Link href={`/programas/${course.slug}`} className="text-xs font-semibold text-primary hover:underline">Ver detalles</Link>
-                    <Link href="/login" className="inline-block rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-strong">Iniciar sesión</Link>
+
+                  <div className="mt-5 flex items-center justify-between gap-2 border-t border-border/60 pt-4">
+                    <Link
+                      href={`/programas/${course.slug}`}
+                      className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity"
+                    >
+                      Ver detalles →
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:opacity-95 active:scale-95 transition-all"
+                    >
+                      Iniciar sesión
+                    </Link>
                   </div>
                 </div>
               ))}
             </div>
           ) : filteredCourses.length === 0 ? (
-            <div className="rounded-[10px] border border-border bg-surface p-12 text-center space-y-2">
-              <p className="text-sm font-semibold text-foreground">{!user ? publicCourses.length === 0 ? 'Aún no hay cursos publicados' : 'No se encontraron cursos coincidentes' : courseLoadError ? 'No fue posible cargar los cursos' : offerings.length === 0 ? 'Aún no hay cursos publicados' : 'No se encontraron cursos coincidentes'}</p>
-              <p className="text-xs text-muted">{!user ? publicCourses.length === 0 ? 'Consulta el catálogo más tarde.' : 'Intenta con otro término de búsqueda.' : courseLoadError ? 'Revisa la conexión con la API e inténtalo de nuevo.' : offerings.length === 0 ? 'Consulta el catálogo más tarde.' : 'Intenta con otro término de búsqueda.'}</p>
-              {!user && <Link href="/login" className="inline-block rounded-md bg-primary-action px-4 py-2 text-xs font-semibold text-white">Iniciar sesión</Link>}
+            <div className="rounded-3xl border border-border/70 bg-surface/70 backdrop-blur-md p-12 text-center space-y-3 shadow-xs">
+              <div className="h-10 w-10 mx-auto rounded-full bg-surface-muted grid place-items-center text-muted">
+                <IconSearch className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
+                {!user
+                  ? publicCourses.length === 0
+                    ? 'Aún no hay cursos publicados'
+                    : 'No se encontraron cursos coincidentes'
+                  : courseLoadError
+                  ? 'No fue posible cargar los cursos'
+                  : offerings.length === 0
+                  ? 'Aún no hay cursos publicados'
+                  : 'No se encontraron cursos coincidentes'}
+              </p>
+              <p className="text-xs text-muted max-w-sm mx-auto">
+                {!user
+                  ? publicCourses.length === 0
+                    ? 'Consulta el catálogo curricular más tarde.'
+                    : 'Intenta con otro término o palabra clave de búsqueda.'
+                  : courseLoadError
+                  ? 'Revisa la conexión con la API e inténtalo de nuevo.'
+                  : offerings.length === 0
+                  ? 'Consulta el catálogo más tarde.'
+                  : 'Intenta con otro término de búsqueda.'}
+              </p>
+              {!user && (
+                <Link
+                  href="/login"
+                  className="inline-block rounded-full bg-primary-action px-5 py-2 text-xs font-semibold text-white shadow-xs hover:opacity-95"
+                >
+                  Iniciar sesión
+                </Link>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCourses.map((course) => {
                 const enrolled = isEnrolled(course.course_mapping_id);
-                const pending = myEnrollments.some((request) =>
-                  request.course_mapping_id === course.course_mapping_id && request.status === 'pendiente');
+                const pending = myEnrollments.some(
+                  (request) =>
+                    request.course_mapping_id === course.course_mapping_id &&
+                    request.status === 'pendiente',
+                );
+
                 return (
                   <div
                     key={course.id}
-                    className="flex flex-col justify-between rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-4 hover:border-primary/40 transition-all"
+                    className="group relative flex flex-col justify-between rounded-2xl border border-border/70 bg-surface p-6 shadow-sm hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.4)] hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300"
                   >
-                    <div className="space-y-2.5">
+                    <div className="space-y-3.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-mono font-medium text-foreground">
+                        <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
                           {course.code}
                         </span>
                         {course.credits != null && (
-                          <span className="text-[11px] font-mono text-muted">
+                          <span className="text-[11px] font-medium text-muted">
                             {course.credits} créditos
                           </span>
                         )}
                       </div>
-                      <h3 className="text-base font-semibold text-foreground leading-snug">{course.name}</h3>
+                      <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
+                        {course.name}
+                      </h3>
                       <p className="text-xs text-muted leading-relaxed line-clamp-3">
                         {course.course_description || 'Curso disponible en el catálogo de INICIA.'}
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+                    <div className="mt-5 pt-4 border-t border-border/60 flex items-center justify-between gap-2">
                       {course.programs?.slug ? (
-                        <Link href={`/programas/${course.programs.slug}`} className="text-[11px] font-semibold text-primary hover:underline">Detalles</Link>
-                      ) : <span className="text-[11px] font-mono text-muted">Moodle LMS</span>}
+                        <Link
+                          href={`/programas/${course.programs.slug}`}
+                          className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity"
+                        >
+                          Detalles →
+                        </Link>
+                      ) : (
+                        <span className="text-[11px] font-medium text-muted">Moodle LMS</span>
+                      )}
 
                       {enrolled ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="rounded-[4px] bg-success/10 px-2 py-1 text-[11px] font-medium text-success border border-success/20">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-[11px] font-semibold text-success border border-success/20">
                             Matriculado
                           </span>
                           <Link
                             href="/dashboard/estudiante"
-                            className="rounded-[4px] bg-primary-action text-white px-2 py-1 text-[11px] font-medium hover:bg-primary-action/90"
+                            className="rounded-full bg-primary-action text-white px-3 py-1 text-xs font-semibold hover:opacity-95 shadow-xs transition-opacity"
                           >
                             Entrar
                           </Link>
                         </div>
                       ) : pending ? (
-                        <span className="rounded-[4px] bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary border border-primary/20">
+                        <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary border border-primary/20">
                           Solicitud pendiente
                         </span>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleEnroll(course.course_mapping_id || course.id, course.name)}
-                          disabled={enrollingId === (course.course_mapping_id || course.id)}
-                          className="rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
+                          onClick={() =>
+                            handleEnroll(
+                              course.course_mapping_id || course.id,
+                              course.name,
+                            )
+                          }
+                          disabled={
+                            enrollingId ===
+                            (course.course_mapping_id || course.id)
+                          }
+                          className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-95 transition-all shadow-xs disabled:opacity-50 active:scale-95"
                         >
-                          {enrollingId === (course.course_mapping_id || course.id) ? 'Solicitando...' : user ? 'Solicitar inscripción' : 'Iniciar sesión para solicitar'}
+                          {enrollingId === (course.course_mapping_id || course.id)
+                            ? 'Solicitando...'
+                            : user
+                            ? 'Inscribirme'
+                            : 'Iniciar sesión'}
                         </button>
                       )}
                     </div>
