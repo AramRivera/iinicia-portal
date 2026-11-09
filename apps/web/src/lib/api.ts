@@ -111,15 +111,10 @@ export const authApi = {
     last_name: string;
     phone?: string;
   }): Promise<RegisterResponse> => {
-    const res = await apiFetch<RegisterResponse>('/auth/register', {
+    return apiFetch<RegisterResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    const token = res.session?.access_token || (res as any).access_token;
-    if (token) {
-      setToken(token);
-    }
-    return res;
   },
 
   getMe: async (): Promise<UserProfile> => {

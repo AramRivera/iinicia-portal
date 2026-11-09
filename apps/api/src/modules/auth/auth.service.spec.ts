@@ -35,7 +35,7 @@ describe('AuthService.getMe', () => {
     };
 
     supabaseMock = {
-      signUp: vi.fn().mockResolvedValue({ id: profile.id, email: profile.email }),
+      signUp: vi.fn().mockResolvedValue({ message: 'Confirma tu correo.' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({

@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -75,81 +74,85 @@ export class SupabaseService {
     firstName?: string;
     lastName?: string;
     phone?: string;
-  }) {
+  }): Promise<{ message: string }> {
+    const message =
+      'Si puedes registrar esta dirección, recibirás un enlace para confirmar tu correo.';
     try {
-      const adminClient = this.getAdminClient();
-      const { data, error } = await adminClient.auth.admin.createUser({
+      const emailRedirectTo = this.getAuthRedirect('/confirmar-correo');
+      await this.requireEmailConfirmation();
+
+      const { data, error } = await this.createClient().auth.signUp({
         email: params.email,
         password: params.password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: params.firstName ?? '',
-          last_name: params.lastName ?? '',
-          phone: params.phone ?? null,
+        options: {
+          emailRedirectTo,
+          data: {
+            first_name: params.firstName ?? '',
+            last_name: params.lastName ?? '',
+            phone: params.phone ?? null,
+          },
         },
       });
 
-      if (error) {
-        const msg = error.message?.toLowerCase() ?? '';
-        if (
-          (error.status === 422 || error.status === 400) &&
-          (msg.includes('already registered') || msg.includes('already been registered'))
-        ) {
-          throw new ConflictException(
-            'El correo electrónico ya se encuentra registrado.',
-          );
-        }
-        if (error.status === 422 || error.status === 400) {
-          throw new BadRequestException(
-            error.message || 'Los datos de registro no son válidos.',
-          );
-        }
-        this.logger.error(`Error en admin.createUser: [${error.status}] ${error.message}`);
+      if (error?.code === 'user_already_exists') return { message };
+      if (error?.status === 429) {
+        throw new HttpException(
+          'Demasiados intentos. Intenta más tarde.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      if (error?.code === 'weak_password') {
+        throw new BadRequestException('Elige una contraseña más segura.');
+      }
+      if (error || !data.user || data.session) {
         throw new ServiceUnavailableException(
-          'No fue posible contactar al servicio de autenticación.',
+          'No fue posible iniciar la confirmación del correo.',
         );
       }
-
-      if (!data.user) {
-        throw new ServiceUnavailableException(
-          'No fue posible completar el registro en el servicio de identidad.',
-        );
-      }
-
-      let session: {
-        access_token: string;
-        refresh_token: string;
-        token_type: string;
-        expires_in: number;
-        expires_at?: number;
-      } | null = null;
-
-      try {
-        const loginData = await this.signInWithPassword(params.email, params.password);
-        session = {
-          access_token: loginData.access_token,
-          refresh_token: loginData.refresh_token,
-          token_type: loginData.token_type,
-          expires_in: loginData.expires_in,
-          expires_at: loginData.expires_at,
-        };
-      } catch (loginErr: any) {
-        this.logger.warn(
-          `Usuario registrado pero falló inicio de sesión automático: ${loginErr.message}`,
-        );
-      }
-
-      return {
-        id: data.user.id,
-        email: data.user.email,
-        session,
-      };
+      return { message };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      this.logger.error('Error durante el registro de usuario en Supabase.');
+      this.logger.error('Falló la comunicación con Supabase durante el registro.');
       throw new ServiceUnavailableException(
         'No fue posible completar el registro en el servicio de identidad.',
       );
+    }
+  }
+
+  private async requireEmailConfirmation(): Promise<void> {
+    const { url, publishableKey } = this.getConfiguration();
+    const response = await fetch(new URL('/auth/v1/settings', url), {
+      headers: { apikey: publishableKey },
+      signal: AbortSignal.timeout(5000),
+    });
+    const settings = response.ok
+      ? await response.json() as {
+          mailer_autoconfirm?: boolean;
+          disable_signup?: boolean;
+          external?: { email?: boolean };
+        }
+      : null;
+    if (
+      settings?.mailer_autoconfirm !== false ||
+      settings.disable_signup !== false ||
+      settings.external?.email !== true
+    ) {
+      throw new ServiceUnavailableException(
+        'El registro con confirmación de correo no está disponible.',
+      );
+    }
+  }
+
+  private getAuthRedirect(path: '/confirmar-correo' | '/restablecer-password'): string {
+    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4000';
+    try {
+      const redirectTo = new URL(path, frontendUrl);
+      if (!['http:', 'https:'].includes(redirectTo.protocol)) {
+        throw new Error('Protocolo no válido.');
+      }
+      return redirectTo.href;
+    } catch {
+      throw new ServiceUnavailableException('El enlace del portal no está configurado.');
     }
   }
 
@@ -167,6 +170,9 @@ export class SupabaseService {
           'Demasiados intentos. Intenta más tarde.',
           HttpStatus.TOO_MANY_REQUESTS,
         );
+      }
+      if (error?.code === 'email_not_confirmed') {
+        throw new UnauthorizedException('Confirma tu correo antes de iniciar sesión.');
       }
       if (error) {
         if (
@@ -249,19 +255,8 @@ export class SupabaseService {
   }
 
   async requestPasswordRecovery(email: string): Promise<{ message: string }> {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4000';
-    let redirectTo: URL;
-    try {
-      redirectTo = new URL('/restablecer-password', frontendUrl);
-      if (!['http:', 'https:'].includes(redirectTo.protocol)) {
-        throw new Error('Protocolo no válido.');
-      }
-    } catch {
-      throw new ServiceUnavailableException('La recuperación no está configurada.');
-    }
-
     const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
-      redirectTo: redirectTo.href,
+      redirectTo: this.getAuthRedirect('/restablecer-password'),
     });
     if (error && (error.status === undefined || error.status >= 500)) {
       this.logger.warn('Supabase Auth no pudo procesar la recuperación.');

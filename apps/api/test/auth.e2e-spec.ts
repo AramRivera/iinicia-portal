@@ -12,12 +12,14 @@ import { SupabaseService } from '../src/common/supabase/supabase.service.js';
 describe('POST /api/v1/auth/login', () => {
   let app: INestApplication<App>;
   const login = vi.fn();
+  const signup = vi.fn();
   const recover = vi.fn();
   const reset = vi.fn();
   const credentials = { email: 'user@example.com', password: 'password' };
 
   beforeEach(async () => {
     login.mockReset();
+    signup.mockReset().mockResolvedValue({ message: 'Confirma tu correo.' });
     recover.mockReset().mockResolvedValue({ message: 'Solicitud recibida' });
     reset.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
     login.mockResolvedValue({
@@ -29,7 +31,7 @@ describe('POST /api/v1/auth/login', () => {
     });
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(SupabaseService)
-      .useValue({ signInWithPassword: login, requestPasswordRecovery: recover, resetPassword: reset })
+      .useValue({ signInWithPassword: login, signUp: signup, requestPasswordRecovery: recover, resetPassword: reset })
       .compile();
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1');
@@ -93,6 +95,25 @@ describe('POST /api/v1/auth/login', () => {
     expect(login).toHaveBeenCalledTimes(5);
     await request(app.getHttpServer()).get('/api/v1').expect(200);
   });
+  it('returns a confirmation message and no session after public signup', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ ...credentials, first_name: 'Persona', last_name: 'De prueba' })
+      .expect(201);
+    expect(response.body).toEqual({ message: 'Confirma tu correo.' });
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(signup).toHaveBeenCalledOnce();
+    expect(login).not.toHaveBeenCalled();
+  });
+
+  it('rejects a role supplied by a public signup request', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ ...credentials, first_name: 'Persona', last_name: 'De prueba', role: 'superadministrador' })
+      .expect(400);
+    expect(signup).not.toHaveBeenCalled();
+  });
+
   it('passes the recovery email and one-time token to Supabase without caching', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/recover')

@@ -2,12 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconAlertTriangle } from '@/components/campus-tech/Icons';
 
 export default function RegistroPage() {
-  const router = useRouter();
   const { register } = useAuth();
 
   const [firstName, setFirstName] = useState('');
@@ -16,6 +14,7 @@ export default function RegistroPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,7 +23,7 @@ export default function RegistroPage() {
     setLoading(true);
 
     try {
-      await register({
+      const { message } = await register({
         first_name: firstName,
         last_name: lastName,
         phone: phone || undefined,
@@ -32,8 +31,8 @@ export default function RegistroPage() {
         password,
       });
 
-      // Registro exitoso, redirigir al portal de aspirante
-      router.push('/dashboard/aspirante');
+      setPassword('');
+      setNotice(message);
     } catch (err: any) {
       setError(err.message || 'No fue posible completar el registro. Verifica los datos.');
     } finally {
@@ -64,97 +63,106 @@ export default function RegistroPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {notice ? (
+          <div className="space-y-3" role="status">
+            <p className="text-sm text-foreground">{notice}</p>
+            <Link href="/login" className="text-sm font-semibold text-primary hover:underline">
+              Ir a iniciar sesión
+            </Link>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  Nombre(s)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Juan Carlos"
+                  className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  Apellido(s)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Pérez López"
+                  className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-foreground mb-1.5">
-                Nombre(s)
+                Teléfono / WhatsApp (Opcional)
               </label>
               <input
-                type="text"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Juan Carlos"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="5512345678"
                 className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-medium text-foreground mb-1.5">
-                Apellido(s)
+                Correo Electrónico
               </label>
               <input
-                type="text"
+                type="email"
                 required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Pérez López"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu.correo@ejemplo.com"
                 className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">
-              Teléfono / WhatsApp (Opcional)
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="5512345678"
-              className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1.5">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
+              />
+              <p className="mt-1 text-[11px] text-muted">
+                Debe contener al menos 8 caracteres para proteger tu cuenta.
+              </p>
+            </div>
 
-          <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">
-              Correo Electrónico
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu.correo@ejemplo.com"
-              className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 8 caracteres"
-              className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none transition-all"
-            />
-            <p className="mt-1 text-[11px] text-muted">
-              Debe contener al menos 8 caracteres para proteger tu cuenta.
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                <span>Registrando aspirante...</span>
-              </span>
-            ) : (
-              'Crear Cuenta y Continuar'
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Registrando aspirante...</span>
+                </span>
+              ) : (
+                'Solicitar registro'
+              )}
+            </button>
+          </form>
+        )}
 
         <div className="text-center text-xs text-muted">
           ¿Ya tienes cuenta en INICIA?{' '}
