@@ -701,15 +701,63 @@
         }
       },
       "post": {
-        "summary": "Solicitar inscripci\u00f3n a un curso",
+        "summary": "Solicitar inscripci\u00f3n o asignar un curso",
+        "description": "Las solicitudes propias quedan pendientes como estudiante. La asignaci\u00f3n a otra cuenta requiere el permiso enrollments.authorize y acceso al \u00e1mbito del curso.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "course_mapping_id"
+                ],
+                "properties": {
+                  "course_mapping_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Cuenta destinataria en asignaciones administrativas."
+                  },
+                  "program_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Si se proporciona, debe coincidir con el programa del curso."
+                  },
+                  "moodle_role": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "editingteacher",
+                      "teacher"
+                    ],
+                    "default": "student"
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
-            "description": "Solicitud registrada en estado 'pendiente'."
+            "description": "Solicitud pendiente o asignaci\u00f3n administrativa registrada. El estado sincronizada indica confirmaci\u00f3n de Moodle."
+          },
+          "403": {
+            "description": "Rol, permiso o \u00e1mbito insuficiente para la operaci\u00f3n."
+          },
+          "409": {
+            "description": "Ya existe una matr\u00edcula activa o el registro cambi\u00f3 durante la solicitud."
           }
         }
       }
@@ -1291,6 +1339,119 @@
         "responses": {
           "200": {
             "description": "Lista de mapeos de redirecci\u00f3n."
+          }
+        }
+      }
+    },
+    "/auth/recover": {
+      "post": {
+        "summary": "Solicitar un correo de recuperaci\u00f3n",
+        "description": "Responde con el mismo mensaje para cualquier correo v\u00e1lido.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Solicitud recibida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Correo inv\u00e1lido."
+          },
+          "429": {
+            "description": "L\u00edmite de solicitudes alcanzado."
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Restablecer contrase\u00f1a con el token de un solo uso",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token_hash",
+                  "password"
+                ],
+                "properties": {
+                  "token_hash": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{16,256}$"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "maxLength": 72,
+                    "description": "Debe ocupar como m\u00e1ximo 72 bytes en UTF-8."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contrase\u00f1a actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos, token caducado o contrase\u00f1a rechazada."
+          },
+          "429": {
+            "description": "L\u00edmite de solicitudes alcanzado."
+          },
+          "503": {
+            "description": "El servicio de recuperaci\u00f3n no pudo completar la operaci\u00f3n."
           }
         }
       }

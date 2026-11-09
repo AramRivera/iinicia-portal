@@ -524,7 +524,7 @@ El sistema deberá contemplar:
 
 \- Acceso autorizado a cursos.
 
-\- Dos cursos de ejemplo completos.
+\- Un curso de prueba completo y configurado en Moodle.
 
 \- Auditoría.
 

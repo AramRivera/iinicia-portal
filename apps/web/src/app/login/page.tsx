@@ -31,11 +31,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-  };
-
   return (
     <div className="relative flex min-h-[calc(100vh-140px)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-6 rounded-[14px] border border-border bg-surface p-7 sm:p-9 shadow-minimal">
@@ -111,59 +106,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Demo Fast Fill Buttons for Testing & Grading */}
-        <div className="border-t border-border pt-4">
-          <p className="text-center text-[11px] font-mono uppercase tracking-wider text-muted">
-            Acceso rápido para verificación:
-          </p>
-          <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin@iinicia.org', 'Admin.2026!')}
-              className="rounded-[6px] border border-border bg-surface-muted/40 px-2 py-1.5 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary transition-all text-center"
-              title="admin@iinicia.org / Admin.2026!"
-            >
-              Superadmin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('aram@iinicia.org', '123456789')}
-              className="rounded-[6px] border border-border bg-surface-muted/40 px-2 py-1.5 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary transition-all text-center"
-              title="aram@iinicia.org / 123456789"
-            >
-              Superadmin (Aram)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('profesor@iinicia.org', 'Docente.2026!')}
-              className="rounded-[6px] border border-border bg-surface-muted/40 px-2 py-1.5 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary transition-all text-center"
-              title="profesor@iinicia.org / Docente.2026!"
-            >
-              Profesor
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('estudiante1@iinicia.org', 'Alumno.2026!')}
-              className="rounded-[6px] border border-border bg-surface-muted/40 px-2 py-1.5 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary transition-all text-center"
-              title="estudiante1@iinicia.org / Alumno.2026!"
-            >
-              Estudiante
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('user3@yopmail.com', '123456789')}
-              className="rounded-[6px] border border-border bg-surface-muted/40 px-2 py-1.5 text-[11px] font-medium text-foreground hover:border-primary hover:text-primary transition-all text-center"
-              title="user3@yopmail.com / 123456789"
-            >
-              Aspirante
-            </button>
-          </div>
-          <div className="mt-2.5 rounded-[6px] bg-surface-muted/40 border border-border p-2 text-center text-[10px] font-mono text-muted space-y-0.5">
-            <div><strong>admin@iinicia.org</strong>: <code>Admin.2026!</code></div>
-            <div><strong>aram@iinicia.org</strong>: <code>123456789</code></div>
-          </div>
-        </div>
 
         <div className="text-center text-xs text-muted">
           ¿No tienes una cuenta aún?{' '}

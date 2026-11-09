@@ -465,7 +465,7 @@ export default function HomePage() {
                 Cursos y Asignaturas
               </h2>
               <p className="text-sm text-muted max-w-xl font-normal leading-relaxed">
-                Programas curriculares sincronizados con Moodle LMS. Inscríbete con un clic o accede a tu contenido si ya estás matriculado.
+                Programas curriculares sincronizados con Moodle LMS. Solicita tu inscripción o accede a tu contenido si ya estás matriculado.
               </p>
             </div>
 
@@ -678,7 +678,7 @@ export default function HomePage() {
                           {enrollingId === (course.course_mapping_id || course.id)
                             ? 'Solicitando...'
                             : user
-                            ? 'Inscribirme'
+                            ? 'Solicitar inscripción'
                             : 'Iniciar sesión'}
                         </button>
                       )}

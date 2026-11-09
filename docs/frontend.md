@@ -56,7 +56,7 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 
 **Oferta.** La portada usa `GET /programs`; el detalle usa `GET /programs/:idOrSlug`. `GET /courses/offerings` requiere sesión. `coursesApi` normaliza los campos de la API para las tarjetas.
 
-**Inscripciones.** El cliente permite solicitar acceso con `POST /enrollments`, consultar solicitudes con `GET /enrollments` y cursos autorizados con `GET /courses`. Administración usa `PATCH /enrollments/:id/status` y `POST /enrollments/:id/sync` según permisos. Existe una discrepancia entre el texto de interfaz y el comportamiento de autorización automática de algunos flujos del servicio; no asumir que toda solicitud queda pendiente hasta acordar y alinear la regla.
+**Inscripciones.** `POST /enrollments` registra las solicitudes propias como pendientes y con rol de estudiante. Administración puede asignar un curso a otra cuenta con el permiso y ámbito correspondientes, aprobar solicitudes con `PATCH /enrollments/:id/status` y reintentar la sincronización con `POST /enrollments/:id/sync`. La interfaz distingue entre autorización y confirmación de Moodle.
 
 **Campus.** `POST /moodle/launch` y `POST /moodle/courses/:courseMappingId/launch` devuelven URLs de acceso. `moodle-window.ts` abre una ventana durante el clic y luego la dirige a la URL devuelta. Los permisos y el enlace temporal dependen del backend.
 
@@ -64,7 +64,13 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 
 **Cliente HTTP.** `api.ts` exporta `authApi`, `coursesApi`, `enrollmentsApi`, `admissionsApi`, `contactApi`, `rolesApi`, `auditApi`, `moodleApi`, `programsApi` y `usersApi`. `ApiError` conserva código HTTP y respuesta. Ante `401`, revisa la sesión; ante `403`, el rol, permiso y ámbito. Si no hay cursos, revisa la sesión, la API y las publicaciones/mapeos.
 
-**Recuperación de acceso.** Existen páginas de recuperación y el cliente llama a `/auth/recover` y `/auth/reset-password`. Esas operaciones no están implementadas en el controlador actual ni en el contrato OpenAPI; el flujo no debe considerarse integrado hasta cerrar la API y probar correo y restablecimiento.
+**Recuperación de acceso.** `POST /auth/recover` solicita el correo y `POST /auth/reset-password` recibe el token de recuperación de un solo uso y la nueva contraseña. Configura `FRONTEND_URL` en la API, agrega la URL completa de `/restablecer-password` a la lista de redirecciones permitidas en Supabase Auth y usa este enlace en la plantilla **Reset Password**:
+
+```html
+<a href="{{ .RedirectTo }}#type=recovery&amp;token_hash={{ .TokenHash }}">Restablecer contraseña</a>
+```
+
+La página retira el fragmento de la barra de direcciones y envía el token en el cuerpo de la solicitud. Valida el envío y el restablecimiento con una cuenta de prueba en cada ambiente. [Plantillas de correo de Supabase](https://supabase.com/docs/guides/auth/auth-email-templates).
 
 ## Identidad visual y tema
 
@@ -81,7 +87,6 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 
 ## Límites actuales
 
-- Los accesos rápidos del login contienen credenciales de desarrollo en el código. Deben aislarse o retirarse antes de publicar el portal.
 - El token de acceso se almacena en `localStorage`; falta revisar almacenamiento, renovación y revocación para producción.
 - Algunos enlaces Moodle tienen valores de respaldo fijos. Configura `NEXT_PUBLIC_MOODLE_URL` para cada entorno.
 - La barra depende del backend desplegado y de la finalización de actividades configurada en Moodle.

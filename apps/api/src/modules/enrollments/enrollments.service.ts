@@ -75,145 +75,119 @@ export class EnrollmentsService {
     return data || [];
   }
 
-  /**
-   * Crea una nueva solicitud de inscripción a un curso.
-   * Estado inicial: 'pendiente'.
-   */
   async createEnrollmentRequest(
     userId: string,
     dto: CreateEnrollmentRequestDto,
-    actorId?: string,
-    isStaffAssignment: boolean = false,
+    actorId = userId,
+    assignmentToken?: string,
   ) {
     const admin = this.supabase.getAdminClient();
+    const isAssignment = actorId !== userId;
+    const role = dto.moodle_role ?? 'student';
 
-    // Validar curso
-    const { data: course } = await admin
+    if (
+      (!isAssignment && role !== 'student') ||
+      !['student', 'editingteacher', 'teacher'].includes(role)
+    ) {
+      throw new ForbiddenException('No se permite asignar ese rol de Moodle.');
+    }
+
+    const { data: course, error: courseError } = await admin
       .from('course_mappings')
       .select('id, program_id, course_name, is_active')
       .eq('id', dto.course_mapping_id)
       .maybeSingle();
 
+    if (courseError) {
+      throw new InternalServerErrorException('No fue posible consultar el curso.');
+    }
     if (!course || !course.is_active) {
       throw new NotFoundException('El curso solicitado no existe o no está activo.');
     }
-
-    // Comprobar si ya existe una solicitud para este usuario y curso
-    const { data: existing } = await admin
-      .from('enrollment_requests')
-      .select('id, status')
-      .eq('user_id', userId)
-      .eq('course_mapping_id', dto.course_mapping_id)
-      .maybeSingle();
-
-    const nowIso = new Date().toISOString();
-    const effectiveActor = actorId || userId;
-
-    if (existing) {
-      if (existing.status === 'sincronizada' || existing.status === 'autorizada') {
-        throw new ConflictException(
-          `El usuario ya cuenta con una matrícula activa en este curso.`,
-        );
-      }
-
-      // Si existía como pendiente, rechazada o error, se autoriza y sincroniza de inmediato
-      const { data: updated, error: updError } = await admin
-        .from('enrollment_requests')
-        .update({
-          status: 'autorizada',
-          moodle_role: dto.moodle_role || 'student',
-          authorized_by: effectiveActor,
-          authorized_at: nowIso,
-          notes: dto.notes ?? (isStaffAssignment ? 'Asignado directamente por administrador' : null),
-        })
-        .eq('id', existing.id)
-        .select()
-        .maybeSingle();
-
-      if (updError || !updated) {
-        throw new InternalServerErrorException('Error al reactivar solicitud de inscripción.');
-      }
-
-      try {
-        await this.moodleService.syncEnrollment(updated.id);
-      } catch (err: any) {
-        this.logger.warn(`Error al sincronizar matrícula existente con Moodle: ${err?.message}`);
-      }
-
-      return updated;
+    if (dto.program_id && dto.program_id !== course.program_id) {
+      throw new ForbiddenException('El programa no corresponde al curso.');
     }
-
-    const programId = dto.program_id || course.program_id;
-    // Cursos públicos activos se autorizan de inmediato para que el alumno pueda tomarlos de forma directa
-    const initialStatus = 'autorizada';
-
-    const { data, error } = await admin
-      .from('enrollment_requests')
-      .insert({
-        user_id: userId,
-        course_mapping_id: dto.course_mapping_id,
-        program_id: programId,
-        moodle_role: dto.moodle_role || 'student',
-        status: initialStatus,
-        requested_by: effectiveActor,
-        authorized_by: effectiveActor,
-        authorized_at: nowIso,
-        notes: dto.notes ?? null,
-      })
-      .select()
-      .maybeSingle();
-
-    if (error || !data) {
-      this.logger.error(`Error al registrar matrícula: ${error?.message}`);
-      throw new InternalServerErrorException(
-        'No fue posible registrar la solicitud de inscripción.',
-      );
-    }
-
-    // Si el usuario no tiene rol de estudiante (id: 5), asignarlo automáticamente para que acceda al aula
-    try {
-      const { data: existingRoles } = await admin
-        .from('user_roles')
-        .select('role_id')
-        .eq('user_id', userId);
-
-      const hasStudentRole = existingRoles?.some((r) => r.role_id === 5);
-      if (!hasStudentRole) {
-        await admin.from('user_roles').insert({
-          user_id: userId,
-          role_id: 5,
-          assigned_by: effectiveActor,
+    if (isAssignment) {
+      if (!assignmentToken) {
+        throw new ForbiddenException('Se requiere autorización para asignar cursos.');
+      }
+      const client = this.supabase.getClient(assignmentToken);
+      const { data: canAssign } = await client.rpc('has_permission', {
+        required_permission_code: 'enrollments.authorize',
+      });
+      if (!canAssign) {
+        throw new ForbiddenException('No tienes permiso para asignar cursos.');
+      }
+      const { data: isAdmin } = await client.rpc('is_admin', {});
+      if (!isAdmin) {
+        const { data: isCoordinator } = await client.rpc('has_role', {
+          required_role_slug: 'coordinador',
         });
+        if (!isCoordinator || !course.program_id) {
+          throw new ForbiddenException('El curso está fuera de tu ámbito.');
+        }
+        await this.requireProgramScope(actorId, course.program_id);
       }
-    } catch (err: any) {
-      this.logger.warn(`No se pudo verificar/asignar rol de estudiante al usuario ${userId}: ${err?.message}`);
+    }
+
+    const { data: existing, error: lookupError } = await admin
+      .from('enrollment_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('course_mapping_id', course.id)
+      .maybeSingle();
+
+    if (lookupError) {
+      throw new InternalServerErrorException('No fue posible consultar la matrícula.');
+    }
+    if (existing?.status === 'pendiente' && !isAssignment) return existing;
+    if (existing && !['pendiente', 'rechazada', 'desmatriculada'].includes(existing.status)) {
+      throw new ConflictException('El usuario ya cuenta con una matrícula activa o en sincronización.');
+    }
+
+    const status = isAssignment ? 'autorizada' : 'pendiente';
+    const values = {
+      user_id: userId,
+      course_mapping_id: course.id,
+      program_id: course.program_id,
+      moodle_role: role,
+      status,
+      requested_by: actorId,
+      authorized_by: isAssignment ? actorId : null,
+      authorized_at: isAssignment ? new Date().toISOString() : null,
+      notes: dto.notes ?? null,
+    } as const;
+    const enrollments = admin.from('enrollment_requests');
+    const mutation = existing
+      ? enrollments.update(values).eq('id', existing.id).eq('status', existing.status)
+      : enrollments.insert(values);
+    const { data, error } = await mutation.select().maybeSingle();
+
+    if (error?.code === '23505' || (!error && !data)) {
+      throw new ConflictException('La matrícula cambió. Actualiza la lista e inténtalo de nuevo.');
+    }
+    if (error || !data) {
+      throw new InternalServerErrorException('No fue posible registrar la solicitud de inscripción.');
     }
 
     await admin.from('audit_logs').insert({
-      actor_id: effectiveActor,
+      actor_id: actorId,
       target_user_id: userId,
-      action: isStaffAssignment
-        ? 'ENROLLMENT_ASSIGNED_BY_ADMIN'
-        : 'ENROLLMENT_PUBLIC_COURSE_SELF_REGISTERED',
+      action: isAssignment ? 'ENROLLMENT_ASSIGNED_BY_ADMIN' : 'ENROLLMENT_REQUESTED',
       entity_name: 'enrollment_requests',
       entity_id: data.id,
-      new_values: {
-        course_mapping_id: dto.course_mapping_id,
-        course_name: course.course_name,
-        moodle_role: dto.moodle_role || 'student',
-        status: initialStatus,
-      },
+      new_values: { course_mapping_id: course.id, moodle_role: role, status },
     });
 
-    // Sincronizar inmediatamente la matrícula con Moodle LMS
-    try {
-      await this.moodleService.syncEnrollment(data.id);
-    } catch (err: any) {
-      this.logger.warn(
-        `Matrícula autorizada pero falló sincronización inmediata a Moodle: ${err?.message}`,
-      );
+    if (isAssignment) {
+      try {
+        const result = await this.moodleService.syncEnrollment(data.id);
+        if (role === 'student') await this.ensureStudentRole(userId, actorId);
+        return { ...data, status: result.status };
+      } catch {
+        this.logger.warn('La asignación se autorizó, pero no se confirmó la matrícula en Moodle.');
+      }
     }
-
     return data;
   }
 
@@ -225,6 +199,7 @@ export class EnrollmentsService {
     enrollmentId: string,
     dto: UpdateEnrollmentStatusDto,
     actorId: string,
+    actorRoles: string[] = [],
   ) {
     const admin = this.supabase.getAdminClient();
 
@@ -236,6 +211,10 @@ export class EnrollmentsService {
 
     if (findError || !current) {
       throw new NotFoundException('Solicitud de inscripción no encontrada.');
+    }
+
+    if (this.isScopedCoordinator(actorRoles)) {
+      await this.requireProgramScope(actorId, current.program_id);
     }
 
     const now = new Date().toISOString();
@@ -277,6 +256,9 @@ export class EnrollmentsService {
     if (dto.status === 'autorizada' && dto.sync_to_moodle) {
       try {
         syncResult = await this.moodleService.syncEnrollment(enrollmentId);
+        if (current.moodle_role === 'student') {
+          await this.ensureStudentRole(current.user_id, actorId);
+        }
       } catch (err: any) {
         this.logger.warn(
           `Matrícula autorizada pero falló sincronización inmediata con Moodle: ${err.message}`,
@@ -290,11 +272,61 @@ export class EnrollmentsService {
     };
   }
 
-  /**
-   * Reintenta o ejecuta la sincronización con Moodle de forma manual.
-   */
-  async syncToMoodle(enrollmentId: string) {
-    return this.moodleService.syncEnrollment(enrollmentId);
+  async syncToMoodle(enrollmentId: string, actorId: string, actorRoles: string[] = []) {
+    const { data: enrollment, error } = await this.supabase.getAdminClient()
+      .from('enrollment_requests')
+      .select('user_id, moodle_role, program_id')
+      .eq('id', enrollmentId)
+      .maybeSingle();
+    if (error || !enrollment) {
+      throw new NotFoundException('Solicitud de inscripción no encontrada.');
+    }
+    if (this.isScopedCoordinator(actorRoles)) {
+      await this.requireProgramScope(actorId, enrollment.program_id);
+    }
+
+    const result = await this.moodleService.syncEnrollment(enrollmentId);
+    if (enrollment.moodle_role === 'student') {
+      await this.ensureStudentRole(enrollment.user_id, actorId);
+    }
+    return result;
+  }
+
+  private isScopedCoordinator(roles: string[]): boolean {
+    return roles.includes('coordinador') &&
+      !roles.some((role) => role === 'administrador' || role === 'superadministrador');
+  }
+
+  private async requireProgramScope(userId: string, programId: string | null) {
+    if (!programId) {
+      throw new ForbiddenException('El curso está fuera de tu ámbito.');
+    }
+    const { data: scope } = await this.supabase.getAdminClient()
+      .from('user_programs')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('program_id', programId)
+      .in('status', ['admitido', 'inscrito', 'cursando'])
+      .maybeSingle();
+    if (!scope) throw new ForbiddenException('El curso está fuera de tu ámbito.');
+  }
+
+  private async ensureStudentRole(userId: string, actorId: string) {
+    const admin = this.supabase.getAdminClient();
+    const { data: role, error: roleError } = await admin.from('roles')
+      .select('id')
+      .eq('slug', 'estudiante')
+      .maybeSingle();
+    if (roleError || !role) {
+      this.logger.warn('No fue posible consultar el rol de estudiante.');
+      return;
+    }
+
+    const { error } = await admin.from('user_roles').upsert(
+      { user_id: userId, role_id: role.id, assigned_by: actorId },
+      { onConflict: 'user_id,role_id', ignoreDuplicates: true },
+    );
+    if (error) this.logger.warn('No fue posible asignar el rol de estudiante.');
   }
 
   /**

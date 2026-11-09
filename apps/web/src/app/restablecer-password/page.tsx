@@ -14,8 +14,8 @@ export default function RestablecerPasswordPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.slice(1));
-    if (params.get('type') === 'recovery' && params.get('access_token')) {
-      const recoveryToken = params.get('access_token')!;
+    const recoveryToken = params.get('token_hash');
+    if (params.get('type') === 'recovery' && recoveryToken) {
       queueMicrotask(() => setToken(recoveryToken));
       window.history.replaceState(null, '', window.location.pathname);
     }

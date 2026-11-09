@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import type { MoodleRoleType } from '../../../common/supabase/database.types.js';
 
 export class CreateEnrollmentRequestDto {
@@ -14,7 +14,7 @@ export class CreateEnrollmentRequestDto {
   program_id?: string;
 
   @IsOptional()
-  @IsEnum(['student', 'editingteacher', 'teacher', 'manager', 'coursecreator'])
+  @IsIn(['student', 'editingteacher', 'teacher'])
   moodle_role: MoodleRoleType = 'student';
 
   @IsOptional()

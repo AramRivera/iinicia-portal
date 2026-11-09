@@ -9,6 +9,7 @@ describe('EnrollmentsService', () => {
   let service: EnrollmentsService;
   let supabaseMock: {
     getResilientClient: ReturnType<typeof vi.fn>;
+    getClient: ReturnType<typeof vi.fn>;
     getAdminClient: ReturnType<typeof vi.fn>;
   };
   let moodleServiceMock: {
@@ -28,6 +29,7 @@ describe('EnrollmentsService', () => {
 
     supabaseMock = {
       getResilientClient: vi.fn().mockReturnValue(clientMock),
+      getClient: vi.fn().mockReturnValue(clientMock),
       getAdminClient: vi.fn().mockReturnValue(adminClientMock),
     };
 
@@ -48,6 +50,42 @@ describe('EnrollmentsService', () => {
   });
 
   describe('createEnrollmentRequest', () => {
+    it('rejects a request that attempts to assign the requester a teaching role', async () => {
+      await expect(
+        service.createEnrollmentRequest('usr-1', {
+          course_mapping_id: 'c1',
+          moodle_role: 'editingteacher',
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      expect(adminClientMock.from).not.toHaveBeenCalled();
+      expect(moodleServiceMock.syncEnrollment).not.toHaveBeenCalled();
+    });
+
+    it('rejects assigning another user without enrollment authorization', async () => {
+      adminClientMock.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { id: 'c1', is_active: true, program_id: 'p1' },
+              error: null,
+            }),
+          }),
+        }),
+      });
+      clientMock.rpc = vi.fn().mockResolvedValue({ data: false, error: null });
+
+      await expect(
+        service.createEnrollmentRequest(
+          'other-user',
+          { course_mapping_id: 'c1', moodle_role: 'student' },
+          'requester',
+          'requester-token',
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(moodleServiceMock.syncEnrollment).not.toHaveBeenCalled();
+    });
+
     it('throws NotFoundException if course does not exist', async () => {
       adminClientMock.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
