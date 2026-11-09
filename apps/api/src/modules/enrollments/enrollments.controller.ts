@@ -26,14 +26,8 @@ export class EnrollmentsController {
 
   @Get()
   @UseGuards(SupabaseAuthGuard)
-  async findEnrollments(@Req() req: AuthenticatedRequest) {
-    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
-
-    return this.enrollmentsService.findEnrollments(
-      req.user.id,
-      isStaff,
-      req.accessToken,
-    );
+  findEnrollments(@Req() req: AuthenticatedRequest) {
+    return this.enrollmentsService.findEnrollments(req.user.id, req.accessToken);
   }
 
   @Post()
@@ -76,11 +70,10 @@ export class EnrollmentsController {
   @Delete(':id')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard)
-  async deleteEnrollment(
+  deleteEnrollment(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const isStaff = await this.enrollmentsService.checkIsStaff(req.user.id);
-    return this.enrollmentsService.deleteEnrollment(id, req.user.id, isStaff);
+    return this.enrollmentsService.deleteEnrollment(id, req.user.id);
   }
 }
