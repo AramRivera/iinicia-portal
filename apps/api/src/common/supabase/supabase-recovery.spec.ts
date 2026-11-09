@@ -8,6 +8,8 @@ describe('Supabase password recovery', () => {
   const resetPasswordForEmail = vi.fn();
   const verifyOtp = vi.fn();
   const updateUser = vi.fn();
+  const setSession = vi.fn();
+  const upstream = vi.fn();
   const email = 'user@example.com';
   const tokenHash = 'a'.repeat(56);
   const password = 'a-new-password';
@@ -19,10 +21,13 @@ describe('Supabase password recovery', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.stubGlobal('fetch', upstream);
     vi.mocked(createClient).mockReturnValue({
-      auth: { resetPasswordForEmail, verifyOtp, updateUser },
+      auth: { resetPasswordForEmail, verifyOtp, updateUser, setSession },
     } as unknown as ReturnType<typeof createClient>);
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it('uses the configured portal and returns the same response for an unknown email', async () => {
     resetPasswordForEmail.mockResolvedValueOnce({ error: null })
@@ -50,4 +55,50 @@ describe('Supabase password recovery', () => {
     await expect(service.resetPassword(tokenHash, password)).rejects.toMatchObject({ status: 400 });
     expect(updateUser).not.toHaveBeenCalled();
   });
+  it('requests a standard PKCE link with the portal URL and S256 challenge', async () => {
+    upstream.mockResolvedValue(Response.json({}));
+    const challenge = 'a'.repeat(43);
+    await service.requestPkcePasswordRecovery(email, challenge);
+
+    const [url, options] = upstream.mock.calls[0];
+    expect(url.pathname).toBe('/auth/v1/recover');
+    expect(url.searchParams.get('redirect_to')).toBe('https://portal.example.com/restablecer-password');
+    expect(JSON.parse(options.body)).toEqual({
+      email, code_challenge: challenge, code_challenge_method: 's256',
+    });
+  });
+
+  it('updates the password only after an accepted PKCE recovery exchange', async () => {
+    const claim = Buffer.from(JSON.stringify({ amr: [{ method: 'recovery' }] })).toString('base64url');
+    const session = { access_token: `header.${claim}.signature`, refresh_token: 'refresh' };
+    upstream.mockResolvedValue(Response.json(session));
+    setSession.mockResolvedValue({ error: null });
+    updateUser.mockResolvedValue({ error: null });
+
+    const code = '3d215b7c-0a43-4983-9c7a-8c14f5dca9b4';
+    const verifier = 'a'.repeat(43);
+    await expect(service.resetPasswordWithCode(code, verifier, password))
+      .resolves.toEqual({ message: 'Tu contraseña se actualizó.' });
+
+    const [url, options] = upstream.mock.calls[0];
+    expect(url.pathname + url.search).toBe('/auth/v1/token?grant_type=pkce');
+    expect(JSON.parse(options.body)).toEqual({ auth_code: code, code_verifier: verifier });
+    expect(setSession).toHaveBeenCalledWith(session);
+    expect(updateUser).toHaveBeenCalledWith({ password });
+  });
+
+  it('rejects an OAuth session and an expired exchange without changing a password', async () => {
+    const claim = Buffer.from(JSON.stringify({ amr: [{ method: 'oauth' }] })).toString('base64url');
+    upstream.mockResolvedValueOnce(Response.json({
+      access_token: `header.${claim}.signature`, refresh_token: 'refresh',
+    })).mockResolvedValueOnce(Response.json({}, { status: 422 }));
+
+    await expect(service.resetPasswordWithCode('code', 'verifier', password))
+      .rejects.toMatchObject({ status: 400 });
+    await expect(service.resetPasswordWithCode('code', 'verifier', password))
+      .rejects.toMatchObject({ status: 400 });
+    expect(setSession).not.toHaveBeenCalled();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
 });

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
+import { clearRecoveryVerifier, startRecoveryProof } from '@/lib/recovery-pkce';
 import {
   IconCheck,
   IconAlertTriangle,
@@ -25,10 +26,14 @@ export default function RecuperarPasswordPage() {
 
     setLoading(true);
 
+    let verifier: string | undefined;
     try {
-      await authApi.recoverPassword(email.trim());
+      const proof = await startRecoveryProof();
+      verifier = proof.verifier;
+      await authApi.recoverPassword(email.trim(), proof.challenge);
       setSubmitted(true);
     } catch (err: unknown) {
+      if (verifier) clearRecoveryVerifier(verifier);
       setError(err instanceof Error ? err.message : 'No fue posible procesar la solicitud.');
     } finally {
       setLoading(false);
@@ -66,7 +71,7 @@ export default function RecuperarPasswordPage() {
             </div>
 
             <div className="rounded-[8px] bg-surface-muted/50 border border-border p-3 text-[11px] text-muted space-y-1">
-              <p>Revisa tu bandeja de entrada y la carpeta de correo no deseado (spam).</p>
+              <p>Revisa tu bandeja de entrada y la carpeta de correo no deseado (spam). Abre el enlace en este mismo navegador.</p>
               <p>Si el enlace caduca, solicita uno nuevo desde esta página.</p>
             </div>
 
