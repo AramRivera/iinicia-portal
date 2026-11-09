@@ -1367,7 +1367,7 @@
     "/auth/recover": {
       "post": {
         "summary": "Solicitar un correo de recuperaci\u00f3n",
-        "description": "Responde con el mismo mensaje para cualquier correo v\u00e1lido.",
+        "description": "Responde con el mismo mensaje para cualquier correo v\u00e1lido. El desaf\u00edo S256 habilita el enlace est\u00e1ndar PKCE.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1382,6 +1382,10 @@
                     "type": "string",
                     "format": "email",
                     "maxLength": 254
+                  },
+                  "code_challenge": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$"
                   }
                 }
               }
@@ -1419,6 +1423,7 @@
     "/auth/reset-password": {
       "post": {
         "summary": "Restablecer contrase\u00f1a con el token de un solo uso",
+        "description": "Acepta un token de plantilla personalizada o el c\u00f3digo PKCE con su verificador.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1426,13 +1431,52 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "token_hash",
                   "password"
+                ],
+                "oneOf": [
+                  {
+                    "required": [
+                      "token_hash"
+                    ],
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "auth_code"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "code_verifier"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "required": [
+                      "auth_code",
+                      "code_verifier"
+                    ],
+                    "not": {
+                      "required": [
+                        "token_hash"
+                      ]
+                    }
+                  }
                 ],
                 "properties": {
                   "token_hash": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_-]{16,256}$"
+                  },
+                  "auth_code": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "code_verifier": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$"
                   },
                   "password": {
                     "type": "string",

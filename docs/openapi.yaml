@@ -108,7 +108,7 @@ paths:
   /auth/recover:
     post:
       summary: Solicitar un correo de recuperación
-      description: Responde con el mismo mensaje para cualquier correo válido.
+      description: Responde con el mismo mensaje para cualquier correo válido. El desafío S256 habilita el enlace estándar PKCE.
       requestBody:
         required: true
         content:
@@ -121,6 +121,9 @@ paths:
                   type: string
                   format: email
                   maxLength: 254
+                code_challenge:
+                  type: string
+                  pattern: '^[A-Za-z0-9_-]{43}$'
       responses:
         "200":
           description: Solicitud recibida.
@@ -139,17 +142,33 @@ paths:
   /auth/reset-password:
     post:
       summary: Restablecer contraseña con el token de un solo uso
+      description: Acepta un token de plantilla personalizada o el código PKCE con su verificador.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [token_hash, password]
+              required: [password]
+              oneOf:
+                - required: [token_hash]
+                  not:
+                    anyOf:
+                      - required: [auth_code]
+                      - required: [code_verifier]
+                - required: [auth_code, code_verifier]
+                  not:
+                    required: [token_hash]
               properties:
                 token_hash:
                   type: string
                   pattern: '^[A-Za-z0-9_-]{16,256}$'
+                auth_code:
+                  type: string
+                  format: uuid
+                code_verifier:
+                  type: string
+                  pattern: '^[A-Za-z0-9_-]{43}$'
                 password:
                   type: string
                   format: password

@@ -12,6 +12,9 @@ import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { Database } from './database.types.js';
 
 /** Primer segmento de la URL a la que PostgREST sirve `/rest/v1/<tabla>`. */
+const RECOVERY_MESSAGE =
+  'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.';
+
 const REST_PATH = '/rest/v1/';
 
 function preservePostgrestError(
@@ -262,13 +265,77 @@ export class SupabaseService {
       this.logger.warn('Supabase Auth no pudo procesar la recuperación.');
     }
     // Una respuesta uniforme evita revelar si el correo existe o si alcanzó su cuota.
-    return { message: 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.' };
+    return { message: RECOVERY_MESSAGE };
   }
 
-  async resetPassword(tokenHash: string, password: string): Promise<{ message: string }> {
+  async requestPkcePasswordRecovery(email: string, challenge: string): Promise<{ message: string }> {
+    const query = new URLSearchParams({ redirect_to: this.getAuthRedirect('/restablecer-password') });
+    const response = await this.postAuth(`/recover?${query}`, {
+      email,
+      code_challenge: challenge,
+      code_challenge_method: 's256',
+    });
+    if (response.status >= 500) {
+      this.logger.warn('Supabase Auth no pudo procesar la recuperación PKCE.');
+    }
+    return { message: RECOVERY_MESSAGE };
+  }
+
+  async resetPasswordWithCode(
+    code: string,
+    verifier: string,
+    password: string,
+  ): Promise<{ message: string }> {
+    this.validatePasswordSize(password);
+    const response = await this.postAuth('/token?grant_type=pkce', {
+      auth_code: code,
+      code_verifier: verifier,
+    });
+    if (response.status >= 500 || response.status === 429) {
+      throw new ServiceUnavailableException('No fue posible verificar el enlace de recuperación.');
+    }
+    if (!response.ok) {
+      throw new BadRequestException('El enlace de recuperación es inválido o ya caducó.');
+    }
+    const session: unknown = await response.json().catch(() => null);
+    if (!isPasswordRecoverySession(session)) {
+      throw new BadRequestException('El enlace no corresponde a una recuperación de contraseña.');
+    }
+
+    const { auth } = this.createClient();
+    const { error } = await auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) {
+      throw new ServiceUnavailableException('No fue posible iniciar la sesión de recuperación.');
+    }
+    return this.updateRecoveredPassword(auth, password);
+  }
+
+  private async postAuth(path: string, body: Record<string, string>): Promise<Response> {
+    const { url, publishableKey } = this.getConfiguration();
+    try {
+      return await fetch(new URL(`/auth/v1${path}`, url), {
+        method: 'POST',
+        headers: { apikey: publishableKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        redirect: 'error',
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch {
+      throw new ServiceUnavailableException('No fue posible contactar a Supabase Auth.');
+    }
+  }
+
+  private validatePasswordSize(password: string): void {
     if (Buffer.byteLength(password, 'utf8') > 72) {
       throw new BadRequestException('La contraseña no debe superar 72 bytes.');
     }
+  }
+
+  async resetPassword(tokenHash: string, password: string): Promise<{ message: string }> {
+    this.validatePasswordSize(password);
 
     const { auth } = this.createClient();
     const { data, error } = await auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
@@ -279,6 +346,10 @@ export class SupabaseService {
       throw new BadRequestException('El enlace de recuperación es inválido o ya caducó.');
     }
 
+    return this.updateRecoveredPassword(auth, password);
+  }
+
+  private async updateRecoveredPassword(auth: SupabaseClient<Database>['auth'], password: string) {
     const { error: updateError } = await auth.updateUser({ password });
     if (updateError) {
       if (updateError.code === 'weak_password' || updateError.code === 'same_password') {
@@ -388,5 +459,28 @@ export class SupabaseService {
     }
 
     return { url, secretKey };
+  }
+}
+
+
+// This token comes directly from Supabase Auth over the PKCE exchange, never from the client.
+function isPasswordRecoverySession(value: unknown): value is {
+  access_token: string;
+  refresh_token: string;
+} {
+  if (!value || typeof value !== 'object') return false;
+  const { access_token, refresh_token } = value as Record<string, unknown>;
+  if (typeof access_token !== 'string' || typeof refresh_token !== 'string' || !refresh_token) return false;
+
+  try {
+    const payload = access_token.split('.')[1];
+    if (!payload) return false;
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { amr?: unknown };
+    return Array.isArray(claims.amr) && claims.amr.some(
+      (claim: unknown) => typeof claim === 'object' && claim !== null &&
+        'method' in claim && claim.method === 'recovery',
+    );
+  } catch {
+    return false;
   }
 }

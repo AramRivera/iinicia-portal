@@ -15,12 +15,16 @@ describe('POST /api/v1/auth/login', () => {
   const signup = vi.fn();
   const recover = vi.fn();
   const reset = vi.fn();
+  const recoverPkce = vi.fn();
+  const resetPkce = vi.fn();
   const credentials = { email: 'user@example.com', password: 'password' };
 
   beforeEach(async () => {
     login.mockReset();
     signup.mockReset().mockResolvedValue({ message: 'Confirma tu correo.' });
     recover.mockReset().mockResolvedValue({ message: 'Solicitud recibida' });
+    recoverPkce.mockReset().mockResolvedValue({ message: 'Solicitud recibida' });
+    resetPkce.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
     reset.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
     login.mockResolvedValue({
       access_token: 'access',
@@ -31,7 +35,14 @@ describe('POST /api/v1/auth/login', () => {
     });
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(SupabaseService)
-      .useValue({ signInWithPassword: login, signUp: signup, requestPasswordRecovery: recover, resetPassword: reset })
+      .useValue({
+        signInWithPassword: login,
+        signUp: signup,
+        requestPasswordRecovery: recover,
+        requestPkcePasswordRecovery: recoverPkce,
+        resetPassword: reset,
+        resetPasswordWithCode: resetPkce,
+      })
       .compile();
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1');
@@ -137,6 +148,29 @@ describe('POST /api/v1/auth/login', () => {
       .send({ password: credentials.password })
       .expect(400);
     expect(reset).not.toHaveBeenCalled();
+  });
+
+  it('supports the standard PKCE recovery contract', async () => {
+    const challenge = 'a'.repeat(43);
+    const code = '3d215b7c-0a43-4983-9c7a-8c14f5dca9b4';
+    const verifier = 'b'.repeat(43);
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/recover')
+      .send({ email: credentials.email, code_challenge: challenge })
+      .expect(200);
+    expect(recoverPkce).toHaveBeenCalledWith(credentials.email, challenge);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ auth_code: code, code_verifier: verifier, password: credentials.password })
+      .expect(200);
+    expect(resetPkce).toHaveBeenCalledWith(code, verifier, credentials.password);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/reset-password')
+      .send({ auth_code: code, password: credentials.password })
+      .expect(400);
+    expect(resetPkce).toHaveBeenCalledOnce();
   });
 
 });

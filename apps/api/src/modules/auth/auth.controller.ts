@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -52,7 +53,9 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   recoverPassword(@Body() dto: RecoverPasswordDto) {
-    return this.supabase.requestPasswordRecovery(dto.email);
+    return dto.code_challenge
+      ? this.supabase.requestPkcePasswordRecovery(dto.email, dto.code_challenge)
+      : this.supabase.requestPasswordRecovery(dto.email);
   }
 
   @Post('reset-password')
@@ -61,7 +64,14 @@ export class AuthController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.supabase.resetPassword(dto.token_hash, dto.password);
+    const { token_hash, auth_code, code_verifier, password } = dto;
+    if (auth_code && code_verifier && !token_hash) {
+      return this.supabase.resetPasswordWithCode(auth_code, code_verifier, password);
+    }
+    if (token_hash && !auth_code && !code_verifier) {
+      return this.supabase.resetPassword(token_hash, password);
+    }
+    throw new BadRequestException('Se requiere un enlace de recuperación válido.');
   }
 
   /**

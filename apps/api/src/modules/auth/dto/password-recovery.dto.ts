@@ -1,15 +1,27 @@
-import { IsEmail, IsString, Length, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, Length, Matches, MaxLength } from 'class-validator';
 
 export class RecoverPasswordDto {
   @IsEmail()
   @MaxLength(254)
   email!: string;
+
+  @IsOptional()
+  @Matches(/^[A-Za-z0-9_-]{43}$/)
+  code_challenge?: string;
 }
 
 export class ResetPasswordDto {
-  @IsString()
+  @IsOptional()
   @Matches(/^[A-Za-z0-9_-]{16,256}$/)
-  token_hash!: string;
+  token_hash?: string;
+
+  @IsOptional()
+  @IsUUID()
+  auth_code?: string;
+
+  @IsOptional()
+  @Matches(/^[A-Za-z0-9_-]{43}$/)
+  code_verifier?: string;
 
   @IsString()
   @Length(8, 72)

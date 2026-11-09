@@ -80,16 +80,19 @@ export async function apiFetch<T>(
 
 // ----------------- Auth API -----------------
 export const authApi = {
-  recoverPassword: async (email: string): Promise<{ message: string }> =>
+  recoverPassword: async (email: string, challenge: string): Promise<{ message: string }> =>
     apiFetch<{ message: string }>('/auth/recover', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, code_challenge: challenge }),
     }),
 
-  resetPassword: async (recoveryToken: string, password: string): Promise<{ message: string }> =>
+  resetPassword: async (
+    proof: { token_hash: string } | { auth_code: string; code_verifier: string },
+    password: string,
+  ): Promise<{ message: string }> =>
     apiFetch<{ message: string }>('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token_hash: recoveryToken, password }),
+      body: JSON.stringify({ ...proof, password }),
     }),
 
   login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
