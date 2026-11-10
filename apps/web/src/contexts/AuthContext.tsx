@@ -1,13 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authApi, getToken, removeToken } from '@/lib/api';
-import type { RegisterResponse, RoleSlug, UserProfile } from '@/types';
+import { authApi, getToken, removeToken, setToken } from '@/lib/api';
+import type { LoginResponse, RegisterResponse, RoleSlug, UserProfile } from '@/types';
 
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<UserProfile>;
+  login: (email: string, password: string) => Promise<LoginResponse>;
+  verifyLoginMfa: (mfaToken: string, factorId: string, code: string) => Promise<UserProfile>;
   register: (payload: {
     email: string;
     password: string;
@@ -51,11 +52,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchProfile();
   }, [fetchProfile]);
 
-  const login = async (email: string, password: string): Promise<UserProfile> => {
+  const login = (email: string, password: string): Promise<LoginResponse> => {
+    removeToken();
+    setUser(null);
+    return authApi.login({ email, password });
+  };
+
+  const verifyLoginMfa = async (mfaToken: string, factorId: string, code: string): Promise<UserProfile> => {
     setLoading(true);
     try {
-      await authApi.login({ email, password });
-      const profile = await authApi.getMe();
+      const { access_token } = await authApi.verifyLoginMfa(mfaToken, factorId, code);
+      const profile = await authApi.getMe(access_token);
+      setToken(access_token);
       setUser(profile);
       return profile;
     } finally {
@@ -121,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         login,
+        verifyLoginMfa,
         register,
         logout,
         refreshUser,

@@ -17,6 +17,9 @@ describe('POST /api/v1/auth/login', () => {
   const reset = vi.fn();
   const recoverPkce = vi.fn();
   const resetPkce = vi.fn();
+  const verifyMfa = vi.fn();
+  const resetMfa = vi.fn();
+  const factorId = '39f63a84-f56b-47ab-bf82-ec0e76e1f681';
   const credentials = { email: 'user@example.com', password: 'password' };
 
   beforeEach(async () => {
@@ -26,13 +29,15 @@ describe('POST /api/v1/auth/login', () => {
     recoverPkce.mockReset().mockResolvedValue({ message: 'Solicitud recibida' });
     resetPkce.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
     reset.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
-    login.mockResolvedValue({
+    login.mockResolvedValue({ step: 'verify', mfa_token: 'partial', factors: [{ id: factorId }] });
+    verifyMfa.mockReset().mockResolvedValue({
       access_token: 'access',
       refresh_token: 'refresh',
       token_type: 'bearer',
       expires_in: 3600,
       user: { id: 'id' },
     });
+    resetMfa.mockReset().mockResolvedValue({ message: 'Contraseña actualizada' });
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(SupabaseService)
       .useValue({
@@ -42,6 +47,8 @@ describe('POST /api/v1/auth/login', () => {
         requestPkcePasswordRecovery: recoverPkce,
         resetPassword: reset,
         resetPasswordWithCode: resetPkce,
+        verifyLoginMfa: verifyMfa,
+        resetPasswordWithMfa: resetMfa,
       })
       .compile();
     app = module.createNestApplication();
@@ -65,8 +72,32 @@ describe('POST /api/v1/auth/login', () => {
       .send(credentials)
       .expect(200);
     expect(result.headers['cache-control']).toBe('no-store');
-    expect(result.body.access_token).toBe('access');
+    expect(result.body).toEqual({ step: 'verify', mfa_token: 'partial', factors: [{ id: factorId }] });
     expect(login).toHaveBeenCalledWith(credentials.email, credentials.password);
+  });
+
+  it('completes login only through MFA verification and disables caching', async () => {
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/mfa/verify')
+      .set('Authorization', 'Bearer partial').send({ factor_id: factorId, code: '012345' }).expect(200);
+    expect(response.body.access_token).toBe('access');
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(verifyMfa).toHaveBeenCalledWith('partial', factorId, '012345');
+  });
+
+  it('rejects a missing continuation token and malformed MFA codes', async () => {
+    await request(app.getHttpServer()).post('/api/v1/auth/mfa/verify')
+      .send({ factor_id: factorId, code: '012345' }).expect(401);
+    await request(app.getHttpServer()).post('/api/v1/auth/mfa/verify')
+      .set('Authorization', 'Bearer partial').send({ factor_id: factorId, code: '12345' }).expect(400);
+    expect(verifyMfa).not.toHaveBeenCalled();
+  });
+
+  it('uses a separate verification endpoint for password recovery', async () => {
+    await request(app.getHttpServer()).post('/api/v1/auth/mfa/recover')
+      .set('Authorization', 'Bearer recovery').send({ factor_id: factorId, code: '012345', password: 'new-password' })
+      .expect(200, { message: 'Contraseña actualizada' });
+    expect(resetMfa).toHaveBeenCalledWith('recovery', factorId, '012345', 'new-password');
+    expect(verifyMfa).not.toHaveBeenCalled();
   });
 
   it.each([

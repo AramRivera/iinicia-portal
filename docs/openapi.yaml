@@ -42,8 +42,8 @@ paths:
   # =========================================================================
   /auth/login:
     post:
-      summary: Iniciar sesión en el portal
-      description: Autentica al usuario contra Supabase Auth y devuelve tokens de sesión.
+      summary: Iniciar la verificación en dos pasos
+      description: Valida la contraseña y devuelve una continuación AAL1 para configurar o verificar TOTP. La sesión del portal se obtiene en /auth/mfa/verify.
       requestBody:
         required: true
         content:
@@ -59,9 +59,94 @@ paths:
                   type: string
       responses:
         "200":
-          description: Sesión iniciada correctamente.
+          description: Continuación de MFA. La respuesta no se debe almacenar.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MfaSetup'
+                  - $ref: '#/components/schemas/MfaVerification'
         "401":
-          description: Credenciales incorrectas.
+          description: Credenciales incorrectas o correo sin confirmar.
+        "403":
+          description: La cuenta ya usa un factor que el portal no admite.
+        "429":
+          description: Límite de intentos alcanzado.
+        "503":
+          description: Servicio de autenticación o MFA no disponible.
+
+  /auth/mfa/verify:
+    post:
+      summary: Completar el inicio de sesión con el código del autenticador
+      description: Envía mfa_token como Bearer. Supabase valida el desafío y devuelve una sesión AAL2.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaCode'
+      responses:
+        "200":
+          description: Sesión del portal verificada. La respuesta no se debe almacenar en caché.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedSession'
+        "400":
+          description: Cuerpo inválido o código incorrecto.
+        "401":
+          description: Continuación ausente, inválida o caducada.
+        "403":
+          description: Autenticador no disponible para la cuenta.
+        "429":
+          description: Límite de intentos alcanzado.
+        "503":
+          description: Servicio de verificación no disponible.
+
+  /auth/mfa/recover:
+    post:
+      summary: Confirmar con TOTP un cambio de contraseña iniciado por correo
+      description: Envía como Bearer el mfa_token devuelto por /auth/reset-password. No se devuelve una sesión del portal.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [factor_id, code, password]
+              properties:
+                factor_id:
+                  type: string
+                  format: uuid
+                code:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  maxLength: 72
+      responses:
+        "200":
+          description: Contraseña actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMessage'
+        "400":
+          description: Cuerpo inválido, código incorrecto o contraseña rechazada.
+        "401":
+          description: Continuación de recuperación ausente, inválida o caducada.
+        "403":
+          description: Autenticador no disponible para la cuenta.
+        "429":
+          description: Límite de intentos alcanzado.
+        "503":
+          description: Servicio de recuperación o MFA no disponible.
 
   /auth/register:
     post:
@@ -142,7 +227,7 @@ paths:
   /auth/reset-password:
     post:
       summary: Restablecer contraseña con el token de un solo uso
-      description: Acepta un token de plantilla personalizada o el código PKCE con su verificador.
+      description: Acepta un token de plantilla personalizada o el código PKCE con su verificador. Si la cuenta tiene TOTP, solicita confirmación en /auth/mfa/recover antes de cambiar la contraseña.
       requestBody:
         required: true
         content:
@@ -177,17 +262,17 @@ paths:
                   description: Debe ocupar como máximo 72 bytes en UTF-8.
       responses:
         "200":
-          description: Contraseña actualizada.
+          description: Contraseña actualizada o verificación TOTP requerida.
           content:
             application/json:
               schema:
-                type: object
-                required: [message]
-                properties:
-                  message:
-                    type: string
+                oneOf:
+                  - $ref: '#/components/schemas/AuthMessage'
+                  - $ref: '#/components/schemas/MfaVerification'
         "400":
           description: Datos inválidos, token caducado o contraseña rechazada.
+        "403":
+          description: La cuenta usa un factor que el portal no admite.
         "429":
           description: Límite de solicitudes alcanzado.
         "503":
@@ -196,7 +281,7 @@ paths:
   /auth/me:
     get:
       summary: Identidad del usuario autenticado
-      description: Devuelve el perfil institucional, roles activos, permisos consolidados y estado de Moodle.
+      description: Devuelve el perfil institucional, roles activos, permisos consolidados y estado de Moodle. Requiere una sesión AAL2, igual que el resto de operaciones protegidas del portal.
       security:
         - bearerAuth: []
       responses:
@@ -208,6 +293,8 @@ paths:
                 $ref: "#/components/schemas/MeResponse"
         "401":
           description: Token no válido o cuenta suspendida.
+        "403":
+          description: La sesión aún no ha completado la verificación en dos pasos.
 
   # =========================================================================
   # USUARIOS Y PERFILES
@@ -1072,6 +1159,89 @@ components:
       bearerFormat: JWT
 
   schemas:
+    MfaSetup:
+      type: object
+      required: [step, mfa_token, factor_id, secret]
+      properties:
+        step:
+          type: string
+          enum: [setup]
+        mfa_token:
+          type: string
+          description: JWT temporal AAL1 para continuar la verificación.
+        factor_id:
+          type: string
+          format: uuid
+        secret:
+          type: string
+          description: Clave de configuración manual del autenticador.
+        qr_code:
+          type: string
+          description: Imagen QR como URL de datos SVG codificada en Base64.
+    MfaVerification:
+      type: object
+      required: [step, mfa_token, factors]
+      properties:
+        step:
+          type: string
+          enum: [verify]
+        mfa_token:
+          type: string
+          description: JWT temporal AAL1 para continuar la verificación.
+        factors:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+    MfaCode:
+      type: object
+      required: [factor_id, code]
+      properties:
+        factor_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+    VerifiedSession:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in, user]
+      properties:
+        access_token:
+          type: string
+          description: JWT AAL2 validado por Supabase Auth.
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          enum: [bearer]
+        expires_in:
+          type: integer
+        expires_at:
+          type: integer
+        user:
+          type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+    AuthMessage:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
     MeResponse:
       type: object
       required:

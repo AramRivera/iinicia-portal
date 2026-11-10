@@ -1,12 +1,14 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { User } from '@supabase/supabase-js';
 import type { Request } from 'express';
 import { SupabaseService } from '../supabase/supabase.service.js';
+import { readSupabaseTokenClaims } from './supabase-token-claims.js';
 
 export interface AuthenticatedRequest extends Request {
   accessToken: string;
@@ -30,8 +32,12 @@ export class SupabaseAuthGuard implements CanActivate {
     }
 
     const accessToken = match[1];
+    const user = await this.supabase.getAuthenticatedUser(accessToken);
+    if (readSupabaseTokenClaims(accessToken).aal !== 'aal2') {
+      throw new ForbiddenException('Completa la verificación en dos pasos.');
+    }
     request.accessToken = accessToken;
-    request.user = await this.supabase.getAuthenticatedUser(accessToken);
+    request.user = user;
 
     return true;
   }

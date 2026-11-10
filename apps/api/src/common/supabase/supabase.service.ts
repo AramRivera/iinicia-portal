@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -10,12 +11,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { Database } from './database.types.js';
+import { readSupabaseTokenClaims } from '../auth/supabase-token-claims.js';
 
 /** Primer segmento de la URL a la que PostgREST sirve `/rest/v1/<tabla>`. */
 const RECOVERY_MESSAGE =
   'Solicitud recibida. Si podemos enviar un enlace para esa dirección, lo recibirás por correo.';
 
 const REST_PATH = '/rest/v1/';
+const PORTAL_TOTP_FACTOR = 'IINICIA';
 
 function preservePostgrestError(
   fetchImpl: typeof globalThis.fetch,
@@ -161,7 +164,8 @@ export class SupabaseService {
 
   async signInWithPassword(email: string, password: string) {
     try {
-      const { data, error } = await this.createClient().auth.signInWithPassword(
+      const { auth } = this.createClient();
+      const { data, error } = await auth.signInWithPassword(
         {
           email,
           password,
@@ -198,13 +202,49 @@ export class SupabaseService {
         );
       }
 
+      const mfaToken = data.session.access_token;
+      if (readSupabaseTokenClaims(mfaToken).aal !== 'aal1') {
+        throw new ServiceUnavailableException('No se pudo iniciar la verificación en dos pasos.');
+      }
+
+      const { data: factors, error: factorsError } = await auth.mfa.listFactors();
+      if (factorsError) this.throwMfaError(factorsError.status);
+      const verifiedTotp = factors.totp;
+      if (verifiedTotp.length > 0) {
+        return {
+          step: 'verify' as const,
+          mfa_token: mfaToken,
+          factors: totpOptions(verifiedTotp),
+        };
+      }
+
+      if (factors.all.some((factor) => factor.status === 'verified')) {
+        throw new ForbiddenException('Tu cuenta requiere un factor compatible con el portal. Contacta a soporte.');
+      }
+
+      // Un alta abandonada no debe impedir volver a configurar el autenticador.
+      for (const factor of factors.all) {
+        if (factor.factor_type !== 'totp' || factor.status !== 'unverified' || factor.friendly_name !== PORTAL_TOTP_FACTOR) continue;
+        const { error: unenrollError } = await auth.mfa.unenroll({ factorId: factor.id });
+        if (unenrollError && unenrollError.status !== 404) this.throwMfaError(unenrollError.status);
+      }
+
+      const { data: factor, error: enrollmentError } = await auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: PORTAL_TOTP_FACTOR,
+        issuer: 'IINICIA',
+      });
+      if (enrollmentError) this.throwMfaError(enrollmentError.status);
+      const qrPrefix = 'data:image/svg+xml;utf-8,';
+      const qrCode = factor.totp.qr_code?.startsWith(qrPrefix)
+        ? `data:image/svg+xml;base64,${Buffer.from(factor.totp.qr_code.slice(qrPrefix.length)).toString('base64')}`
+        : undefined;
       return {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        token_type: data.session.token_type,
-        expires_in: data.session.expires_in,
-        expires_at: data.session.expires_at,
-        user: { id: data.user.id, email: data.user.email },
+        step: 'setup' as const,
+        mfa_token: mfaToken,
+        factor_id: factor.id,
+        secret: factor.totp.secret,
+        qr_code: qrCode,
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -215,6 +255,93 @@ export class SupabaseService {
         'No fue posible contactar al servicio de autenticación.',
       );
     }
+  }
+
+  verifyLoginMfa(accessToken: string, factorId: string, code: string) {
+    return this.verifyMfa(accessToken, factorId, code, 'password');
+  }
+
+  async resetPasswordWithMfa(accessToken: string, factorId: string, code: string, password: string) {
+    this.validatePasswordSize(password);
+    const session = await this.verifyMfa(accessToken, factorId, code, 'recovery');
+    const { auth } = this.createClient();
+    const { error } = await auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) throw new ServiceUnavailableException('No fue posible iniciar la sesión de recuperación.');
+    return this.updateRecoveredPassword(auth, password);
+  }
+
+  private async verifyMfa(accessToken: string, factorId: string, code: string, method: 'password' | 'recovery') {
+    const user = await this.getAuthenticatedUser(accessToken);
+    // Supabase etiqueta el enlace PKCE como recovery y el intercambio verifyOtp como otp.
+    const matchesMethod = hasAuthMethod(accessToken, method) ||
+      (method === 'recovery' && hasAuthMethod(accessToken, 'otp'));
+    if (readSupabaseTokenClaims(accessToken).aal !== 'aal1' || !matchesMethod) {
+      throw new UnauthorizedException('La sesión no corresponde a esta verificación.');
+    }
+
+    const factors = user.factors ?? [];
+    const factor = factors.find((item) => item.id === factorId && item.factor_type === 'totp');
+    const firstEnrollment = method === 'password' && factor?.status === 'unverified' &&
+      factor.friendly_name === PORTAL_TOTP_FACTOR &&
+      !factors.some((item) => item.status === 'verified');
+    if (factor?.status !== 'verified' && !firstEnrollment) {
+      throw new ForbiddenException('Este autenticador no está disponible. Vuelve a iniciar sesión.');
+    }
+
+    // La continuación usa solo el JWT AAL1. El navegador nunca recibe su refresh token.
+    const path = `/factors/${factorId}`;
+    const challenge = await this.postAuth(`${path}/challenge`, {}, accessToken);
+    if (!challenge.ok) this.throwMfaError(challenge.status, true);
+    const challengeData: unknown = await challenge.json().catch(() => null);
+    if (!challengeData || typeof challengeData !== 'object' || !('id' in challengeData) ||
+        typeof challengeData.id !== 'string' || !challengeData.id) {
+      throw new ServiceUnavailableException('Supabase no devolvió un desafío de verificación.');
+    }
+
+    const response = await this.postAuth(`${path}/verify`, {
+      challenge_id: challengeData.id,
+      code,
+    }, accessToken);
+    if (!response.ok) this.throwMfaError(response.status, true);
+    const session = await response.json().catch(() => null) as Record<string, unknown> | null;
+    if (!session || typeof session.access_token !== 'string' ||
+        typeof session.refresh_token !== 'string' || !session.refresh_token ||
+        typeof session.expires_in !== 'number' || session.expires_in <= 0 ||
+        typeof session.token_type !== 'string') {
+      throw new ServiceUnavailableException('Supabase devolvió una sesión incompleta.');
+    }
+    const claims = readSupabaseTokenClaims(session.access_token);
+    if (claims.aal !== 'aal2' || claims.sub !== user.id) {
+      throw new ServiceUnavailableException('Supabase no confirmó la sesión con dos factores.');
+    }
+
+    return {
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      token_type: session.token_type,
+      expires_in: session.expires_in,
+      expires_at: typeof claims.exp === 'number' ? claims.exp : undefined,
+      user: { id: user.id, email: user.email },
+    };
+  }
+
+  private throwMfaError(status?: number, verifying = false): never {
+    if (status === 429) {
+      throw new HttpException('Demasiados intentos. Intenta más tarde.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    if (verifying && status === 401) {
+      throw new UnauthorizedException('La sesión de verificación caducó. Vuelve a iniciar sesión.');
+    }
+    if (verifying && (status === 400 || status === 422)) {
+      throw new BadRequestException('No se pudo verificar el código. Usa el código actual de tu app.');
+    }
+    if (verifying && (status === 403 || status === 404)) {
+      throw new ForbiddenException('Este autenticador no está disponible. Vuelve a iniciar sesión.');
+    }
+    throw new ServiceUnavailableException('La verificación en dos pasos no está disponible.');
   }
 
   async getAuthenticatedUser(accessToken: string): Promise<User> {
@@ -289,7 +416,7 @@ export class SupabaseService {
     code: string,
     verifier: string,
     password: string,
-  ): Promise<{ message: string }> {
+  ) {
     this.validatePasswordSize(password);
     const response = await this.postAuth('/token?grant_type=pkce', {
       auth_code: code,
@@ -314,15 +441,19 @@ export class SupabaseService {
     if (error) {
       throw new ServiceUnavailableException('No fue posible iniciar la sesión de recuperación.');
     }
-    return this.updateRecoveredPassword(auth, password);
+    return this.preparePasswordReset(auth, session.access_token, password);
   }
 
-  private async postAuth(path: string, body: Record<string, string>): Promise<Response> {
+  private async postAuth(path: string, body: Record<string, string>, accessToken?: string): Promise<Response> {
     const { url, publishableKey } = this.getConfiguration();
     try {
       return await fetch(new URL(`/auth/v1${path}`, url), {
         method: 'POST',
-        headers: { apikey: publishableKey, 'Content-Type': 'application/json' },
+        headers: {
+          apikey: publishableKey,
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify(body),
         redirect: 'error',
         signal: AbortSignal.timeout(5000),
@@ -338,7 +469,7 @@ export class SupabaseService {
     }
   }
 
-  async resetPassword(tokenHash: string, password: string): Promise<{ message: string }> {
+  async resetPassword(tokenHash: string, password: string) {
     this.validatePasswordSize(password);
 
     const { auth } = this.createClient();
@@ -350,6 +481,18 @@ export class SupabaseService {
       throw new BadRequestException('El enlace de recuperación es inválido o ya caducó.');
     }
 
+    return this.preparePasswordReset(auth, data.session.access_token, password);
+  }
+
+  private async preparePasswordReset(auth: SupabaseClient<Database>['auth'], accessToken: string, password: string) {
+    const { data, error } = await auth.mfa.listFactors();
+    if (error) this.throwMfaError(error.status);
+    if (data.totp.length > 0) {
+      return { step: 'verify' as const, mfa_token: accessToken, factors: totpOptions(data.totp) };
+    }
+    if (data.all.some((factor) => factor.status === 'verified')) {
+      throw new ForbiddenException('Tu cuenta requiere un factor compatible con el portal. Contacta a soporte.');
+    }
     return this.updateRecoveredPassword(auth, password);
   }
 
@@ -476,15 +619,16 @@ function isPasswordRecoverySession(value: unknown): value is {
   const { access_token, refresh_token } = value as Record<string, unknown>;
   if (typeof access_token !== 'string' || typeof refresh_token !== 'string' || !refresh_token) return false;
 
-  try {
-    const payload = access_token.split('.')[1];
-    if (!payload) return false;
-    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { amr?: unknown };
-    return Array.isArray(claims.amr) && claims.amr.some(
-      (claim: unknown) => typeof claim === 'object' && claim !== null &&
-        'method' in claim && claim.method === 'recovery',
-    );
-  } catch {
-    return false;
-  }
+  return hasAuthMethod(access_token, 'recovery');
+}
+
+function hasAuthMethod(token: string, method: 'password' | 'recovery' | 'otp'): boolean {
+  const { amr } = readSupabaseTokenClaims(token);
+  return Array.isArray(amr) && amr.some((claim: unknown) =>
+    typeof claim === 'object' && claim !== null && 'method' in claim && claim.method === method,
+  );
+}
+
+function totpOptions(factors: { id: string; friendly_name?: string }[]) {
+  return factors.map((factor) => ({ id: factor.id, name: factor.friendly_name }));
 }

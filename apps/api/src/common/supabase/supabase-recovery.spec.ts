@@ -9,6 +9,7 @@ describe('Supabase password recovery', () => {
   const verifyOtp = vi.fn();
   const updateUser = vi.fn();
   const setSession = vi.fn();
+  const listFactors = vi.fn();
   const upstream = vi.fn();
   const email = 'user@example.com';
   const tokenHash = 'a'.repeat(56);
@@ -23,8 +24,9 @@ describe('Supabase password recovery', () => {
     vi.resetAllMocks();
     vi.stubGlobal('fetch', upstream);
     vi.mocked(createClient).mockReturnValue({
-      auth: { resetPasswordForEmail, verifyOtp, updateUser, setSession },
+      auth: { resetPasswordForEmail, verifyOtp, updateUser, setSession, mfa: { listFactors } },
     } as unknown as ReturnType<typeof createClient>);
+    listFactors.mockResolvedValue({ data: { all: [], totp: [] }, error: null });
   });
 
   afterEach(() => vi.unstubAllGlobals());
@@ -53,6 +55,16 @@ describe('Supabase password recovery', () => {
   it('never updates a password with an invalid or expired token', async () => {
     verifyOtp.mockResolvedValue({ data: { session: null }, error: { status: 403 } });
     await expect(service.resetPassword(tokenHash, password)).rejects.toMatchObject({ status: 400 });
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it('requires the registered TOTP factor before resetting the password', async () => {
+    verifyOtp.mockResolvedValue({ data: { session: { access_token: 'recovery-token' } }, error: null });
+    const factor = { id: 'factor-id', friendly_name: 'My authenticator' };
+    listFactors.mockResolvedValue({ data: { all: [factor], totp: [factor] }, error: null });
+    await expect(service.resetPassword(tokenHash, password)).resolves.toEqual({
+      step: 'verify', mfa_token: 'recovery-token', factors: [{ id: 'factor-id', name: 'My authenticator' }],
+    });
     expect(updateUser).not.toHaveBeenCalled();
   });
   it('requests a standard PKCE link with the portal URL and S256 challenge', async () => {

@@ -45,12 +45,15 @@ y ejecuta `npm run start:dev`. No se necesita una clave secreta.
 }
 ```
 
-3. Copia `access_token` de la respuesta `200`.
-4. Envía `GET http://localhost:3000/api/v1/permissions` usando Authorization
+3. La respuesta `200` entrega `mfa_token`. Si `step` es `setup`, configura una app
+   autenticadora con `secret` y usa `factor_id`. Si `step` es `verify`, elige un `id` de `factors`.
+4. Envía `POST /api/v1/auth/mfa/verify` con `mfa_token` como Bearer y el JSON
+   `{"factor_id":"<UUID>","code":"012345"}`. Copia `access_token` de esa respuesta.
+5. Envía `GET http://localhost:3000/api/v1/permissions` usando Authorization
    **Bearer Token** con ese valor. Para ver el catálogo, el perfil debe estar activo
    y tener `roles.read`. El login no activa perfiles ni concede permisos.
 
-El login devuelve `access_token`, `refresh_token`, `token_type`, `expires_in`,
+La verificación devuelve `access_token`, `refresh_token`, `token_type`, `expires_in`,
 `expires_at` (si Supabase lo proporciona) y `user` con `id` y `email`.
 No almacena sesiones en el servidor ni registra contraseñas o tokens.
 Errores: `400` por cuerpo inválido, `401` por credenciales rechazadas,

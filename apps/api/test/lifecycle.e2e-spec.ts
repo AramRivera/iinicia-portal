@@ -12,7 +12,7 @@ import { MoodleClient } from '../src/modules/moodle/moodle.client.js';
 function fakeAccessToken(issuedAt: number = 1_790_000_000): string {
   const encode = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iat: issuedAt })}.signature`;
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iat: issuedAt, aal: 'aal2' })}.signature`;
 }
 
 describe('Portal Lifecycle E2E Test Suite', () => {

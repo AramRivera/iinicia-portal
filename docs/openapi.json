@@ -49,8 +49,8 @@
     },
     "/auth/login": {
       "post": {
-        "summary": "Iniciar sesi\u00f3n en el portal",
-        "description": "Autentica al usuario contra Supabase Auth y devuelve tokens de sesi\u00f3n.",
+        "summary": "Iniciar la verificaci\u00f3n en dos pasos",
+        "description": "Valida la contrase\u00f1a y devuelve una continuaci\u00f3n AAL1 para configurar o verificar TOTP. La sesi\u00f3n del portal se obtiene en /auth/mfa/verify.",
         "requestBody": {
           "required": true,
           "content": {
@@ -76,10 +76,33 @@
         },
         "responses": {
           "200": {
-            "description": "Sesi\u00f3n iniciada correctamente."
+            "description": "Continuaci\u00f3n de MFA. La respuesta no se debe almacenar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MfaSetup"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaVerification"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "401": {
-            "description": "Credenciales incorrectas."
+            "description": "Credenciales incorrectas o correo sin confirmar."
+          },
+          "403": {
+            "description": "La cuenta ya usa un factor que el portal no admite."
+          },
+          "429": {
+            "description": "L\u00edmite de intentos alcanzado."
+          },
+          "503": {
+            "description": "Servicio de autenticaci\u00f3n o MFA no disponible."
           }
         }
       }
@@ -157,7 +180,7 @@
     "/auth/me": {
       "get": {
         "summary": "Identidad del usuario autenticado",
-        "description": "Devuelve el perfil institucional, roles activos, permisos consolidados y estado de Moodle.",
+        "description": "Devuelve el perfil institucional, roles activos, permisos consolidados y estado de Moodle. Requiere una sesi\u00f3n AAL2, igual que el resto de operaciones protegidas del portal.",
         "security": [
           {
             "bearerAuth": []
@@ -176,6 +199,9 @@
           },
           "401": {
             "description": "Token no v\u00e1lido o cuenta suspendida."
+          },
+          "403": {
+            "description": "La sesi\u00f3n a\u00fan no ha completado la verificaci\u00f3n en dos pasos."
           }
         }
       }
@@ -1428,7 +1454,7 @@
     "/auth/reset-password": {
       "post": {
         "summary": "Restablecer contrase\u00f1a con el token de un solo uso",
-        "description": "Acepta un token de plantilla personalizada o el c\u00f3digo PKCE con su verificador.",
+        "description": "Acepta un token de plantilla personalizada o el c\u00f3digo PKCE con su verificador. Si la cuenta tiene TOTP, solicita confirmaci\u00f3n en /auth/mfa/recover antes de cambiar la contrase\u00f1a.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1497,19 +1523,18 @@
         },
         "responses": {
           "200": {
-            "description": "Contrase\u00f1a actualizada.",
+            "description": "Contrase\u00f1a actualizada o verificaci\u00f3n TOTP requerida.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "message"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthMessage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaVerification"
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -1517,11 +1542,131 @@
           "400": {
             "description": "Datos inv\u00e1lidos, token caducado o contrase\u00f1a rechazada."
           },
+          "403": {
+            "description": "La cuenta usa un factor que el portal no admite."
+          },
           "429": {
             "description": "L\u00edmite de solicitudes alcanzado."
           },
           "503": {
             "description": "El servicio de recuperaci\u00f3n no pudo completar la operaci\u00f3n."
+          }
+        }
+      }
+    },
+    "/auth/mfa/verify": {
+      "post": {
+        "summary": "Completar el inicio de sesi\u00f3n con el c\u00f3digo del autenticador",
+        "description": "Env\u00eda mfa_token como Bearer. Supabase valida el desaf\u00edo y devuelve una sesi\u00f3n AAL2.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaCode"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesi\u00f3n del portal verificada. La respuesta no se debe almacenar en cach\u00e9.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cuerpo inv\u00e1lido o c\u00f3digo incorrecto."
+          },
+          "401": {
+            "description": "Continuaci\u00f3n ausente, inv\u00e1lida o caducada."
+          },
+          "403": {
+            "description": "Autenticador no disponible para la cuenta."
+          },
+          "429": {
+            "description": "L\u00edmite de intentos alcanzado."
+          },
+          "503": {
+            "description": "Servicio de verificaci\u00f3n no disponible."
+          }
+        }
+      }
+    },
+    "/auth/mfa/recover": {
+      "post": {
+        "summary": "Confirmar con TOTP un cambio de contrase\u00f1a iniciado por correo",
+        "description": "Env\u00eda como Bearer el mfa_token devuelto por /auth/reset-password. No se devuelve una sesi\u00f3n del portal.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "factor_id",
+                  "code",
+                  "password"
+                ],
+                "properties": {
+                  "factor_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "maxLength": 72
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contrase\u00f1a actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cuerpo inv\u00e1lido, c\u00f3digo incorrecto o contrase\u00f1a rechazada."
+          },
+          "401": {
+            "description": "Continuaci\u00f3n de recuperaci\u00f3n ausente, inv\u00e1lida o caducada."
+          },
+          "403": {
+            "description": "Autenticador no disponible para la cuenta."
+          },
+          "429": {
+            "description": "L\u00edmite de intentos alcanzado."
+          },
+          "503": {
+            "description": "Servicio de recuperaci\u00f3n o MFA no disponible."
           }
         }
       }
@@ -1615,6 +1760,153 @@
               "error",
               "suspendido_en_moodle"
             ]
+          }
+        }
+      },
+      "MfaSetup": {
+        "type": "object",
+        "required": [
+          "step",
+          "mfa_token",
+          "factor_id",
+          "secret"
+        ],
+        "properties": {
+          "step": {
+            "type": "string",
+            "enum": [
+              "setup"
+            ]
+          },
+          "mfa_token": {
+            "type": "string",
+            "description": "JWT temporal AAL1 para continuar la verificaci\u00f3n."
+          },
+          "factor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Clave de configuraci\u00f3n manual del autenticador."
+          },
+          "qr_code": {
+            "type": "string",
+            "description": "Imagen QR como URL de datos SVG codificada en Base64."
+          }
+        }
+      },
+      "MfaVerification": {
+        "type": "object",
+        "required": [
+          "step",
+          "mfa_token",
+          "factors"
+        ],
+        "properties": {
+          "step": {
+            "type": "string",
+            "enum": [
+              "verify"
+            ]
+          },
+          "mfa_token": {
+            "type": "string",
+            "description": "JWT temporal AAL1 para continuar la verificaci\u00f3n."
+          },
+          "factors": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MfaCode": {
+        "type": "object",
+        "required": [
+          "factor_id",
+          "code"
+        ],
+        "properties": {
+          "factor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$"
+          }
+        }
+      },
+      "VerifiedSession": {
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token",
+          "token_type",
+          "expires_in",
+          "user"
+        ],
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "JWT AAL2 validado por Supabase Auth."
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "bearer"
+            ]
+          },
+          "expires_in": {
+            "type": "integer"
+          },
+          "expires_at": {
+            "type": "integer"
+          },
+          "user": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          }
+        }
+      },
+      "AuthMessage": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
           }
         }
       }

@@ -76,7 +76,7 @@ La tabla describe módulos y rutas encontradas en `apps/api/src`. La presencia d
 | Módulo | Responsabilidad | Endpoints Clave |
 |---|---|---|
 | `HealthModule` | Comprobación de salud de la API, Supabase y Moodle | `GET /api/v1/health` |
-| `AuthModule` | Login con Supabase Auth, registro de aspirantes, obtención de identidad efectiva | `POST /auth/login`, `POST /auth/register`, `GET /auth/me` |
+| `AuthModule` | Inicio con contraseña y TOTP, registro de aspirantes, recuperación e identidad efectiva. Las rutas protegidas requieren AAL2. | `POST /auth/login`, `POST /auth/mfa/verify`, `POST /auth/register`, `GET /auth/me` |
 | `UsersModule` | Gestión de perfiles, listado con búsqueda trgm, cambio de estado y suspensión | `GET /users`, `GET /users/:id`, `PATCH /users/:id/status`, `PATCH /users/me/profile` |
 | `RolesModule` | Catálogo de roles, asignación y revocación de roles a usuarios | `GET /roles`, `POST /roles/users/:userId`, `DELETE /roles/users/:userId/:roleId` |
 | `PermissionsModule` | Catálogo de permisos granulares por módulo | `GET /permissions` |

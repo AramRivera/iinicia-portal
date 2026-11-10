@@ -7,9 +7,11 @@ import type {
   MoodleCourseProgress,
   MoodleLaunchResponse,
   MoodleStatusResponse,
+  PasswordResetResponse,
   Program,
   RegisterResponse,
   UserProfile,
+  VerifiedLoginResponse,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
@@ -89,23 +91,31 @@ export const authApi = {
   resetPassword: async (
     proof: { token_hash: string } | { auth_code: string; code_verifier: string },
     password: string,
-  ): Promise<{ message: string }> =>
-    apiFetch<{ message: string }>('/auth/reset-password', {
+  ): Promise<PasswordResetResponse> =>
+    apiFetch<PasswordResetResponse>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ ...proof, password }),
     }),
 
-  login: async (credentials: { email: string; password: string }): Promise<LoginResponse> => {
-    const res = await apiFetch<LoginResponse>('/auth/login', {
+  verifyRecoveryMfa: (mfaToken: string, factorId: string, code: string, password: string) =>
+    apiFetch<{ message: string }>('/auth/mfa/recover', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${mfaToken}` },
+      body: JSON.stringify({ factor_id: factorId, code, password }),
+    }),
+
+  login: (credentials: { email: string; password: string }): Promise<LoginResponse> =>
+    apiFetch<LoginResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
-    });
-    const token = res.session?.access_token || (res as any).access_token;
-    if (token) {
-      setToken(token);
-    }
-    return res;
-  },
+    }),
+
+  verifyLoginMfa: (mfaToken: string, factorId: string, code: string): Promise<VerifiedLoginResponse> =>
+    apiFetch<VerifiedLoginResponse>('/auth/mfa/verify', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${mfaToken}` },
+      body: JSON.stringify({ factor_id: factorId, code }),
+    }),
 
   register: async (payload: {
     email: string;
@@ -120,8 +130,10 @@ export const authApi = {
     });
   },
 
-  getMe: async (): Promise<UserProfile> => {
-    return apiFetch<UserProfile>('/auth/me');
+  getMe: async (accessToken?: string): Promise<UserProfile> => {
+    return apiFetch<UserProfile>('/auth/me', {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    });
   },
 
   logout: () => {

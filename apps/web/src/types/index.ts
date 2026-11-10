@@ -52,22 +52,24 @@ export interface AuthSession {
   expires_at?: number;
 }
 
-export interface LoginResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expires_in: number;
-  expires_at?: number;
+export type LoginResponse =
+  | { step: 'setup'; mfa_token: string; factor_id: string; secret: string; qr_code?: string }
+  | { step: 'verify'; mfa_token: string; factors: { id: string; name?: string }[] };
+
+export interface VerifiedLoginResponse extends AuthSession {
   user: {
     id: string;
-    email: string;
+    email?: string;
   };
-  session?: AuthSession;
 }
 
 export interface RegisterResponse {
   message: string;
 }
+
+export type PasswordResetResponse =
+  | { message: string }
+  | Extract<LoginResponse, { step: 'verify' }>;
 
 export interface CourseOffering {
   id: string;

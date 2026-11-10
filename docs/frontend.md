@@ -64,7 +64,7 @@ El iniciador actual carga `.env.demo.local` con `process.loadEnvFile()` para evi
 
 ## Flujos y contratos usados
 
-**Sesión.** `POST /auth/register` y `POST /auth/login` inician el flujo. `GET /auth/me` restaura el perfil y sus roles. `AuthContext` ofrece `user`, `loading`, `login`, `register`, `logout`, `refreshUser`, `hasRole`, `hasPermission` y `getDefaultDashboardPath`. El cliente actual guarda `iinicia_access_token` en `localStorage` y `apiFetch` lo envía como Bearer. Si `/auth/me` falla, se borra el token. El logout borra el token local y vuelve al login; no revoca por sí solo la sesión remota.
+**Sesión.** `POST /auth/register` inicia el alta. `POST /auth/login` valida la contraseña y entrega la continuación para el autenticador. `POST /auth/mfa/verify` completa el inicio con TOTP y `GET /auth/me` carga el perfil y sus roles. El cliente conserva en memoria la continuación AAL1 y guarda `iinicia_access_token` en `localStorage` después de verificar la sesión AAL2. `apiFetch` lo envía como Bearer. Si `/auth/me` falla, se borra el token. El logout borra el token local y vuelve al login. Consulta la [guía de verificación en dos pasos](autenticacion-dos-factores.md).
 
 **Oferta.** La portada usa `GET /programs`; el detalle usa `GET /programs/:idOrSlug`. `GET /courses/offerings` requiere sesión. `coursesApi` normaliza los campos de la API para las tarjetas.
 
@@ -78,7 +78,7 @@ El iniciador actual carga `.env.demo.local` con `process.loadEnvFile()` para evi
 
 **Recuperación de acceso.** El portal usa el enlace estándar de Supabase con PKCE. En Supabase Auth agrega la URL exacta de `/restablecer-password` a las redirecciones permitidas y mantén la plantilla estándar **Reset Password** con `{{ .ConfirmationURL }}`. Usa en el navegador el mismo origen configurado en `FRONTEND_URL`. `localhost` y `127.0.0.1` cuentan como orígenes distintos.
 
-Solicita el correo desde `/recuperar-password` y abre el enlace en ese mismo navegador. El portal guarda un verificador temporal, y la API intercambia el código con Supabase antes de cambiar la contraseña. Si ya se usa una plantilla personalizada con `token_hash`, la API sigue aceptando ese enlace. [Recuperación de Supabase Auth](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail).
+Solicita el correo desde `/recuperar-password` y abre el enlace en ese mismo navegador. El portal guarda un verificador temporal y la API intercambia el código con Supabase. Si la cuenta ya tiene un autenticador registrado, se solicita su código antes de cambiar la contraseña. La API también acepta una plantilla personalizada con `token_hash`. [Recuperación de Supabase Auth](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail).
 
 ## Identidad visual y tema
 

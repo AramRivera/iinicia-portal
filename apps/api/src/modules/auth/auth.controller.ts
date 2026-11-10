@@ -18,6 +18,8 @@ import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RecoverPasswordDto, ResetPasswordDto } from './dto/password-recovery.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { VerifyLoginMfaDto, VerifyRecoveryMfaDto } from './dto/verify-login-mfa.dto.js';
+import { readSupabaseTokenClaims } from '../../common/auth/supabase-token-claims.js';
 
 @Controller('auth')
 export class AuthController {
@@ -36,6 +38,24 @@ export class AuthController {
       credentials.email,
       credentials.password,
     );
+  }
+
+  @Post('mfa/verify')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  verifyLoginMfa(@Body() dto: VerifyLoginMfaDto, @Req() request: AuthenticatedRequest) {
+    return this.supabase.verifyLoginMfa(mfaToken(request), dto.factor_id, dto.code);
+  }
+
+  @Post('mfa/recover')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  verifyRecoveryMfa(@Body() dto: VerifyRecoveryMfaDto, @Req() request: AuthenticatedRequest) {
+    return this.supabase.resetPasswordWithMfa(mfaToken(request), dto.factor_id, dto.code, dto.password);
   }
 
   @Post('register')
@@ -98,18 +118,13 @@ export class AuthController {
   }
 }
 
-function issuedAtSeconds(accessToken: string): number | null {
-  const payload = accessToken.split('.')[1];
-  if (!payload) return null;
+function mfaToken(request: AuthenticatedRequest): string {
+  const match = request.headers.authorization?.match(/^Bearer\s+(\S+)$/i);
+  if (!match) throw new UnauthorizedException('Se requiere una sesión de verificación.');
+  return match[1];
+}
 
-  try {
-    const decoded: unknown = JSON.parse(
-      Buffer.from(payload, 'base64url').toString('utf8'),
-    );
-    if (typeof decoded !== 'object' || decoded === null) return null;
-    const iat = (decoded as Record<string, unknown>).iat;
-    return typeof iat === 'number' && Number.isFinite(iat) ? iat : null;
-  } catch {
-    return null;
-  }
+function issuedAtSeconds(accessToken: string): number | null {
+  const { iat } = readSupabaseTokenClaims(accessToken);
+  return typeof iat === 'number' && Number.isFinite(iat) ? iat : null;
 }

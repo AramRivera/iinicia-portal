@@ -12,7 +12,7 @@
 
 ## API NestJS
 
-Usa `Authorization: Bearer <JWT_COORDINADOR>` en las pruebas de coordinación. Para obtener un token real por API usa `POST /api/v1/auth/login`. En los casos de lectura por ámbito compara siempre con la sesión administrativa y revisa todas las páginas del resultado si hay paginación.
+Usa `Authorization: Bearer <JWT_COORDINADOR>` en las pruebas de coordinación. Obtén el token AAL2 con `POST /api/v1/auth/login` seguido de `POST /api/v1/auth/mfa/verify`. En los casos de lectura por ámbito compara con la sesión administrativa y revisa todas las páginas del resultado si hay paginación. [Flujo de verificación en dos pasos](autenticacion-dos-factores.md)
 
 | Caso | Operación | Resultado esperado |
 | --- | --- | --- |

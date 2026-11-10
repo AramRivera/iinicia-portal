@@ -11,16 +11,22 @@ import { AppModule } from '../src/app.module.js';
 import { SupabaseService } from '../src/common/supabase/supabase.service.js';
 import { AuthService } from '../src/modules/auth/auth.service.js';
 
-function fakeAccessToken(issuedAt: number): string {
+function fakeAccessToken(issuedAt: number, aal = 'aal2'): string {
   const encode = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iat: issuedAt })}.signature`;
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ iat: issuedAt, aal })}.signature`;
 }
 
 describe('GET /api/v1/auth/me', () => {
   let app: INestApplication<App>;
   const getAuthenticatedUser = vi.fn();
   const getMe = vi.fn();
+
+  it('rejects the password-only token before loading profile data', async () => {
+    await request(app.getHttpServer()).get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${fakeAccessToken(1_790_000_000, 'aal1')}`).expect(403);
+    expect(getMe).not.toHaveBeenCalled();
+  });
 
   const userId = '11111111-1111-1111-1111-111111111111';
   const issuedAt = 1_790_000_000;
