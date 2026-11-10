@@ -1,5 +1,7 @@
 # IINICIA · Base de datos (Supabase · DEV)
 
+> **Estado vigente:** las recetas siguientes registran diseños históricos. La única migración que actualmente está en `supabase/migrations/` es `20261020110000_initial_schema.sql` y no reproduce el contrato vigente de la API (`roles.id/slug`, `user_roles.role_id`). La serie `20261022*` que se menciona abajo no está disponible como migraciones separadas en esta copia. Antes de ejecutar SQL en un proyecto existente, compara el esquema, grants y políticas activos con [Identidad y Supabase](../../../docs/validacion-identidad-supabase.md). Queda pendiente una línea base reproducible. Para coordinación, el código de matrículas y Moodle usa asignaciones activas en `user_programs`; consulta [los casos pendientes de validación](../../../docs/pruebas-coordinacion-supabase.md).
+
 Esquema PostgreSQL del portal IINICIA, derivado del documento de alcance técnico (secciones 5, 6, 7, 10 y 19).
 Probado en PostgreSQL 16 con un stub de Supabase (RLS, triggers, auditoría y anti-escalada de roles).
 
@@ -111,7 +113,7 @@ Esquema PostgreSQL del portal IINICIA, derivado del documento de alcance técnic
 
 > Las claves (`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`) **no se documentan aquí**.
 > Viven únicamente en el archivo `.env` local / en el gestor de secretos del backend.
-> Ver la sección [Variables de entorno](#variables-de-entorno).
+> Ver [cómo preparar el entorno de desarrollo](../../../docs/bitacora-proyecto.md#reproducir-el-entorno-de-desarrollo).
 
 ---
 

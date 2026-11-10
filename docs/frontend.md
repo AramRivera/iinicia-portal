@@ -1,6 +1,6 @@
 # Frontend INICIA — guía vigente
 
-Revisión del código en `main`: 5 de noviembre de 2026. Esta guía describe `apps/web`. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Para solicitudes y respuestas documentadas consulta [openapi.yaml](openapi.yaml); para el estado de validación de integraciones externas consulta [estado-actual.md](estado-actual.md).
+Revisión del código: 9 de noviembre de 2026. Esta guía describe `apps/web` en `main` y el modo de demostración disponible en la copia local. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Consulta [openapi.yaml](openapi.yaml) para el contrato y la [bitácora](bitacora-proyecto.md) para el historial de cambios.
 
 ## Arquitectura
 
@@ -19,7 +19,7 @@ El navegador ejecuta Next.js 16, React 19, TypeScript y Tailwind CSS 4. El porta
 
 ## Instalación y entorno
 
-Desde PowerShell, en `apps/web`, ejecuta `npm.cmd ci`, copia `.env.example` a `.env.local` y ejecuta `npm.cmd run dev`. Abre <http://localhost:4000>. `Ctrl+C` detiene el servidor. Reinícialo al modificar variables.
+En `apps/web`, ejecuta `npm ci`, copia `.env.example` a `.env.local` si no existe y ejecuta `npm run dev`. Abre <http://localhost:4000>. En PowerShell puedes usar `npm.cmd` en lugar de `npm`. `Ctrl+C` detiene el servidor. Reinícialo al modificar variables.
 
 | Variable | Uso |
 | --- | --- |
@@ -31,6 +31,18 @@ El puerto 4000 corresponde a Next.js; el 3000 en los ejemplos corresponde a Nest
 
 Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el análisis estático: `npm.cmd run lint`. El build verifica compilación y TypeScript; no equivale al resultado del lint ni a pruebas de integración.
 
+### Accesos rápidos de prueba
+
+El iniciador y los botones están disponibles en la copia local al corte de la bitácora; aún no forman parte del commit de `main`. Crea `apps/web/.env.demo.local` con las cuentas de tu entorno de pruebas. El archivo está ignorado por Git.
+
+```dotenv
+NEXT_PUBLIC_DEMO_ACCOUNTS='[{"label":"Estudiante","email":"estudiante@example.test","password":"CONTRASENA_DE_PRUEBA"}]'
+```
+
+Desde `apps/web`, ejecuta `npm run dev:demo` y abre <http://127.0.0.1:4000/login>. Si ya hay un servidor en el puerto 4000, detenlo antes. Cada botón rellena el formulario para que puedas iniciar sesión. El comando escucha solo en la interfaz local y las cuentas se cargan en el navegador de desarrollo. Usa únicamente cuentas de prueba.
+
+El iniciador actual carga `.env.demo.local` con `process.loadEnvFile()` para evitar el error `--env-file= is not allowed in NODE_OPTIONS` del intento anterior. Si pruebas enlaces de correo desde esta URL, configura el mismo origen en `FRONTEND_URL` y en las redirecciones permitidas de Supabase.
+
 ## Mapa de páginas
 
 | Ruta | Uso |
@@ -38,7 +50,7 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 | `/` | Portada con universidad, oferta, admisiones y contacto. |
 | `/universidad`, `/cursos`, `/diplomados`, `/certificaciones`, `/admisiones`, `/contacto` | Entradas públicas. |
 | `/programas/[slug]` | Detalle de programa consultado por identificador o slug. |
-| `/registro`, `/login`, `/recuperar-password`, `/restablecer-password` | Cuenta y recuperación. |
+| `/registro`, `/confirmar-correo`, `/login`, `/recuperar-password`, `/restablecer-password` | Cuenta, confirmación y recuperación. |
 | `/dashboard` | Redirección al panel que corresponde al perfil. |
 | `/dashboard/admin` | Gestión administrativa y superadministrativa según permisos. |
 | `/dashboard/admin/asignaciones` | Asignación de roles y cursos. |
@@ -64,13 +76,9 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 
 **Cliente HTTP.** `api.ts` exporta `authApi`, `coursesApi`, `enrollmentsApi`, `admissionsApi`, `contactApi`, `rolesApi`, `auditApi`, `moodleApi`, `programsApi` y `usersApi`. `ApiError` conserva código HTTP y respuesta. Ante `401`, revisa la sesión; ante `403`, el rol, permiso y ámbito. Si no hay cursos, revisa la sesión, la API y las publicaciones/mapeos.
 
-**Recuperación de acceso.** `POST /auth/recover` solicita el correo y `POST /auth/reset-password` recibe el token de recuperación de un solo uso y la nueva contraseña. Configura `FRONTEND_URL` en la API, agrega la URL completa de `/restablecer-password` a la lista de redirecciones permitidas en Supabase Auth y usa este enlace en la plantilla **Reset Password**:
+**Recuperación de acceso.** El portal usa el enlace estándar de Supabase con PKCE. En Supabase Auth agrega la URL exacta de `/restablecer-password` a las redirecciones permitidas y mantén la plantilla estándar **Reset Password** con `{{ .ConfirmationURL }}`. Usa en el navegador el mismo origen configurado en `FRONTEND_URL`. `localhost` y `127.0.0.1` cuentan como orígenes distintos.
 
-```html
-<a href="{{ .RedirectTo }}#type=recovery&amp;token_hash={{ .TokenHash }}">Restablecer contraseña</a>
-```
-
-La página retira el fragmento de la barra de direcciones y envía el token en el cuerpo de la solicitud. Valida el envío y el restablecimiento con una cuenta de prueba en cada ambiente. [Plantillas de correo de Supabase](https://supabase.com/docs/guides/auth/auth-email-templates).
+Solicita el correo desde `/recuperar-password` y abre el enlace en ese mismo navegador. El portal guarda un verificador temporal, y la API intercambia el código con Supabase antes de cambiar la contraseña. Si ya se usa una plantilla personalizada con `token_hash`, la API sigue aceptando ese enlace. [Recuperación de Supabase Auth](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail).
 
 ## Identidad visual y tema
 

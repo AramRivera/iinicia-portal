@@ -4,7 +4,30 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { IconAlertTriangle, IconCheck } from '@/components/campus-tech/Icons';
+import { IconAlertTriangle } from '@/components/campus-tech/Icons';
+
+type DemoAccount = { label: string; email: string; password: string };
+
+function readDemoAccounts(value: string | undefined): DemoAccount[] {
+  if (!value) return [];
+  try {
+    const accounts: unknown = JSON.parse(value);
+    if (!Array.isArray(accounts)) return [];
+    return accounts.filter((account: unknown): account is DemoAccount => {
+      if (typeof account !== 'object' || account === null) return false;
+      const { label, email, password } = account as Partial<DemoAccount>;
+      return typeof label === 'string' && !!label.trim() &&
+        typeof email === 'string' && !!email.trim() &&
+        typeof password === 'string' && !!password;
+    });
+  } catch {
+    return [];
+  }
+}
+
+const demoAccounts = process.env.NODE_ENV === 'development'
+  ? readDemoAccounts(process.env.NEXT_PUBLIC_DEMO_ACCOUNTS)
+  : [];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -106,6 +129,29 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {demoAccounts.length > 0 && (
+          <section aria-label="Accesos rápidos de prueba" className="space-y-2 border-t border-border pt-4">
+            <p className="text-center text-xs text-muted">Accesos rápidos de prueba</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {demoAccounts.map(({ label, email: demoEmail, password: demoPassword }) => (
+                <button
+                  key={demoEmail}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => {
+                    setEmail(demoEmail);
+                    setPassword(demoPassword);
+                    setError(null);
+                  }}
+                  className="rounded-md border border-border bg-surface-muted px-3 py-2 text-xs font-medium hover:border-primary hover:text-primary disabled:opacity-50"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="text-center text-xs text-muted">
           ¿No tienes una cuenta aún?{' '}

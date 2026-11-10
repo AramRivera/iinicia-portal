@@ -1,6 +1,6 @@
 \# ALCANCE — Portal IINICIA
 
-El estado comprobado del código y las validaciones externas se resume en [`docs/estado-actual.md`](docs/estado-actual.md). Este documento define el alcance objetivo; no se debe interpretar como prueba de que Supabase o Moodle ya estén configurados.
+El estado comprobado del código y las validaciones externas se resume en [`docs/estado-actual.md`](docs/estado-actual.md). La [bitácora del proyecto](docs/bitacora-proyecto.md) recoge el historial y los criterios de aceptación. Este documento define el alcance objetivo; consulta la evidencia antes de considerar completada una integración.
 
 
 
@@ -618,7 +618,7 @@ Las siguientes decisiones deberán resolverse antes de implementar o aceptar las
 
 
 
-Estado documentado: el equipo informó que el proyecto de Supabase fue creado. La conexión desde la API y la aplicación de la migración inicial siguen pendientes de validación; la guía de configuración registra la migración como pendiente de aplicación manual.
+Estado documentado: se comprobó la conexión desde la API, el registro, la confirmación, el inicio de sesión y lecturas puntuales con JWT reales. El esquema activo difiere de la migración inicial; falta una línea base reproducible y comprobar las escrituras y el aislamiento de coordinación. SMTP quedó aplazado y la recuperación no se completó. Véase [Identidad y Supabase](docs/validacion-identidad-supabase.md).
 
 
 
@@ -648,7 +648,7 @@ No se necesitan credenciales reales para diseñar el modelo ni planificar las mi
 
 
 
-Estado documentado: el código incluye un cliente Moodle y flujos de integración, pero este repositorio no demuestra que una instalación Moodle esté disponible ni que los Web Services, permisos o SSO estén habilitados en una instancia real. La versión objetivo y el estado del entorno deben confirmarse con el equipo.
+Estado documentado: se identificó una instalación local Moodle 5.3+ (build `20261021`) y el Web Service respondió a la comprobación de salud. Esto no acredita el catálogo completo de funciones, permisos, SSO o el curso de prueba en el entorno de entrega.
 
 
 

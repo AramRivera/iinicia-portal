@@ -1,10 +1,12 @@
 # Estado actual del proyecto IINICIA
 
 **Revisión documental y del código:** 9 de noviembre de 2026
-**Rama de referencia:** `main`
+**Rama de referencia:** `main` local (`ad33159`)
 **Alcance vigente del curso de prueba:** un curso
 
 Este documento separa lo que se observa en el repositorio de lo que requiere confirmación en servicios externos. Los módulos, variables de entorno, mocks, ejemplos y documentos por sí solos no prueban que Supabase o Moodle estén conectados ni que una operación real haya funcionado.
+
+Consulta la [bitácora del proyecto](bitacora-proyecto.md) para el historial de ramas, las decisiones, las pruebas y la matriz de los 20 criterios de aceptación. Para repetir las pruebas reales, usa [Identidad y Supabase](validacion-identidad-supabase.md) y [Coordinación con Supabase](pruebas-coordinacion-supabase.md).
 
 ## Alcance vigente
 
@@ -16,17 +18,17 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 
 | Componente | Evidencia | Validación pendiente |
 | --- | --- | --- |
-| Frontend | Rediseño de navegación y catálogo integrado. Pantallas de recuperación conectadas a la API y accesos rápidos retirados del login. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. |
-| Backend | Las solicitudes propias quedan pendientes. Las asignaciones a terceros exigen permiso y ámbito. OpenAPI incluye recuperación y restablecimiento. | Validar autorización y revocación de acceso con las cuentas reales de demostración. |
-| Supabase | La API local consultó la tabla de roles y reportó `ok` en `GET /api/v1/health`. El SQL inicial usa `roles.code` y `user_roles.role_code`; la API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`. | Comparar el esquema activo y acordar una migración compatible antes de aplicar SQL. Verificar RLS con JWT de diferentes roles. Configurar URL y plantilla de recuperación de acuerdo con [la guía del portal](frontend.md). |
-| Moodle | El Web Service respondió a la comprobación de salud de la API local. Hay [un recurso didáctico candidato](cursos/html-basico/GUIA-MOODLE.txt) para el curso único. | Confirmar nombre e ID del curso, versión, permisos, SSO y mapeo de roles. Registrar evidencia de las actividades y de acceso por rol. |
+| Frontend | Rediseño de navegación y catálogo y pantallas de cuenta integrados. Los accesos rápidos de demostración existen como cambios locales sin commit. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. |
+| Backend | Solicitudes propias pendientes; autorización y ámbito en matrículas y consultas de Moodle revisadas. OpenAPI incluye recuperación y restablecimiento. | Corregir la autoasignación a programas desde la ruta de vinculación y comprobar el alcance con cuentas reales. |
+| Supabase | Conectividad, alta pública, confirmación, login y lecturas puntuales por rol comprobados. El SQL inicial usa `roles.code` y `user_roles.role_code`; la API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`. | Versionar un esquema compatible, comprobar RLS de coordinación y escrituras privilegiadas. SMTP quedó aplazado y falta completar la recuperación. |
+| Moodle | Instalación local Moodle 5.3+ (build `20261021`) y Web Service comprobados. Hay [un recurso didáctico candidato](cursos/html-basico/GUIA-MOODLE.txt) para el curso único. | Confirmar nombre e ID del curso, permisos, SSO y mapeo de roles. Registrar evidencia de las actividades y de acceso por rol. |
 | Operación | Compilaciones de API y portal y suites unitarias y de API ejecutadas localmente. | Cerrar configuración de despliegue, HTTPS, respaldos y recuperación. |
 
 ## Comprobaciones del 9 de noviembre
 
-- API: 68 pruebas unitarias y 24 pruebas HTTP de extremo a extremo con servicios simulados. Compilación correcta.
-- Portal: compilación correcta. ESLint reportó 93 errores y 41 avisos, los mismos totales que en `main` antes de integrar los cambios de la API.
-- Conectividad: `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local que estaba en ejecución. El envío de correo, RLS, SSO y las actividades del curso requieren sus propias comprobaciones.
+- API en `ad33159`: 81 pruebas unitarias y 27 pruebas HTTP con servicios simulados. Compilación correcta. El lint terminó con dos avisos de tipos en `moodle.client.ts`.
+- Portal: la compilación pasó en la revisión previa, cuyo lint reportó 93 errores y 41 avisos. Al repetir el lint en la copia local con los cambios de demo, reportó 94 errores y 40 avisos; sigue pendiente.
+- Conectividad: `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local. Las comprobaciones reales de identidad y RLS se detallan en [su registro de evidencia](validacion-identidad-supabase.md#evidencia-de-acceso-comprobada). SSO y las actividades del curso aún no se acreditaron.
 
 ## Demostración del curso único
 

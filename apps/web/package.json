@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 4000",
+    "dev:demo": "node scripts/dev-demo.cjs",
     "build": "next build",
     "start": "next start -p 4000",
     "lint": "eslint"
