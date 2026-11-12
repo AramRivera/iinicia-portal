@@ -98,7 +98,6 @@ export function SiteFooter() {
           <p>
             © 2026 Instituto de Innovación y Ciencias Aplicadas. Todos los derechos reservados.
           </p>
-          <p>Aprende sin fronteras con Campus Tech OS.</p>
         </div>
       </div>
     </footer>

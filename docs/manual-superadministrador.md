@@ -12,6 +12,8 @@ Este manual documenta el funcionamiento y operación integral del panel de admin
 - **Ruta del Panel:** `http://localhost:4000/dashboard/admin`
 - **Requisitos de Acceso:** Cuenta de usuario con rol activo de `superadmin` o `admin`.
 
+El acceso requiere contraseña y TOTP en cada inicio. En la primera entrada la cuenta configura su autenticador; después debe proporcionar un código de seis dígitos. Consulta [Verificación en dos pasos](autenticacion-dos-factores.md). Para el panel no basta con un JWT provisional AAL1.
+
 Las cuentas de prueba deben crearse en el ambiente autorizado y recibir sus roles por el flujo administrativo establecido. No se documentan contraseñas en este manual.
 
 > Si un usuario con rol exclusivo de aspirante o estudiante intenta navegar directamente a esta URL, el sistema validará sus permisos mediante `AuthContext` y lo redirigirá a su panel correspondiente (`/dashboard/estudiante` o `/dashboard/aspirante`).

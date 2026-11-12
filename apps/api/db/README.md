@@ -1,6 +1,8 @@
 # IINICIA · Base de datos (Supabase · DEV)
 
-> **Estado vigente:** las recetas siguientes registran diseños históricos. La migración inicial `20261020110000_initial_schema.sql` no reproduce el contrato vigente de la API (`roles.id/slug`, `user_roles.role_id`). La serie `20261022*` que se menciona abajo no está disponible como migraciones separadas en esta copia. Antes de ejecutar SQL en un proyecto existente, compara el esquema, grants y políticas activos con [Identidad y Supabase](../../../docs/validacion-identidad-supabase.md). Queda pendiente una línea base reproducible. La [migración de MFA](../../../docs/autenticacion-dos-factores.md) es independiente del esquema inicial. Para coordinación, el código de matrículas y Moodle usa asignaciones activas en `user_programs`. [Casos pendientes de validación](../../../docs/pruebas-coordinacion-supabase.md)
+> **Estado vigente:** las recetas siguientes registran diseños históricos y no deben ejecutarse como procedimiento actual. La migración inicial `20261020110000_initial_schema.sql` no reproduce el contrato vigente de la API (`roles.id/slug`, `user_roles.role_id`). La serie `20261022*` que se menciona abajo no está disponible como migraciones separadas en esta copia. Antes de ejecutar SQL en un proyecto existente, compara esquema, grants y políticas activos con [Identidad y Supabase](../../../docs/validacion-identidad-supabase.md). Queda pendiente una línea base reproducible. La [migración de MFA](../../../docs/autenticacion-dos-factores.md) es independiente del esquema inicial y no consta aplicada al proyecto remoto. Para coordinación, el código de matrículas y Moodle usa asignaciones activas en `user_programs`. [Casos pendientes de validación](../../../docs/pruebas-coordinacion-supabase.md)
+
+> El PDF pedía dos cursos; el equipo docente cambió el requisito a **un curso de prueba**. El `seed.sql` y el apartado 12.5 de `IINICIA_DATABASE.sql` conservan dos cursos de ejemplo históricos. No cargues esos ejemplos como la configuración vigente.
 
 Esquema PostgreSQL del portal IINICIA, derivado del documento de alcance técnico (secciones 5, 6, 7, 10 y 19).
 Probado en PostgreSQL 16 con un stub de Supabase (RLS, triggers, auditoría y anti-escalada de roles).
@@ -20,22 +22,14 @@ supabase/
 │   ├── 20261022000800_seed_catalogs.sql              roles, permisos y matriz rol-permiso (todos los ambientes)
 │   ├── 20261022000900_rls_policies.sql               Row Level Security
 │   └── 20261022001000_views_grants.sql               vistas y privilegios (lista blanca)
-├── seed.sql                                          solo DEV: los 2 cursos de ejemplo como programas
+├── seed.sql                                          semilla histórica de dos cursos; no vigente
 ├── scripts/bootstrap_superadmin.sql                  crea el primer superadministrador
 └── 1100_sessions_password_changed_at.sql             migración incremental: revocación de sesiones
 ```
 
-## Cómo aplicarlo
+## Recetas históricas: no aplicar sin revisión
 
-**Opción A (rápida, SQL Editor del dashboard):** pega `iinicia_schema_completo.sql` y ejecútalo. Después pega `seed.sql`.
-
-**Opción B (Supabase CLI):** `supabase link --project-ref <ref>` y `supabase db push` (aplica `migrations/` en orden).
-
-Luego: regístrate desde el portal (o Authentication → Users → Add user con *Auto Confirm*) y corre `scripts/bootstrap_superadmin.sql` con tu correo.
-
-**Proyecto que ya existe:** `iinicia_schema_completo.sql` es un `CREATE TABLE` y
-falla sobre un esquema ya creado. Aplica solo la migración incremental
-`1100_sessions_password_changed_at.sql` (idempotente).
+Las instrucciones antiguas de ejecutar `iinicia_schema_completo.sql`, cargar `seed.sql` o correr `supabase db push` presuponen un orden/esquema que no coincide con la API vigente. No ejecutes esos pasos en un proyecto existente ni en producción. Primero prepara y revisa una línea base compatible, contrástala con el estado remoto y aplica las migraciones de forma controlada. Para el hook de AAL2 revisa además si ya existe `pgrst.db_pre_request`; sigue [la guía MFA](../../../docs/autenticacion-dos-factores.md).
 
 ## Modelo
 
@@ -91,7 +85,7 @@ El cambio también está integrado en `iinicia_schema_completo.sql` (columna en 
 
 ## Pendiente para staging/producción
 
-Aplicar las mismas migraciones (sin `seed.sql`) en cada proyecto nuevo.
+Preparar y aprobar una línea base de esquema que coincida con la API actual, migrarla en una base vacía y registrar pruebas de RLS/grants. Aplicar por separado la migración de MFA en el ambiente autorizado después de revisar el hook existente. No cargar `seed.sql` de dos cursos; la entrega contempla un curso único seleccionado y configurado en Moodle.
 
 # IINICIA · Base de datos (Supabase · DEV)
 

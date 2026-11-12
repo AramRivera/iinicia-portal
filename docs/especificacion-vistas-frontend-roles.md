@@ -42,9 +42,11 @@ Rutas públicas accesibles sin autenticación o con navegación continua integra
   - Datos de contacto institucional, enlaces legales (Aviso de privacidad, Términos y condiciones) y redes oficiales.
 
 ### 2.2. Autenticación y Recuperación
-- `/login`: Formulario de acceso único (Email, Contraseña, botón de envío, enlaces a registro y recuperación).
+- `/login`: Formulario por pasos. Primero valida email y contraseña; en el primer acceso configura TOTP y en los siguientes solicita el código actual. No abre el panel hasta verificar una sesión AAL2.
 - `/registro`: Formulario de registro para aspirantes (Nombre, Apellidos, Correo, Teléfono, Contraseña, Confirmación).
-- `/recuperar-password`: Solicitud de restablecimiento vía correo electrónico (Supabase Auth).
+- `/recuperar-password`: Solicitud de restablecimiento vía correo electrónico (Supabase Auth). Si la cuenta tiene TOTP registrado, la recuperación también verifica ese factor antes de cambiar la contraseña.
+
+Contrato vigente: `POST /api/v1/auth/login` devuelve una continuación AAL1 con `step: setup` o `step: verify`; `POST /api/v1/auth/mfa/verify` completa el login. El detalle de pantallas y errores está en [Verificación en dos pasos](autenticacion-dos-factores.md) y [OpenAPI](openapi.yaml).
 
 ---
 
@@ -231,7 +233,8 @@ El coordinador cuenta con atribuciones operativas dentro del alcance de su facul
 
 | Módulo / Vista | Endpoint API | Método | Rol Mínimo Requerido | Propósito |
 | :--- | :--- | :---: | :---: | :--- |
-| **Auth** | `/api/v1/auth/login` | `POST` | Público | Autenticación y obtención de JWT de sesión. |
+| **Auth** | `/api/v1/auth/login` | `POST` | Público | Validación de contraseña y continuación AAL1 para preparar/verificar TOTP. |
+| **Auth** | `/api/v1/auth/mfa/verify` | `POST` | Continuación AAL1 | Verifica TOTP y entrega sesión AAL2. |
 | **Perfil** | `/api/v1/auth/me` | `GET` | Autenticado | Retorna datos de perfil, roles y vínculo de Moodle. |
 | **Usuarios** | `/api/v1/users` | `GET` | `admin` | Consulta y filtrado paginado de usuarios. |
 | **Usuarios** | `/api/v1/users/admin-create` | `POST` | `admin` | Alta administrativa con rol específico y sincronización a Moodle. |

@@ -56,6 +56,8 @@ Códigos HTTP estándar utilizados:
 
 ## 2. Flujo de Autenticación e Identidad con Supabase
 
+> **Contrato histórico:** los ejemplos de registro y login que siguen describen una respuesta de sesión directa y ya no son válidos. El contrato vigente exige TOTP: el login devuelve `step: setup` o `step: verify` y una continuación AAL1; `POST /api/v1/auth/mfa/verify` entrega la sesión AAL2. Consulta [Verificación en dos pasos](autenticacion-dos-factores.md) y [OpenAPI](openapi.yaml) antes de integrar.
+
 ### 2.1 Flujo de Registro (`POST /api/v1/auth/register`)
 - **Público**: Cualquier visitante puede registrarse.
 - **Estado Inicial**: Se le asigna automáticamente el rol `aspirante` y estado de cuenta `pendiente`.

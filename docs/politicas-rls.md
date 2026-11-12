@@ -1,5 +1,7 @@
 # Políticas de Row Level Security (RLS)
 
+> Documento de diseño. No acredita que estas políticas o grants estén aplicados al Supabase remoto. Para MFA, la migración `20261110120000_require_mfa_data_api.sql` exige AAL2 en PostgREST antes de evaluar las operaciones de datos; su aplicación remota sigue pendiente. MFA no reemplaza RLS, grants ni autorización de NestJS. Consulta [Verificación en dos pasos](autenticacion-dos-factores.md) y [Estado actual](estado-actual.md).
+
 - **Estado:** Aprobado como base de la migración inicial
 - **Fecha:** 2026-10-20
 - **Modelo de acceso:** [ADR-001](decisiones/ADR-001-acceso-supabase.md)
@@ -125,6 +127,12 @@ Las claves privilegiadas del servidor pueden omitir RLS. Para esas rutas NestJS 
 5. Registrar auditoría segura y devolver una respuesta sin secretos.
 
 El cliente privilegiado permanecerá aislado del cliente que usa JWT. No se permitirá seleccionar la credencial mediante parámetros de solicitud ni reutilizarla como acceso general a datos.
+
+## Requisito de nivel AAL2
+
+La API del portal rechaza sesiones que no hayan completado TOTP y exige `aal2` en rutas protegidas. Para el acceso de usuarios a Supabase Data API, la migración `20261110120000_require_mfa_data_api.sql` instala `public.iinicia_require_mfa` como `pgrst.db_pre_request`: rechaza JWT del rol `authenticated` cuyo `aal` no sea `aal2`, incluyendo RPC y vistas, antes de aplicar RLS. El hook no da permisos a la cuenta; después de superar MFA las políticas y grants siguen restringiendo cada operación.
+
+La migración se detiene si ya existe un hook distinto en `pgrst.db_pre_request`; en ese caso se debe integrar la comprobación en el hook existente. El alcance cubre PostgREST/Data API: otros productos o endpoints deben protegerse por separado. La función tampoco sustituye los controles de NestJS y no debe asumirse activa hasta registrar la aplicación y probar AAL1/AAL2 en el ambiente correspondiente.
 
 ## Casos de prueba de seguridad requeridos
 

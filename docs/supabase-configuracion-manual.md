@@ -7,6 +7,8 @@
 
 > La migración de esta guía corresponde al diseño inicial. La API vigente consulta campos como `roles.id`, `roles.slug` y `user_roles.role_id`, que la migración no crea. Compara primero el esquema del ambiente activo con el contrato de la API y prepara una migración compatible revisada antes de seguir los pasos de aplicación.
 
+> **No ejecutes el SQL inicial de esta guía como si fuera el esquema vigente.** La línea base compatible todavía está pendiente. La migración de MFA `20261110120000_require_mfa_data_api.sql` es independiente: también requiere revisión del hook `pgrst.db_pre_request` y no consta aplicada al proyecto remoto.
+
 Consulta [Identidad y Supabase](validacion-identidad-supabase.md) para los resultados del proyecto conectado, las consultas de diagnóstico y los pasos de confirmación y recuperación.
 
 ## Alcance
@@ -25,15 +27,11 @@ No contiene datos de cursos, usuarios de prueba, credenciales reales, tokens Moo
 4. No ejecutes la migración contra producción ni contra un proyecto con datos sin autorización expresa y respaldo revisado.
 5. No pegues claves de Supabase, tokens o credenciales en archivos, consultas, logs ni en el chat.
 
-## Aplicar desde el dashboard
+## Procedimiento histórico (no aplicar sin revisión de esquema)
 
-1. Abre el **SQL Editor** del proyecto confirmado.
-2. Crea una consulta nueva y pega el contenido completo de `supabase/migrations/20261020110000_initial_schema.sql`.
-3. Ejecuta la consulta una sola vez. El script usa una transacción y no contiene instrucciones de borrado de tablas o datos.
-4. Si el dashboard devuelve un error, detente y conserva el mensaje de error sin secretos. No elimines objetos ni vuelvas a ejecutar parcialmente el script. Revisa si la transacción fue revertida antes de decidir cómo corregirlo.
-5. Si finaliza correctamente, ejecuta las verificaciones siguientes y registra la fecha y el resultado en el control de migraciones del equipo.
+Los pasos siguientes ya no son una receta aprobada para el ambiente actual. La migración `20261020110000_initial_schema.sql` no coincide con los nombres que consulta la API (`roles.id/slug`, `user_roles.role_id`). **No pegues ni ejecutes ese archivo en el proyecto remoto.** Primero se requiere una línea base compatible revisada y un plan de aplicación para el esquema que ya existe. Las consultas de diagnóstico que siguen son de solo lectura.
 
-La ejecución manual desde SQL Editor no sincroniza automáticamente el historial de migraciones de una CLI. El repositorio seguirá siendo la fuente versionada; el equipo debe registrar qué archivo se aplicó en cada proyecto.
+Si en otro ambiente aislado se aprueba expresamente probar esta migración inicial, registra el ambiente y revisa el archivo completo antes de aplicarlo. Una ejecución manual desde SQL Editor no sincroniza automáticamente el historial de migraciones de una CLI.
 
 ## Verificaciones de esquema
 
@@ -168,3 +166,7 @@ No se debe modificar manualmente el historial interno de migraciones de Supabase
 El SQL Editor ejecuta consultas con privilegios administrativos, por lo que una consulta exitosa allí **no demuestra** que RLS funcione para un usuario normal. La validación de políticas requiere pruebas posteriores con JWT de usuarios de prueba y casos de alumno, profesor, coordinador, administrador e identidad `inactive`, según [`politicas-rls.md`](politicas-rls.md).
 
 La migración no crea cursos ni usuarios de demostración y no verifica Web Services Moodle. Esas tareas pertenecen a fases posteriores.
+
+## MFA de Supabase Auth y Data API
+
+El portal requiere TOTP en cada inicio de sesión y las rutas de NestJS exigen AAL2. En el proyecto destino, habilita Enrollment y Verification de TOTP y revisa la migración [`20261110120000_require_mfa_data_api.sql`](../supabase/migrations/20261110120000_require_mfa_data_api.sql). No la apliques a ciegas si `pgrst.db_pre_request` ya está configurado: integra la comprobación AAL2 en el hook existente. Después verifica peticiones `authenticated` con JWT AAL1 (rechazadas) y AAL2 (sujetas a RLS). Sigue [Verificación en dos pasos](autenticacion-dos-factores.md) y registra el resultado sin tokens ni códigos.

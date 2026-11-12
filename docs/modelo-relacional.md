@@ -14,7 +14,7 @@ Este documento define el modelo lógico de la migración [`20261020110000_initia
 
 Supabase Auth es dueño de `auth.users` y de las credenciales. Moodle es dueño de cursos, actividades, calificaciones, progreso y matrículas efectivas. La base de datos del portal guarda identidad referenciada, permisos administrativos, vínculos mínimos con Moodle, solicitudes y estado de sincronización; no duplica el contenido académico.
 
-Se asume una instalación Moodle activa para la primera versión, con múltiples cursos. Si en el futuro el portal opera simultáneamente con varias instalaciones Moodle, se agregará una entidad de instancia y la unicidad del curso pasará a ser compuesta por instancia e ID externo.
+Se asume una instalación Moodle activa. El portal puede mantener varios mapeos de oferta, pero la entrega actual debe configurar y acreditar un solo curso completo de prueba. Si en el futuro opera simultáneamente con varias instalaciones Moodle, se agregará una entidad de instancia y la unicidad del curso pasará a ser compuesta por instancia e ID externo.
 
 ## Diagrama lógico
 

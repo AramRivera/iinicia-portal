@@ -2,6 +2,9 @@
 -- PROYECTO: REDISEÑO Y MIGRACIÓN DEL PORTAL IINICIA (VERSIÓN DEFINITIVA PRODUCCIÓN)
 -- ARQUITECTURA: Next.js + NestJS + Supabase (PostgreSQL 15+) + Moodle LMS
 -- BASE DE DATOS OFICIAL: IINICIA_DATABASE
+-- HISTÓRICO: este SQL no coincide con el contrato vigente de la API y no debe
+-- ejecutarse como esquema actual. El apartado 12.5 conserva dos cursos de
+-- ejemplo obsoletos; el alcance actualizado requiere un solo curso de prueba.
 -- =================================================================================
 
 BEGIN;
@@ -1138,7 +1141,8 @@ VALUES
     )
 ON CONFLICT (code) DO NOTHING;
 
--- 12.5 Los 2 Cursos de Ejemplo Obligatorios en Moodle (Sección 8.1)
+-- 12.5 EJEMPLOS HISTÓRICOS: dos cursos del PDF anterior al cambio del profesor.
+-- No representan la configuración vigente, que requiere un solo curso de prueba.
 INSERT INTO public.course_mappings (
     program_id, portal_course_code, slug, course_name, course_description,
     term_or_module, is_mandatory, moodle_course_id, moodle_shortname, is_active

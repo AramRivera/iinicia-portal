@@ -1,5 +1,7 @@
 # Decisión Técnica: Política de Acceso a Supabase y Row Level Security (RLS)
 
+> Referencia de diseño histórica. Sus ejemplos de tablas, funciones y políticas no prueban el esquema desplegado y pueden diferir de la API vigente. La decisión canónica es [ADR-001](decisiones/ADR-001-acceso-supabase.md); el estado observado está en [Estado actual](estado-actual.md). MFA ahora exige AAL2; su migración de Data API aún no está acreditada en remoto.
+
 **Proyecto:** IINICIA — Rediseño y Migración del Portal  
 **Fecha:** Octubre 2026  
 **Referencia:** `AGENTS.md` (Sección 21), `ALCANCE.md` (Secciones 4, 5.2, 9) y `IINICIA_DATABASE.sql`.

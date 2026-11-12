@@ -21,7 +21,7 @@ El portal integra la totalidad de las rutas especificadas en el documento de esp
 | `/certificaciones` | **Certificaciones** | Credenciales digitales profesionales de 60 a 80 horas lectivas. |
 | `/admisiones` | **Admisiones** | Ruta de ingreso en 4 pasos, requisitos documentales y fechas clave. |
 | `/contacto` | **Contacto y Soporte** | Directorio institucional y formulario de consultas y asistencia técnica. |
-| `/login` | **Iniciar Sesión** | Acceso al campus con botones de verificación rápida y recuperación. |
+| `/login` | **Iniciar Sesión** | Acceso con contraseña y verificación TOTP obligatoria; incluye el enlace de recuperación. |
 | `/registro` | **Registro de Aspirantes** | Alta de usuario con creación automática del rol inicial provisional `aspirante`. |
 | `/recuperar-password` | **Recuperación de Acceso** | Restablecimiento de credenciales vía correo institucional o personal. |
 | `/dashboard` | **Mi IINICIA (Hub)** | Redirige automáticamente al panel correspondiente según el rol activo. |

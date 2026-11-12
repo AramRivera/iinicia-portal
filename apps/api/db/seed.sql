@@ -1,5 +1,7 @@
 -- =====================================================================
--- seed.sql · SOLO DEV. Datos de ejemplo (no va a staging/producción).
+-- HISTÓRICO: semilla SOLO DEV, no ejecutar como configuración del proyecto.
+-- El requisito actual es un curso de prueba; los dos programas siguientes
+-- reflejan el PDF previo al cambio del profesor y deben revisarse antes de usar.
 -- =====================================================================
 
 -- Los dos cursos de ejemplo del PDF (sección 8.1) como programas del portal

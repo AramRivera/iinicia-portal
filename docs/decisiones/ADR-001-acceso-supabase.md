@@ -86,3 +86,9 @@ La eliminación permanente, la anonimización y los plazos legales de retención
 ## Validación pendiente
 
 Esta decisión es de diseño. Aún se requiere validar la configuración de firma de tokens del proyecto, las políticas mediante pruebas con usuarios de distintos roles y el flujo de deshabilitación/reactivación de Auth en el proyecto remoto. La creación del proyecto Supabase no se considera evidencia de que la aplicación esté conectada.
+
+## Adenda — MFA y Data API (12 de noviembre de 2026)
+
+El login del portal ahora requiere TOTP para todos los roles. NestJS solo emite una sesión de aplicación después de que Supabase confirma AAL2; la migración `20261110120000_require_mfa_data_api.sql` aplica el mismo umbral a las solicitudes `authenticated` de PostgREST mediante `pgrst.db_pre_request`. Esta capa complementa el modelo mixto: no cambia qué operaciones usan JWT/RLS o credencial privilegiada, ni convierte RLS en un control de AAL2.
+
+La implementación y la migración se probaron contra servicios en contenedores locales. No se ha confirmado su aplicación al proyecto Supabase remoto. Antes de aplicarla, revisar si el proyecto ya usa `pgrst.db_pre_request`, integrar los hooks si corresponde y verificar las políticas y grants con JWT AAL1 y AAL2. Véase [la guía MFA](../autenticacion-dos-factores.md).

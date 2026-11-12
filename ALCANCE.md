@@ -1,10 +1,10 @@
-\# ALCANCE — Portal IINICIA
+# ALCANCE — Portal IINICIA
 
 El estado comprobado del código y las validaciones externas se resume en [`docs/estado-actual.md`](docs/estado-actual.md). La [bitácora del proyecto](docs/bitacora-proyecto.md) recoge el historial y los criterios de aceptación. Este documento define el alcance objetivo; consulta la evidencia antes de considerar completada una integración.
 
 
 
-\## 1. Propósito
+## 1. Propósito
 
 
 
@@ -16,7 +16,7 @@ El documento técnico del proyecto IINICIA es la fuente principal de requisitos.
 
 
 
-\## 2. Estado inicial
+## 2. Estado inicial
 
 
 
@@ -24,9 +24,9 @@ El repositorio ya cuenta con la estructura básica de dos aplicaciones:
 
 
 
-\- `apps/web`: Next.js, React, TypeScript, Tailwind CSS, ESLint y App Router.
+- `apps/web`: Next.js, React, TypeScript, Tailwind CSS, ESLint y App Router.
 
-\- `apps/api`: NestJS y TypeScript.
+- `apps/api`: NestJS y TypeScript.
 
 
 
@@ -38,11 +38,11 @@ Antes de implementar funcionalidades, inspeccionar la estructura real del reposi
 
 
 
-\## 3. Distribución del trabajo
+## 3. Distribución del trabajo
 
 
 
-\### Backend — responsable: desarrollador backend
+### Backend — responsable: desarrollador backend
 
 
 
@@ -54,33 +54,33 @@ Responsabilidades:
 
 
 
-\- API REST para el portal.
+- API REST para el portal.
 
-\- Validación de solicitudes.
+- Validación de solicitudes.
 
-\- Autenticación y autorización en el servidor.
+- Autenticación y autorización en el servidor.
 
-\- Integración con Supabase Auth y PostgreSQL.
+- Integración con Supabase Auth y PostgreSQL.
 
-\- Gestión de perfiles, roles y estados.
+- Gestión de perfiles, roles y estados.
 
-\- Gestión de programas y solicitudes de inscripción.
+- Gestión de programas y solicitudes de inscripción.
 
-\- Autorización de matrículas.
+- Autorización de matrículas.
 
-\- Integración con Moodle mediante Web Services oficiales.
+- Integración con Moodle mediante Web Services oficiales.
 
-\- Sincronización de usuarios y matrículas.
+- Sincronización de usuarios y matrículas.
 
-\- Auditoría de operaciones relevantes.
+- Auditoría de operaciones relevantes.
 
-\- Manejo de errores, configuración y seguridad.
+- Manejo de errores, configuración y seguridad.
 
-\- Documentación OpenAPI y pruebas.
+- Documentación OpenAPI y pruebas.
 
 
 
-\### Frontend — responsable: otro integrante
+### Frontend — responsable: otro integrante
 
 
 
@@ -92,21 +92,21 @@ Responsabilidades:
 
 
 
-\- Portal institucional.
+- Portal institucional.
 
-\- Navegación y componentes visuales.
+- Navegación y componentes visuales.
 
-\- Registro, inicio de sesión y recuperación de acceso.
+- Registro, inicio de sesión y recuperación de acceso.
 
-\- Perfiles y paneles según el rol.
+- Perfiles y paneles según el rol.
 
-\- Consumo de la API de NestJS.
+- Consumo de la API de NestJS.
 
-\- Catálogo de programas y cursos.
+- Catálogo de programas y cursos.
 
-\- Interfaz administrativa.
+- Interfaz administrativa.
 
-\- Diseño responsive y accesibilidad.
+- Diseño responsive y accesibilidad.
 
 
 
@@ -114,7 +114,7 @@ No modificar páginas, estilos, componentes ni configuración del frontend por i
 
 
 
-\### Moodle
+### Moodle
 
 
 
@@ -122,17 +122,17 @@ Moodle será responsable de:
 
 
 
-\- Contenidos y actividades académicas.
+- Contenidos y actividades académicas.
 
-\- Cursos y categorías.
+- Cursos y categorías.
 
-\- Roles académicos.
+- Roles académicos.
 
-\- Matrículas.
+- Matrículas.
 
-\- Calificaciones y progreso.
+- Calificaciones y progreso.
 
-\- Finalización de actividades y cursos.
+- Finalización de actividades y cursos.
 
 
 
@@ -140,7 +140,7 @@ La instalación, configuración y contenido de **un curso de prueba** forman par
 
 
 
-\## 4. Arquitectura
+## 4. Arquitectura
 
 
 
@@ -156,25 +156,27 @@ Reglas:
 
 
 
-1\. El frontend consumirá la API de NestJS para las operaciones de negocio.
+1. El frontend consumirá la API de NestJS para las operaciones de negocio.
 
-2\. Supabase Auth gestionará las identidades y credenciales.
+2. Supabase Auth gestionará las identidades y credenciales.
 
-3\. PostgreSQL almacenará los perfiles y relaciones administrativas.
+3. PostgreSQL almacenará los perfiles y relaciones administrativas.
 
-4\. NestJS verificará permisos antes de ejecutar operaciones protegidas.
+4. NestJS verificará permisos antes de ejecutar operaciones protegidas.
 
-5\. Moodle se integrará exclusivamente desde el backend mediante Web Services habilitados.
+5. Moodle se integrará exclusivamente desde el backend mediante Web Services habilitados.
 
-6\. Las contraseñas no se almacenarán en tablas propias ni se copiarán en texto plano entre sistemas.
+6. Las contraseñas no se almacenarán en tablas propias ni se copiarán en texto plano entre sistemas.
 
-7\. No se accederá directamente a la base de datos de Moodle desde React.
+7. No se accederá directamente a la base de datos de Moodle desde React.
 
-8\. Las credenciales privilegiadas permanecerán en el servidor.
+8. Las credenciales privilegiadas permanecerán en el servidor.
+
+Todo inicio de sesión interactivo deberá completar verificación TOTP con Supabase Auth antes de recibir acceso al portal. La primera entrada configura el autenticador y las siguientes solicitan un código; las rutas protegidas requieren una sesión de nivel AAL2. La confirmación por correo y la recuperación de contraseña siguen siendo flujos separados.
 
 
 
-\## 5. Roles
+## 5. Roles
 
 
 
@@ -182,19 +184,19 @@ El sistema deberá admitir los siguientes roles de aplicación:
 
 
 
-\- `superadmin`
+- `superadmin`
 
-\- `admin`
+- `admin`
 
-\- `coordinator`
+- `coordinator`
 
-\- `teacher`
+- `teacher`
 
-\- `student`
+- `student`
 
-\- `applicant`
+- `applicant`
 
-\- `support`
+- `support`
 
 
 
@@ -214,19 +216,19 @@ Reglas mínimas:
 
 
 
-\- Aspirante: administrar su información y consultar el estado de admisión.
+- Aspirante: administrar su información y consultar el estado de admisión.
 
-\- Estudiante: consultar su perfil, programa y cursos autorizados.
+- Estudiante: consultar su perfil, programa y cursos autorizados.
 
-\- Profesor: consultar los cursos donde tenga asignación docente.
+- Profesor: consultar los cursos donde tenga asignación docente.
 
-\- Coordinador: operar dentro de los programas o ámbitos que tenga asignados.
+- Coordinador: operar dentro de los programas o ámbitos que tenga asignados.
 
-\- Administrador: gestionar usuarios, roles, estados y autorizaciones según sus permisos.
+- Administrador: gestionar usuarios, roles, estados y autorizaciones según sus permisos.
 
-\- Soporte: acceso operativo limitado.
+- Soporte: acceso operativo limitado.
 
-\- Superadministrador: configuración global y operaciones administrativas privilegiadas.
+- Superadministrador: configuración global y operaciones administrativas privilegiadas.
 
 
 
@@ -234,7 +236,7 @@ La autorización se comprobará en el backend. Ocultar botones en el frontend no
 
 
 
-\## 6. Modelo de datos de referencia
+## 6. Modelo de datos de referencia
 
 
 
@@ -242,21 +244,21 @@ El modelo inicial deberá contemplar:
 
 
 
-\- `profiles`: perfil asociado a la identidad de Supabase Auth.
+- `profiles`: perfil asociado a la identidad de Supabase Auth.
 
-\- `roles`: catálogo de roles.
+- `roles`: catálogo de roles.
 
-\- `user\_roles`: asignaciones de roles a usuarios.
+- `user_roles`: asignaciones de roles a usuarios.
 
-\- `programs`: programas académicos.
+- `programs`: programas académicos.
 
-\- `user\_programs`: relación de usuarios con programas y su estado.
+- `user_programs`: relación de usuarios con programas y su estado.
 
-\- `course\_mappings`: correspondencia entre elementos académicos del portal y cursos de Moodle.
+- `course_mappings`: correspondencia entre elementos académicos del portal y cursos de Moodle.
 
-\- `enrollment\_requests`: solicitudes y autorizaciones de inscripción.
+- `enrollment_requests`: solicitudes y autorizaciones de inscripción.
 
-\- `audit\_logs`: registro de operaciones administrativas relevantes.
+- `audit_logs`: registro de operaciones administrativas relevantes.
 
 
 
@@ -272,131 +274,131 @@ Las migraciones SQL deberán ser reproducibles y estar versionadas en el reposit
 
 
 
-\## 7. Módulos del backend
+## 7. Módulos del backend
 
 
 
-\### Módulo de salud
+### Módulo de salud
 
 
 
-\- Comprobar que la API está disponible.
+- Comprobar que la API está disponible.
 
-\- Exponer un endpoint de salud.
+- Exponer un endpoint de salud.
 
-\- Diferenciar disponibilidad de la aplicación y estado de integraciones externas cuando corresponda.
+- Diferenciar disponibilidad de la aplicación y estado de integraciones externas cuando corresponda.
 
 
 
-\### Módulo de autenticación
+### Módulo de autenticación
 
 
 
-\- Verificar tokens de acceso de Supabase.
+- Verificar tokens de acceso de Supabase.
 
-\- Obtener la identidad del usuario autenticado.
+- Obtener la identidad del usuario autenticado.
 
-\- Validar sesiones y estados.
+- Validar sesiones y estados.
 
-\- Evitar implementar un sistema paralelo de contraseñas.
+- Evitar implementar un sistema paralelo de contraseñas.
 
 
 
-\### Módulo de perfiles y usuarios
+### Módulo de perfiles y usuarios
 
 
 
-\- Consultar y actualizar perfiles permitidos.
+- Consultar y actualizar perfiles permitidos.
 
-\- Consultar usuarios con filtros y paginación.
+- Consultar usuarios con filtros y paginación.
 
-\- Gestionar estados administrativos.
+- Gestionar estados administrativos.
 
-\- Evitar duplicados al vincular identidades.
+- Evitar duplicados al vincular identidades.
 
 
 
-\### Módulo de roles y permisos
+### Módulo de roles y permisos
 
 
 
-\- Consultar roles.
+- Consultar roles.
 
-\- Asignar o retirar roles según privilegios.
+- Asignar o retirar roles según privilegios.
 
-\- Proteger endpoints mediante guards y políticas de autorización.
+- Proteger endpoints mediante guards y políticas de autorización.
 
-\- Validar el ámbito de acceso de coordinadores, profesores y estudiantes.
+- Validar el ámbito de acceso de coordinadores, profesores y estudiantes.
 
 
 
-\### Módulo de programas
+### Módulo de programas
 
 
 
-\- Consultar programas académicos.
+- Consultar programas académicos.
 
-\- Gestionar programas mediante permisos administrativos.
+- Gestionar programas mediante permisos administrativos.
 
-\- Asociar usuarios a programas.
+- Asociar usuarios a programas.
 
-\- Mantener el estado de las relaciones académicas.
+- Mantener el estado de las relaciones académicas.
 
 
 
-\### Módulo de inscripciones
+### Módulo de inscripciones
 
 
 
-\- Crear solicitudes de inscripción.
+- Crear solicitudes de inscripción.
 
-\- Consultar el estado de las solicitudes.
+- Consultar el estado de las solicitudes.
 
-\- Autorizar o rechazar solicitudes según permisos.
+- Autorizar o rechazar solicitudes según permisos.
 
-\- Registrar las operaciones relevantes.
+- Registrar las operaciones relevantes.
 
-\- Ejecutar la sincronización de matrículas autorizadas con Moodle.
+- Ejecutar la sincronización de matrículas autorizadas con Moodle.
 
 
 
-\### Módulo de Moodle
+### Módulo de Moodle
 
 
 
-\- Comprobar la configuración de conexión.
+- Comprobar la configuración de conexión.
 
-\- Consultar o localizar usuarios existentes.
+- Consultar o localizar usuarios existentes.
 
-\- Crear o vincular usuarios evitando duplicados.
+- Crear o vincular usuarios evitando duplicados.
 
-\- Sincronizar información autorizada.
+- Sincronizar información autorizada.
 
-\- Consultar cursos asociados.
+- Consultar cursos asociados.
 
-\- Matricular y desmatricular usuarios autorizados.
+- Matricular y desmatricular usuarios autorizados.
 
-\- Asignar roles académicos en cursos permitidos.
+- Asignar roles académicos en cursos permitidos.
 
-\- Manejar errores, reintentos controlados y resultados de sincronización.
+- Manejar errores, reintentos controlados y resultados de sincronización.
 
 
 
-\### Módulo de auditoría
+### Módulo de auditoría
 
 
 
-\- Registrar cambios relevantes de roles y estados.
+- Registrar cambios relevantes de roles y estados.
 
-\- Registrar autorizaciones e inscripciones.
+- Registrar autorizaciones e inscripciones.
 
-\- Registrar resultados de operaciones administrativas y sincronizaciones.
+- Registrar resultados de operaciones administrativas y sincronizaciones.
 
-\- Restringir la lectura de la auditoría a los roles autorizados.
+- Restringir la lectura de la auditoría a los roles autorizados.
 
 
 
-\## 8. Contrato entre frontend y backend
+## 8. Contrato entre frontend y backend
 
 
 
@@ -424,7 +426,7 @@ El backend no debe implementar endpoints que el frontend consuma directamente de
 
 
 
-\## 9. Seguridad
+## 9. Seguridad
 
 
 
@@ -432,35 +434,37 @@ Requisitos obligatorios:
 
 
 
-\- Validación de datos en el servidor.
+- Validación de datos en el servidor.
 
-\- Verificación de tokens de Supabase.
+- Verificación de tokens de Supabase.
 
-\- Guards y políticas de autorización.
+- Guards y políticas de autorización.
 
-\- Row Level Security (RLS) en las tablas pertinentes.
+- Row Level Security (RLS) en las tablas pertinentes.
 
-\- Variables de entorno para secretos.
+- Variables de entorno para secretos.
 
-\- Rate limiting en endpoints sensibles.
+- Rate limiting en endpoints sensibles.
 
-\- Protección de las credenciales y sesiones.
+- Protección de las credenciales y sesiones.
+- Segundo factor TOTP obligatorio para todos los roles en cada inicio de sesión; la sesión AAL1 no habilita datos ni paneles protegidos.
+- Exigir AAL2 también en las consultas protegidas de Supabase Data API mediante la configuración del entorno y la migración versionada correspondiente.
 
-\- CORS limitado a los orígenes configurados.
+- CORS limitado a los orígenes configurados.
 
-\- Manejo seguro de errores.
+- Manejo seguro de errores.
 
-\- Auditoría de operaciones privilegiadas.
+- Auditoría de operaciones privilegiadas.
 
-\- Permisos mínimos en Moodle.
+- Permisos mínimos en Moodle.
 
-\- Ninguna clave `service\_role` ni token administrativo de Moodle en el navegador.
+- Ninguna clave `service_role` ni token administrativo de Moodle en el navegador.
 
-\- Ninguna confianza exclusiva en los roles declarados por el cliente.
+- Ninguna confianza exclusiva en los roles declarados por el cliente.
 
 
 
-\## 10. Entrega parcial — 29 de octubre de 2026, 07:00 h (fecha objetivo histórica)
+## 10. Entrega parcial — 29 de octubre de 2026, 07:00 h (fecha objetivo histórica)
 
 
 
@@ -472,27 +476,27 @@ El avance deberá contemplar:
 
 
 
-\- Estructura existente del proyecto funcional.
+- Estructura existente del proyecto funcional.
 
-\- Supabase Auth configurado.
+- Supabase Auth configurado.
 
-\- Perfil y roles iniciales.
+- Perfil y roles iniciales.
 
-\- API NestJS ejecutable.
+- API NestJS ejecutable.
 
-\- Verificación de autenticación en la API.
+- Verificación de autenticación en la API.
 
-\- Primeras migraciones y políticas RLS.
+- Primeras migraciones y políticas RLS.
 
-\- Conexión inicial con Moodle mediante Web Services.
+- Conexión inicial con Moodle mediante Web Services.
 
-\- Un curso de prueba completo y configurado en Moodle.
+- Un curso de prueba completo y configurado en Moodle.
 
-\- Usuario de prueba con rol de profesor y al menos dos estudiantes.
+- Usuario de prueba con rol de profesor y al menos dos estudiantes.
 
-\- Demostración de consulta de cursos y autorización de acceso.
+- Demostración de consulta de cursos y autorización de acceso.
 
-\- Documentación inicial y evidencias.
+- Documentación inicial y evidencias.
 
 
 
@@ -500,7 +504,7 @@ El orden definitivo se ajustará a las dependencias reales. No se considerará t
 
 
 
-\## 11. Entrega final — 1 de diciembre de 2026
+## 11. Entrega final — 1 de diciembre de 2026
 
 
 
@@ -508,93 +512,95 @@ El sistema deberá contemplar:
 
 
 
-\- Portal institucional completo.
+- Portal institucional completo.
 
-\- Migración de contenidos seleccionados de WordPress.
+- Migración de contenidos seleccionados de WordPress.
 
-\- Autenticación y recuperación de acceso.
+- Autenticación y recuperación de acceso.
+- Verificación TOTP obligatoria para todos los roles en cada inicio de sesión, con sesiones protegidas de nivel AAL2.
 
-\- Roles y permisos efectivos.
+- Roles y permisos efectivos.
 
-\- Administración de usuarios y programas.
+- Administración de usuarios y programas.
 
-\- Solicitudes y autorizaciones de inscripción.
+- Solicitudes y autorizaciones de inscripción.
 
-\- Sincronización con Moodle.
+- Sincronización con Moodle.
 
-\- Acceso autorizado a cursos.
+- Acceso autorizado a cursos.
 
-\- Un curso de prueba completo y configurado en Moodle.
+- Un curso de prueba completo y configurado en Moodle.
 
-\- Auditoría.
+- Auditoría.
 
-\- Diseño responsive y accesible.
+- Diseño responsive y accesible.
 
-\- Pruebas automatizadas y de integración.
+- Pruebas automatizadas y de integración.
 
-\- Documentación de instalación, administración y despliegue.
+- Documentación de instalación, administración y despliegue.
 
-\- Procedimiento de respaldo y recuperación.
+- Procedimiento de respaldo y recuperación.
 
-\- Evidencias del cumplimiento de criterios de aceptación.
-
-
-
-\## 12. Criterios de aceptación del backend
+- Evidencias del cumplimiento de criterios de aceptación.
 
 
 
-\- La API inicia correctamente con la configuración documentada.
-
-\- Los usuarios no autenticados no acceden a endpoints protegidos.
-
-\- Un usuario no puede modificar su rol o privilegios mediante una solicitud manipulada.
-
-\- Los permisos se comprueban en el servidor.
-
-\- Las políticas RLS impiden accesos no autorizados.
-
-\- Las migraciones se pueden aplicar de forma reproducible.
-
-\- La integración con Moodle utiliza exclusivamente credenciales de servidor.
-
-\- No se crean usuarios duplicados por reintentos normales de sincronización.
-
-\- Un estudiante solo recibe acceso a sus cursos autorizados.
-
-\- Un profesor solo recibe acceso a sus asignaciones autorizadas.
-
-\- Los errores de Moodle no provocan asignaciones ficticias ni estados de sincronización exitosos incorrectos.
-
-\- Las operaciones administrativas relevantes quedan auditadas.
-
-\- La API dispone de documentación y pruebas verificables.
+## 12. Criterios de aceptación del backend
 
 
 
-\## 13. Fuera de alcance, salvo acuerdo explícito
+- La API inicia correctamente con la configuración documentada.
+
+- Los usuarios no autenticados no acceden a endpoints protegidos.
+- Una contraseña válida por sí sola no abre una sesión funcional: NestJS exige completar TOTP y verifica que Supabase emita AAL2; las operaciones de datos protegidos aplican la misma exigencia en Supabase Data API.
+
+- Un usuario no puede modificar su rol o privilegios mediante una solicitud manipulada.
+
+- Los permisos se comprueban en el servidor.
+
+- Las políticas RLS impiden accesos no autorizados.
+
+- Las migraciones se pueden aplicar de forma reproducible.
+
+- La integración con Moodle utiliza exclusivamente credenciales de servidor.
+
+- No se crean usuarios duplicados por reintentos normales de sincronización.
+
+- Un estudiante solo recibe acceso a sus cursos autorizados.
+
+- Un profesor solo recibe acceso a sus asignaciones autorizadas.
+
+- Los errores de Moodle no provocan asignaciones ficticias ni estados de sincronización exitosos incorrectos.
+
+- Las operaciones administrativas relevantes quedan auditadas.
+
+- La API dispone de documentación y pruebas verificables.
 
 
 
-\- Reescribir Moodle.
-
-\- Modificar el núcleo de Moodle.
-
-\- Crear un LMS propio.
-
-\- Duplicar en Supabase las calificaciones y actividades que Moodle administra.
-
-\- Migrar automáticamente todo WordPress sin revisar los contenidos.
-
-\- Implementar pagos, comercio electrónico o facturación sin requisitos adicionales.
-
-\- Construir microservicios independientes sin una necesidad demostrada.
-
-\- Añadir funcionalidades no solicitadas que retrasen la entrega.
+## 13. Fuera de alcance, salvo acuerdo explícito
 
 
 
-\## 14. Principio de implementación
+- Reescribir Moodle.
+
+- Modificar el núcleo de Moodle.
+
+- Crear un LMS propio.
+
+- Duplicar en Supabase las calificaciones y actividades que Moodle administra.
+
+- Migrar automáticamente todo WordPress sin revisar los contenidos.
+
+- Implementar pagos, comercio electrónico o facturación sin requisitos adicionales.
+
+- Construir microservicios independientes sin una necesidad demostrada.
+
+- Añadir funcionalidades no solicitadas que retrasen la entrega.
+
+
+
+## 14. Principio de implementación
 
 
 
@@ -606,7 +612,7 @@ Cada funcionalidad deberá tener criterios de aceptación, pruebas y documentaci
 
 
 
-\## 15. Decisiones pendientes y preparación del entorno
+## 15. Decisiones pendientes y preparación del entorno
 
 
 
@@ -614,11 +620,11 @@ Las siguientes decisiones deberán resolverse antes de implementar o aceptar las
 
 
 
-\### 15.1. Supabase
+### 15.1. Supabase
 
 
 
-Estado documentado: se comprobó la conexión desde la API, el registro, la confirmación, el inicio de sesión y lecturas puntuales con JWT reales. El esquema activo difiere de la migración inicial; falta una línea base reproducible y comprobar las escrituras y el aislamiento de coordinación. SMTP quedó aplazado y la recuperación no se completó. Véase [Identidad y Supabase](docs/validacion-identidad-supabase.md).
+Estado documentado: antes del cambio a MFA se comprobaron desde la API la conexión, el registro, la confirmación y el login, además de lecturas puntuales con JWT reales. La nueva autenticación TOTP y la denegación de AAL1 se probaron en contenedores locales; no se ha acreditado el nuevo flujo contra el proyecto Supabase remoto ni la aplicación de `20261110120000_require_mfa_data_api.sql`. El esquema activo difiere de la migración inicial; falta una línea base reproducible y comprobar las escrituras y el aislamiento de coordinación. SMTP quedó aplazado y la recuperación por correo no se completó. Véase [Identidad y Supabase](docs/validacion-identidad-supabase.md) y [Verificación en dos pasos](docs/autenticacion-dos-factores.md).
 
 
 
@@ -626,15 +632,16 @@ Antes de aceptar el acceso a datos en el ambiente objetivo:
 
 
 
-1\. Confirmar el proyecto y el ambiente de Supabase que se utilizarán.
+1. Confirmar el proyecto y el ambiente de Supabase que se utilizarán.
 
-2\. Configurar las variables de entorno necesarias sin compartir credenciales.
+2. Configurar las variables de entorno necesarias sin compartir credenciales.
 
-3\. Aplicar la migración aprobada en el ambiente correspondiente y registrar el resultado.
+3. Aplicar la migración aprobada en el ambiente correspondiente y registrar el resultado.
 
-4\. Probar RLS con JWT de usuarios de distintos roles y documentar los resultados.
+4. Probar RLS con JWT de usuarios de distintos roles y documentar los resultados.
 
-5\. Confirmar que la estrategia de acceso corresponde al modelo mixto acordado en `docs/decisiones/ADR-001-acceso-supabase.md`.
+5. Confirmar que la estrategia de acceso corresponde al modelo mixto acordado en `docs/decisiones/ADR-001-acceso-supabase.md`.
+6. Revisar y aplicar, en el ambiente autorizado, la migración de MFA para la Data API; integrar primero el hook si ya existe y comprobar acceso AAL1/AAL2.
 
 
 
@@ -644,7 +651,7 @@ No se necesitan credenciales reales para diseñar el modelo ni planificar las mi
 
 
 
-\### 15.2. Moodle
+### 15.2. Moodle
 
 
 
@@ -656,25 +663,25 @@ Antes de aceptar la integración con Moodle, identificar y registrar:
 
 
 
-\- Versión de Moodle elegida.
+- Versión de Moodle elegida.
 
-\- Método de instalación y ejecución.
+- Método de instalación y ejecución.
 
-\- URL base accesible desde NestJS.
+- URL base accesible desde NestJS.
 
-\- Tipo y versión de la base de datos compatible.
+- Tipo y versión de la base de datos compatible.
 
-\- Disponibilidad de Web Services.
+- Disponibilidad de Web Services.
 
-\- Protocolo habilitado, inicialmente REST.
+- Protocolo habilitado, inicialmente REST.
 
-\- Servicio externo y funciones permitidas.
+- Servicio externo y funciones permitidas.
 
-\- Usuario de integración y permisos necesarios.
+- Usuario de integración y permisos necesarios.
 
-\- Mecanismo de acceso del estudiante a Moodle.
+- Mecanismo de acceso del estudiante a Moodle.
 
-\- Configuración de SSO y compatibilidad del plugin/mecanismo elegido, pendientes de verificación en la instancia objetivo.
+- Configuración de SSO y compatibilidad del plugin/mecanismo elegido, pendientes de verificación en la instancia objetivo.
 
 
 
@@ -686,7 +693,7 @@ No inventar una URL funcional de Moodle ni asumir que un endpoint está disponib
 
 
 
-\### 15.3. Acceso al campus
+### 15.3. Acceso al campus
 
 
 
@@ -702,7 +709,7 @@ El PDF de alcance requiere un mecanismo seguro de acceso al campus compatible co
 
 
 
-\### 15.4. Estado de las inscripciones
+### 15.4. Estado de las inscripciones
 
 
 
@@ -714,11 +721,11 @@ Estados mínimos de sincronización:
 
 
 
-\- `pending`: pendiente de sincronizar.
+- `pending`: pendiente de sincronizar.
 
-\- `synced`: operación confirmada por Moodle.
+- `synced`: operación confirmada por Moodle.
 
-\- `failed`: intento fallido.
+- `failed`: intento fallido.
 
 
 
@@ -734,7 +741,7 @@ Los reintentos deberán evitar duplicados y no podrán marcar una operación com
 
 
 
-\### 15.5. Contrato compartido
+### 15.5. Contrato compartido
 
 
 
@@ -746,15 +753,15 @@ Antes de modificar endpoints, DTOs, nombres de campos o estructuras de respuesta
 
 
 
-1\. Revisar el contrato existente.
+1. Revisar el contrato existente.
 
-2\. Comunicar el cambio al responsable del frontend.
+2. Comunicar el cambio al responsable del frontend.
 
-3\. Actualizar la especificación.
+3. Actualizar la especificación.
 
-4\. Implementar y probar el cambio.
+4. Implementar y probar el cambio.
 
-5\. Mantener compatibilidad o documentar las modificaciones necesarias.
+5. Mantener compatibilidad o documentar las modificaciones necesarias.
 
 
 
@@ -762,7 +769,7 @@ El contrato compartido será la referencia común para frontend y backend.
 
 
 
-\### 15.6. Criterio para decisiones pendientes
+### 15.6. Criterio para decisiones pendientes
 
 
 
@@ -770,13 +777,13 @@ El equipo deberá separar:
 
 
 
-\- Decisiones ya confirmadas.
+- Decisiones ya confirmadas.
 
-\- Decisiones que requieren validación.
+- Decisiones que requieren validación.
 
-\- Datos que faltan para implementar.
+- Datos que faltan para implementar.
 
-\- Tareas que pueden desarrollarse sin servicios externos.
+- Tareas que pueden desarrollarse sin servicios externos.
 
 
 

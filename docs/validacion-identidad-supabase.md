@@ -1,5 +1,7 @@
 # Identidad y Supabase (CA-03, CA-04 y CA-06)
 
+> **Vigencia:** las comprobaciones de registro, confirmación y login descritas abajo se hicieron antes de que TOTP fuera obligatorio. No cuentan como validación del flujo de login actual. La autenticación TOTP se probó después en contenedores locales; falta repetirla con el proyecto remoto y aplicar/verificar su migración de Data API. Véase [Verificación en dos pasos](autenticacion-dos-factores.md).
+
 ## Registro y recuperación
 
 El registro público usa Supabase Auth con confirmación por correo. El backend verifica que el proveedor de correo y el registro estén habilitados, y que la confirmación automática esté desactivada. La respuesta de registro contiene un mensaje y el portal pide revisar el buzón. Tras confirmar el enlace, la persona inicia sesión desde el portal.
@@ -82,3 +84,7 @@ La ruta de asignación de programas admite el rol `coordinador` y no limita la e
 ## Referencia del entorno
 
 La API local reportó Supabase y Moodle disponibles. La instalación Moodle se encontró en `/var/www/html/moodle` y su directorio de datos en `/var/www/moodledata`. El archivo de versión indica Moodle 5.3+ (build 20261021).
+
+## MFA añadida después de las pruebas remotas
+
+El 10 de noviembre de 2026 se integró TOTP obligatorio para todos los roles. Se probó en contenedores locales con Supabase Auth `v2.197.0`, PostgREST `v14.6`, PostgreSQL 16 y Mailpit: alta y reanudación del enrolamiento, código inválido, primer y siguientes inicios, rechazo de AAL1 y recuperación con `token_hash` y PKCE. Esta ejecución no usó el proyecto Supabase remoto configurado ni prueba que `20261110120000_require_mfa_data_api.sql` se haya aplicado allí. No repitas una prueba de escritura hasta revisar el esquema, las políticas y los permisos efectivos del ambiente.

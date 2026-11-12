@@ -4,6 +4,12 @@
 
 Documento de referencia para el equipo de desarrollo, administración de sistemas y diseño de producto sobre las nuevas capacidades, endpoints, arquitectura de Single Sign-On (SSO) y componentes de interfaz implementados en el proyecto IINICIA.
 
+## Actualización posterior: MFA y alcance de Moodle (10–12 de noviembre)
+
+La rama `main` incorpora TOTP obligatorio en cada inicio de sesión para todos los roles. La contraseña inicia una continuación AAL1; `/api/v1/auth/mfa/verify` comprueba el código y entrega la sesión AAL2. La recuperación con TOTP y la migración para PostgREST se describen en [Verificación en dos pasos](autenticacion-dos-factores.md). El código y la migración se validaron con servicios locales en contenedores; no se confirma que la migración esté aplicada en Supabase remoto.
+
+El alcance docente actual requiere **un curso completo de prueba**. Las menciones a dos cursos y los resultados numéricos de pruebas más abajo pertenecen al historial de esta guía. Consulta [Estado actual](estado-actual.md) y la [bitácora](bitacora-proyecto.md) para evidencia vigente.
+
 ---
 
 ## 1. Resumen Ejecutivo

@@ -1,12 +1,12 @@
 # Estado actual del proyecto IINICIA
 
-**Revisión documental y del código:** 9 de noviembre de 2026
-**Rama de referencia:** `main` local (`ad33159`)
+**Revisión documental y del código:** 12 de noviembre de 2026
+**Rama de referencia:** `main` (`6635d9e`), sincronizada con `origin/main` en las referencias locales consultadas
 **Alcance vigente del curso de prueba:** un curso
 
 Este documento separa lo que se observa en el repositorio de lo que requiere confirmación en servicios externos. Los módulos, variables de entorno, mocks, ejemplos y documentos por sí solos no prueban que Supabase o Moodle estén conectados ni que una operación real haya funcionado.
 
-Consulta la [bitácora del proyecto](bitacora-proyecto.md) para el historial de ramas, las decisiones, las pruebas y la matriz de los 20 criterios de aceptación. Para repetir las pruebas reales, usa [Identidad y Supabase](validacion-identidad-supabase.md) y [Coordinación con Supabase](pruebas-coordinacion-supabase.md).
+Consulta el [índice de documentación](README.md) para encontrar cada guía. La [bitácora del proyecto](bitacora-proyecto.md) reúne el historial, las decisiones, las pruebas y la matriz de los 20 criterios de aceptación. Para repetir las comprobaciones externas, usa [Identidad y Supabase](validacion-identidad-supabase.md) y [Coordinación con Supabase](pruebas-coordinacion-supabase.md).
 
 ## Alcance vigente
 
@@ -18,17 +18,18 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 
 | Componente | Evidencia | Validación pendiente |
 | --- | --- | --- |
-| Frontend | Rediseño de navegación y catálogo y pantallas de cuenta integrados. Los accesos rápidos de demostración existen como cambios locales sin commit. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. |
-| Backend | Solicitudes propias pendientes; autorización y ámbito en matrículas y consultas de Moodle revisadas. OpenAPI incluye recuperación y restablecimiento. | Corregir la autoasignación a programas desde la ruta de vinculación y comprobar el alcance con cuentas reales. |
-| Supabase | Conectividad, alta pública, confirmación, login y lecturas puntuales por rol comprobados. El SQL inicial usa `roles.code` y `user_roles.role_code`; la API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`. | Versionar un esquema compatible, comprobar RLS de coordinación y escrituras privilegiadas. SMTP quedó aplazado y falta completar la recuperación. |
+| Frontend | Portal rediseñado, accesos rápidos configurables con `dev:demo` y flujo de TOTP integrado. La continuación AAL1 permanece en memoria; el token se guarda después de verificar AAL2. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. Ejecutar de nuevo lint completo del portal; la última revisión completa registrada es anterior a MFA. |
+| Backend | Autenticación con TOTP obligatorio, guards que requieren AAL2, recuperación protegida por TOTP y contratos OpenAPI actualizados. Matrículas y consultas de Moodle aplican autorización y ámbito en las rutas revisadas. | Corregir la autoasignación de programa desde `POST /api/v1/programs/:id/enroll-user` y comprobar el alcance con cuentas reales. |
+| Supabase | Se comprobó alta pública, confirmación y lecturas puntuales en el proyecto configurado antes de integrar MFA. La pila local Auth/PostgREST/PostgreSQL validó TOTP y rechazo de AAL1. La API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`, distintos de la migración inicial. | La migración `20261110120000_require_mfa_data_api.sql` no está acreditada como aplicada al proyecto remoto. Falta línea base compatible, revisar RLS y escrituras privilegiadas con JWT reales, y completar recuperación con correo operativo. SMTP sigue aplazado. |
 | Moodle | Instalación local Moodle 5.3+ (build `20261021`) y Web Service comprobados. Hay [un recurso didáctico candidato](cursos/html-basico/GUIA-MOODLE.txt) para el curso único. | Confirmar nombre e ID del curso, permisos, SSO y mapeo de roles. Registrar evidencia de las actividades y de acceso por rol. |
 | Operación | Compilaciones de API y portal y suites unitarias y de API ejecutadas localmente. | Cerrar configuración de despliegue, HTTPS, respaldos y recuperación. |
 
-## Comprobaciones del 9 de noviembre
+## Validación registrada
 
-- API en `ad33159`: 81 pruebas unitarias y 27 pruebas HTTP con servicios simulados. Compilación correcta. El lint terminó con dos avisos de tipos en `moodle.client.ts`.
-- Portal: la compilación pasó en la revisión previa, cuyo lint reportó 93 errores y 41 avisos. Al repetir el lint en la copia local con los cambios de demo, reportó 94 errores y 40 avisos; sigue pendiente.
-- Conectividad: `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local. Las comprobaciones reales de identidad y RLS se detallan en [su registro de evidencia](validacion-identidad-supabase.md#evidencia-de-acceso-comprobada). SSO y las actividades del curso aún no se acreditaron.
+- 10 de noviembre: API compilada; `npm test` pasó con 88 pruebas y `npm run test:e2e` con 31 pruebas HTTP que usan servicios simulados. Se probó MFA localmente con Supabase Auth `v2.197.0`, PostgREST `v14.6`, PostgreSQL 16 y Mailpit. La web compiló y pasó lint dirigido para las páginas de inicio y recuperación. Detalle: [verificación en dos pasos](autenticacion-dos-factores.md).
+- Último lint completo del portal registrado antes de MFA: 94 errores y 40 avisos en la copia local de desarrollo. No se volvió a ejecutar lint completo en esta revisión documental.
+- En una revisión anterior, `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local. Esto no acredita flujos académicos, SMTP, SSO ni configuración remota de MFA.
+- Las pruebas de identidad contra el Supabase configurado son anteriores a MFA. No se han repetido tras el cambio del contrato de login; la migración de protección de Data API no consta aplicada al proyecto remoto.
 
 ## Demostración del curso único
 
@@ -36,7 +37,7 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 2. Configurar una lectura o recurso, un foro, una tarea y una evaluación. Definir la calificación y activar el seguimiento de finalización de actividades.
 3. Asignar un docente y matricular a dos estudiantes de prueba mediante el flujo autorizado. Confirmar la matrícula en Moodle y comprobar que otra cuenta no pueda entrar al aula.
 4. Verificar acceso SSO y calificador docente. Completar una actividad con un estudiante y comprobar que el avance y la calificación se reflejen por separado.
-5. Registrar fecha, ambiente, resultados y evidencia sin secretos. Probar también el correo de recuperación con una cuenta de prueba.
+5. Registrar fecha, ambiente, resultados y evidencia sin secretos. Probar el correo de recuperación y TOTP con cuentas de prueba después de configurar el envío de correo del ambiente.
 
 ## Inventario inicial de WordPress
 
@@ -60,4 +61,5 @@ La revisión cubrió la navegación visible en la portada. Completar el inventar
 - La comprobación ejecutada y su resultado quedan registrados.
 - Para integraciones externas, se indica si la verificación fue real o se limitó a mocks.
 - Los flujos se prueban con al menos un rol autorizado y uno sin autorización.
+- Cada inicio de sesión debe alcanzar AAL2 mediante TOTP antes de abrir un panel. La protección de la Data API Supabase requiere además aplicar y verificar la migración correspondiente en el ambiente.
 - La evidencia no contiene contraseñas, tokens ni claves.

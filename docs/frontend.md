@@ -1,6 +1,6 @@
 # Frontend INICIA — guía vigente
 
-Revisión del código: 9 de noviembre de 2026. Esta guía describe `apps/web` en `main` y el modo de demostración disponible en la copia local. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Consulta [openapi.yaml](openapi.yaml) para el contrato y la [bitácora](bitacora-proyecto.md) para el historial de cambios.
+Revisión del código: 12 de noviembre de 2026 (`main`, `6635d9e`). Esta guía describe `apps/web` y el modo de demostración incluido en el repositorio. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Consulta [openapi.yaml](openapi.yaml) para el contrato y la [bitácora](bitacora-proyecto.md) para el historial de cambios.
 
 ## Arquitectura
 
@@ -33,13 +33,13 @@ Para producción: `npm.cmd run build` seguido de `npm.cmd run start`. Para el an
 
 ### Accesos rápidos de prueba
 
-El iniciador y los botones están disponibles en la copia local al corte de la bitácora; aún no forman parte del commit de `main`. Crea `apps/web/.env.demo.local` con las cuentas de tu entorno de pruebas. El archivo está ignorado por Git.
+El iniciador y los botones están incluidos en `main`. Crea `apps/web/.env.demo.local` con las cuentas de tu entorno de pruebas. El archivo está ignorado por Git.
 
 ```dotenv
 NEXT_PUBLIC_DEMO_ACCOUNTS='[{"label":"Estudiante","email":"estudiante@example.test","password":"CONTRASENA_DE_PRUEBA"}]'
 ```
 
-Desde `apps/web`, ejecuta `npm run dev:demo` y abre <http://127.0.0.1:4000/login>. Si ya hay un servidor en el puerto 4000, detenlo antes. Cada botón rellena el formulario para que puedas iniciar sesión. El comando escucha solo en la interfaz local y las cuentas se cargan en el navegador de desarrollo. Usa únicamente cuentas de prueba.
+Desde `apps/web`, ejecuta `npm run dev:demo` y abre <http://127.0.0.1:4000/login>. Si ya hay un servidor en el puerto 4000, detenlo antes. Cada botón rellena el formulario para que puedas iniciar sesión. El comando escucha solo en la interfaz local y las cuentas se cargan en el navegador de desarrollo. Usa únicamente cuentas de prueba; cada inicio sigue pasando por la API y exige TOTP.
 
 El iniciador actual carga `.env.demo.local` con `process.loadEnvFile()` para evitar el error `--env-file= is not allowed in NODE_OPTIONS` del intento anterior. Si pruebas enlaces de correo desde esta URL, configura el mismo origen en `FRONTEND_URL` y en las redirecciones permitidas de Supabase.
 
