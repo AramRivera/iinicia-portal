@@ -1,6 +1,6 @@
 # Bitácora del proyecto IINICIA
 
-**Corte:** 13 de noviembre de 2026 · **Base de código:** rama `codex/captcha-auth`, basada en `main` `1e73a9d`.
+**Corte:** 13 de noviembre de 2026 · **Base de código:** `main` en `79b952d`, dos commits por delante de `origin/main` al iniciar este corte.
 
 Este documento reúne el alcance acordado, las integraciones de Git, las decisiones técnicas y la evidencia. El [estado actual](estado-actual.md) resume los pendientes; los [casos de coordinación](pruebas-coordinacion-supabase.md) y la [validación de identidad](validacion-identidad-supabase.md) permiten repetir las pruebas.
 
@@ -26,13 +26,39 @@ El profesor redujo de dos a **un curso completo en Moodle**. Se mantienen el con
 | 10 nov. | MFA TOTP obligatorio en cada inicio de sesión, rutas protegidas AAL2, recuperación con confirmación TOTP, contratos OpenAPI y migración separada para exigir MFA en la Data API. | `6635d9e` |
 | 13 nov. | Turnstile en inicio de sesión, registro y recuperación; NestJS reenvía el token a Supabase Auth. Se actualizan contratos OpenAPI y guías. La portada también elimina la mención a Moodle LMS en el texto principal. | `codex/captcha-auth` |
 
-Al corte, `main` y `origin/main` apuntaban a `6635d9e`; la rama `codex/2fa-inicio-sesion` conserva el mismo commit. Esto describe las referencias locales disponibles y no acredita despliegue. Los accesos rápidos de demo están incluidos en el historial, pero cada usuario debe crear su `.env.demo.local`, que permanece fuera de Git.
+Antes del merge de CAPTCHA, `main` y `origin/main` apuntaban a `6635d9e`; la rama `codex/2fa-inicio-sesion` conserva ese commit. El 13 de noviembre se integró CAPTCHA en `main`. Esto describe las referencias locales y no acredita un despliegue.
+
+### Integración CAPTCHA en main
+
+El 13 de noviembre se integró `codex/captcha-auth` en `main`. El commit de funcionalidad es `947256f` y el merge es `79b952d`. Al comenzar este corte, `main` estaba dos commits por delante de `origin/main`.
+
+### Flujo de admisión y entorno ZeroTier
+
+El 13 de noviembre se corrigió el filtro de la bandeja de admisiones, se limitaron las lecturas y dictámenes de coordinación a sus programas y se guardó la admisión, el rol Estudiante, la asociación académica y la auditoría dentro de una transacción. La comprobación de ámbito también se añadió a las asignaciones de usuario a programa. El contrato OpenAPI y las guías se actualizaron. Se registró en `6c9eff5`.
+
+El flujo se probó con PostgreSQL 16, Supabase Auth v2.197.0, PostgREST v14.6, Mailpit y Moodle local. Se verificaron registro, correo, TOTP/AAL2, límites por programa, admisión, matrícula y acceso SSO al curso HTML Básico Desde Cero (Moodle ID 4). No se aplicó la migración al Supabase remoto.
+
+La demo Next.js se actualizó para aceptar host y puerto. Los accesos de prueba se cargan de `.env.demo.local` tanto en la dirección local como en ZeroTier. Las instancias concurrentes usan directorios Next separados. El arranque probado queda en localhost:4000 y ZeroTier 192.168.191.171:4007. La API de pruebas en el puerto 4527 autoriza ambos orígenes y responde a las solicitudes preflight. Se registró en `74ccb79`.
+
+La compilación de producción de la web terminó correctamente con Next.js 16.4.2 y el build de NestJS también. El lint de API terminó con dos advertencias existentes en Moodle. ESLint del frontend termina con 90 errores y 40 avisos preexistentes en las vistas y tipos del portal; excluye los directorios temporales de Next usados por la demo dual.
+
+
+### Commits recientes comprobados
+
+| Commit | Contenido |
+| --- | --- |
+| `6635d9e` | Exigir TOTP en cada inicio de sesión y proteger con AAL2 las rutas de datos cubiertas. |
+| `947256f` | Integrar Turnstile en login, registro y recuperación. |
+| `79b952d` | Merge de CAPTCHA a `main`; era HEAD al comenzar esta actualización. |
+| `6c9eff5` | Aplicar el ámbito de coordinación, guardar el dictamen en una transacción y actualizar OpenAPI. |
+| `74ccb79` | Ejecutar la demo en localhost:4000 y ZeroTier:4007 con CORS para ambos accesos. |
+
 
 ## Qué quedó en cada componente
 
 **Portal.** Portada y páginas de universidad, oferta, admisiones y contacto, detalle de programa, cuenta y paneles por rol. La navegación y el catálogo tienen transparencias y desenfoque CSS. El inicio de sesión exige TOTP: la web conserva la continuación AAL1 en memoria y solo guarda el token después de verificar AAL2. `GET /auth/me` informa los roles efectivos. Quedan por revisar el ciclo de sesión para producción, accesibilidad, tamaños de pantalla y correspondencia editorial con WordPress. Véanse la [guía del frontend](frontend.md), [MFA](autenticacion-dos-factores.md) y los [manuales](README.md#operación-y-uso).
 
-**Demostración local.** Los accesos se configuran con `.env.demo.local`, ignorado por Git. El iniciador usa `process.loadEnvFile()` y abre Next.js en `127.0.0.1:4000`, evitando el error previo de `--env-file`. Los botones rellenan el formulario; el inicio real pasa por la API y requiere TOTP. Usar solo cuentas de prueba. Véase [cómo iniciar la demo](frontend.md#accesos-rápidos-de-prueba).
+**Demostración local y ZeroTier.** Los accesos se configuran con `.env.demo.local`, ignorado por Git. Dos procesos de Next.js sirven el código fuente actual en localhost:4000 y ZeroTier `192.168.191.171:4007`. Cada proceso usa su propio directorio de desarrollo, y NestJS permite los tres orígenes web de esos puntos de acceso. Los botones rellenan el formulario; el login sigue por la API y requiere TOTP. Véase [cómo iniciar la demo](frontend.md#accesos-rápidos-de-prueba).
 
 **CAPTCHA.** Turnstile se integra en las páginas de login, registro y recuperación. Next.js envía `captcha_token` en el contrato JSON y NestJS lo pasa a Supabase Auth, que valida la respuesta con la Secret Key configurada en su panel. El modo Managed de Turnstile puede validar automáticamente y presentar reto interactivo solo si hace falta. La integración aún no está configurada con claves reales ni probada contra el Supabase del proyecto. Véase [guía CAPTCHA](captcha-auth.md).
 
@@ -46,7 +72,7 @@ El 13 de noviembre, con Turnstile integrado, la API compiló, pasaron 88 pruebas
 
 **Recuperación.** Se añadió intercambio PKCE compatible con `{{ .ConfirmationURL }}` y la opción `token_hash`. La cuenta de prueba recibió un correo, pero el flujo con el servicio de correo configurado no completó el cambio; un envío posterior recibió `429 over_email_send_rate_limit`. SMTP propio y SMTP2GO se aplazaron porque el equipo no tenía dominio ni buzón emisor. La implementación local de MFA probó ambos formatos de enlace con Mailpit y exigió TOTP antes de cambiar contraseña; esa evidencia no acredita entrega de correo desde Supabase remoto. Véanse [Identidad y Supabase](validacion-identidad-supabase.md) y [MFA](autenticacion-dos-factores.md).
 
-**Coordinación.** El backend deriva el programa del mapeo de curso y toma como asignaciones activas los estados `admitido`, `inscrito` y `cursando` en `user_programs`. Esto limita la supervisión de matrículas y las consultas de curso revisadas en Moodle; una matrícula propia válida conserva el acceso que le corresponda. El control no cubre la ruta de alta de asignaciones de programa: `POST /api/v1/programs/:id/enroll-user` admite coordinación y escribe con el cliente privilegiado sin verificar ámbito ni impedir la autoasignación. También hay SQL histórico con políticas de `user_programs` y `enrollment_requests` más amplias; sus grants y políticas vigentes no se confirmaron. Estos pendientes impiden cerrar CA-06 aunque los filtros de matrícula funcionen. Véase la [guía de reproducción](pruebas-coordinacion-supabase.md).
+**Coordinación.** El backend deriva el programa del mapeo de curso y toma como asignaciones activas los estados `admitido`, `inscrito` y `cursando` en `user_programs`. Esto limita la supervisión de matrículas y las consultas de curso revisadas en Moodle; una matrícula propia válida conserva el acceso que le corresponda. El commit `6c9eff5` aplica el control de ámbito a `POST /api/v1/programs/:id/enroll-user` y la migración de admisiones limita las escrituras directas. Falta aplicar y verificar esa migración en el ambiente objetivo. También hay SQL histórico con políticas de `user_programs` y `enrollment_requests` más amplias; sus grants y políticas vigentes no se confirmaron. Estos pendientes impiden cerrar CA-06 aunque los filtros de matrícula funcionen. Véase la [guía de reproducción](pruebas-coordinacion-supabase.md).
 
 **Moodle.** Se localizó Moodle 5.3+ (build `20261021`) en `/var/www/html/moodle` y su directorio de datos en `/var/www/moodledata`. El Web Service respondió a la comprobación de salud. El backend incluye búsqueda y vinculación de usuarios, sincronización de cursos y matrículas, acceso al campus mediante `auth_userkey`, consultas de contenidos, participantes y progreso. La interfaz separa `progress_percentage` de `grade_percentage`. Hay un [recurso candidato para HTML básico](cursos/html-basico/GUIA-MOODLE.txt) y un [tema SCSS](moodle-theme.scss); no se verificaron su aplicación, el curso completo ni el SSO con usuarios reales. Los IDs antiguos de ejemplo no deben usarse como configuración comprobada.
 

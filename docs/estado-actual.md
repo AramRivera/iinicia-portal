@@ -1,7 +1,7 @@
 # Estado actual del proyecto IINICIA
 
 **Revisión documental y del código:** 13 de noviembre de 2026
-**Rama de trabajo:** `codex/captcha-auth`, basada en `main` (`1e73a9d`)
+**Rama de trabajo:** `main` con admisiones en `6c9eff5` y demo dual en `74ccb79`
 **Alcance vigente del curso de prueba:** un curso
 
 Este documento separa lo que se observa en el repositorio de lo que requiere confirmación en servicios externos. Los módulos, variables de entorno, mocks, ejemplos y documentos por sí solos no prueban que Supabase o Moodle estén conectados ni que una operación real haya funcionado.
@@ -18,9 +18,9 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 
 | Componente | Evidencia | Validación pendiente |
 | --- | --- | --- |
-| Frontend | Portal rediseñado, accesos rápidos configurables con `dev:demo` y flujo de TOTP integrado. La continuación AAL1 permanece en memoria; el token se guarda después de verificar AAL2. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. Ejecutar de nuevo lint completo del portal; la última revisión completa registrada es anterior a MFA. |
+| Frontend | Portal rediseñado, accesos rápidos configurables con `dev:demo` y flujo de TOTP integrado. La demo actual escucha en localhost:4000 y ZeroTier `192.168.191.171:4007`. | Recorrer roles con el equipo y completar ajustes de lint/accesibilidad. |
 | Frontend | Portal rediseñado, demo local y widget Turnstile para login, registro y recuperación. El token CAPTCHA se envía a NestJS y se renueva tras cada solicitud. | Configurar la Site Key por ambiente y verificar los flujos con un widget real. |
-| Backend | Autenticación con TOTP obligatorio, guards que requieren AAL2, recuperación protegida por TOTP y contratos OpenAPI actualizados. NestJS reenvía `captcha_token` a Supabase Auth en login, registro y recuperación. Matrículas y consultas de Moodle aplican autorización y ámbito en las rutas revisadas. | Verificar CAPTCHA con Supabase Auth configurado; corregir la autoasignación de programa desde `POST /api/v1/programs/:id/enroll-user` y comprobar el alcance con cuentas reales. |
+| Backend | Autenticación con TOTP, NestJS reenvía `captcha_token` a Supabase Auth. El commit `6c9eff5` limita dictámenes y asignaciones de coordinación a programas y hacen transaccional la admisión. | Aplicar la migración de admisiones en pruebas y repetir los permisos con cuentas del ambiente objetivo. Probar CAPTCHA con Supabase configurado. |
 | Supabase | Se comprobó alta pública, confirmación y lecturas puntuales en el proyecto configurado antes de integrar MFA. La pila local Auth/PostgREST/PostgreSQL validó TOTP y rechazo de AAL1. La API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`, distintos de la migración inicial. | La migración `20261110120000_require_mfa_data_api.sql` no está acreditada como aplicada al proyecto remoto. Falta línea base compatible, revisar RLS y escrituras privilegiadas con JWT reales, y completar recuperación con correo operativo. SMTP sigue aplazado. |
 | Moodle | Instalación local Moodle 5.3+ (build `20261021`) y Web Service comprobados. Hay [un recurso didáctico candidato](cursos/html-basico/GUIA-MOODLE.txt) para el curso único. | Confirmar nombre e ID del curso, permisos, SSO y mapeo de roles. Registrar evidencia de las actividades y de acceso por rol. |
 | Operación | Compilaciones de API y portal y suites unitarias y de API ejecutadas localmente. | Cerrar configuración de despliegue, HTTPS, respaldos y recuperación. |
@@ -34,6 +34,8 @@ La activación del CAPTCHA aún requiere crear el widget Cloudflare, permitir lo
 - En una revisión anterior, `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local. Esto no acredita flujos académicos, SMTP, SSO ni configuración remota de MFA.
 - Las pruebas de identidad contra el Supabase configurado son anteriores a MFA. No se han repetido tras el cambio del contrato de login; la migración de protección de Data API no consta aplicada al proyecto remoto.
 - En la rama CAPTCHA, la API compiló, pasaron 88 pruebas unitarias y 32 pruebas HTTP con mocks. La web pasó `tsc --noEmit`. No se ha hecho una prueba real de Turnstile/Supabase porque no están configuradas las claves ni la protección CAPTCHA remota.
+- El 13 de noviembre la API compiló y pasó 97 pruebas unitarias y 32 pruebas HTTP con mocks. La web compiló con `npm run build`. PostgreSQL 16 local verificó límites de admisión, transacción y denegación fuera de ámbito. El curso HTML Básico Desde Cero se matriculó y abrió mediante SSO en Moodle local.
+- La demo dual responde con HTTP 200 en `http://localhost:4000/login` y `http://192.168.191.171:4007/login`. NestJS respondió a preflight CORS para esos orígenes. Esta prueba local no certifica el acceso desde cada dispositivo remoto.
 
 ## Demostración del curso único
 
