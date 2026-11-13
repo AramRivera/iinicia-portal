@@ -635,6 +635,7 @@
     "/programs/{id}/enroll-user": {
       "post": {
         "summary": "Vincular usuario a programa acad\u00e9mico",
+        "description": "Coordinación requiere una asociación activa con el programa.",
         "security": [
           {
             "bearerAuth": []
@@ -643,6 +644,9 @@
         "responses": {
           "200": {
             "description": "Usuario vinculado a programa."
+          },
+          "403": {
+            "description": "Programa fuera del ámbito del usuario."
           }
         }
       }
@@ -958,7 +962,8 @@
           "200": {
             "description": "Solicitudes de admisi\u00f3n."
           }
-        }
+        },
+        "description": "Administraci\u00f3n consulta todas, coordinaci\u00f3n las de sus programas activos y los dem\u00e1s usuarios solo las propias."
       },
       "post": {
         "summary": "Postularse a un programa acad\u00e9mico (Aspirantes)",
@@ -977,7 +982,7 @@
     "/admissions/{id}/review": {
       "patch": {
         "summary": "Dictaminar postulaci\u00f3n (admitir, rechazar)",
-        "description": "Al admitir, activa la cuenta y asigna rol estudiante. Requiere admissions.review.",
+        "description": "Solicitudes de admisi\u00f3n.",
         "security": [
           {
             "bearerAuth": []
@@ -986,6 +991,15 @@
         "responses": {
           "200": {
             "description": "Postulaci\u00f3n dictaminada."
+          },
+          "403": {
+            "description": "Cuenta revisora sin autorizaci\u00f3n o fuera de \u00e1mbito."
+          },
+          "404": {
+            "description": "Postulaci\u00f3n inexistente."
+          },
+          "409": {
+            "description": "El dictamen requiere una revisi\u00f3n administrativa o un proceso de baja."
           }
         }
       }

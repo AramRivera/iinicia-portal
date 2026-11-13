@@ -1007,6 +1007,15 @@ export type Database = {
       };
     };
     Functions: {
+      iinicia_review_admission: {
+        Args: {
+          application_id: string;
+          reviewer_id: string;
+          decision: AcademicStatus;
+          notes: string | null;
+        };
+        Returns: Database['public']['Tables']['admission_applications']['Row'];
+      };
       has_role: {
         Args: {
           required_role_slug: string;

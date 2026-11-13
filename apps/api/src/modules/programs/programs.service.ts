@@ -1,10 +1,17 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  hasGlobalAcademicAccess,
+  hasProgramScope,
+  isScopedCoordinator,
+  loadActiveRoleSlugs,
+} from '../../common/auth/program-scope.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import type { Json } from '../../common/supabase/database.types.js';
 import { CreateProgramDto } from './dto/create-program.dto.js';
@@ -161,6 +168,14 @@ export class ProgramsService {
     actorId: string,
   ) {
     const admin = this.supabase.getAdminClient();
+
+    const roles = await loadActiveRoleSlugs(admin, actorId);
+    if (
+      !hasGlobalAcademicAccess(roles) &&
+      !(isScopedCoordinator(roles) && await hasProgramScope(admin, actorId, programId))
+    ) {
+      throw new ForbiddenException('El programa está fuera de tu ámbito.');
+    }
 
     // Validar programa
     const { data: program } = await admin

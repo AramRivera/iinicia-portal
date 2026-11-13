@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
@@ -128,4 +128,35 @@ describe('ProgramsService', () => {
       expect(auditMock).toHaveBeenCalled();
     });
   });
+
+  it('rejects a coordinator assigning a user outside their program', async () => {
+    const membershipLookup = vi.fn().mockResolvedValue({ data: null, error: null });
+    adminClientMock.from.mockImplementation((table: string) => {
+      if (table === 'user_roles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: async () => ({
+                data: [{ roles: { slug: 'coordinador' }, expires_at: null }],
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === 'user_programs') {
+        return {
+          select: () => ({
+            eq: () => ({ in: () => ({ eq: () => ({ maybeSingle: membershipLookup }) }) }),
+          }),
+        };
+      }
+      throw new Error('Unexpected write or lookup: ' + table);
+    });
+
+    await expect(service.assignUserToProgram(
+      'other-program', { user_id: 'target', status: 'admitido' }, 'coordinator',
+    )).rejects.toBeInstanceOf(ForbiddenException);
+    expect(membershipLookup).toHaveBeenCalled();
+  });
+
 });

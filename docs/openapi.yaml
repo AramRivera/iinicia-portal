@@ -571,11 +571,14 @@ paths:
   /programs/{id}/enroll-user:
     post:
       summary: Vincular usuario a programa académico
+      description: Coordinación requiere una asociación activa con el programa.
       security:
         - bearerAuth: []
       responses:
         "200":
           description: Usuario vinculado a programa.
+        "403":
+          description: Programa fuera del ámbito del usuario.
 
   # =========================================================================
   # CURSOS Y MAPEOS CON MOODLE
@@ -769,6 +772,7 @@ paths:
   /admissions:
     get:
       summary: Consultar solicitudes de admisión
+      description: Administración consulta todas, coordinación las de sus programas activos y los demás usuarios solo las propias.
       security:
         - bearerAuth: []
       responses:
@@ -785,12 +789,18 @@ paths:
   /admissions/{id}/review:
     patch:
       summary: Dictaminar postulación (admitir, rechazar)
-      description: Al admitir, activa la cuenta y asigna rol estudiante. Requiere admissions.review.
+      description: Confirma en una transacción el dictamen, la auditoría y, al admitir, el programa, perfil y rol Estudiante. Coordinación requiere ámbito sobre el programa. Requiere admissions.review, salvo superadministración.
       security:
         - bearerAuth: []
       responses:
         "200":
           description: Postulación dictaminada.
+        "403":
+          description: Cuenta revisora sin autorización o fuera de ámbito.
+        "404":
+          description: Postulación inexistente.
+        "409":
+          description: El dictamen requiere una revisión administrativa o un proceso de baja.
 
   /contact:
     post:

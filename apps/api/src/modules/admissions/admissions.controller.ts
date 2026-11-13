@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Req,
@@ -26,15 +27,8 @@ export class AdmissionsController {
   @Get()
   @UseGuards(SupabaseAuthGuard)
   findApplications(@Req() req: AuthenticatedRequest) {
-    const userRoles = (req as any).userRoles || [];
-    const isStaff =
-      userRoles.includes('superadministrador') ||
-      userRoles.includes('administrador') ||
-      userRoles.includes('coordinador');
-
     return this.admissionsService.findApplications(
       req.user.id,
-      isStaff,
       req.accessToken,
     );
   }
@@ -55,7 +49,7 @@ export class AdmissionsController {
   @Roles('superadministrador', 'administrador', 'coordinador')
   @RequirePermissions('admissions.review')
   reviewApplication(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReviewAdmissionDto,
     @Req() req: AuthenticatedRequest,
   ) {

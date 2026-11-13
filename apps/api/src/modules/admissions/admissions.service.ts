@@ -1,10 +1,17 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  hasGlobalAcademicAccess,
+  isScopedCoordinator,
+  listAssignedProgramIds,
+  loadActiveRoleSlugs,
+} from '../../common/auth/program-scope.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { CreateAdmissionDto } from './dto/create-admission.dto.js';
 import { ReviewAdmissionDto } from './dto/review-admission.dto.js';
@@ -18,14 +25,20 @@ export class AdmissionsService {
   /**
    * Consulta solicitudes de admisión.
    */
-  async findApplications(userId: string, isStaff: boolean, accessToken: string) {
+  async findApplications(userId: string, accessToken: string) {
+    const admin = this.supabase.getAdminClient();
+    const roles = await loadActiveRoleSlugs(admin, userId);
     const client = this.supabase.getResilientClient(accessToken);
     let query = client
       .from('admission_applications')
       .select('*, programs!program_id ( code, name, slug ), profiles!applicant_id ( id, email, first_name, last_name, phone )')
       .order('submitted_at', { ascending: false });
 
-    if (!isStaff) {
+    if (isScopedCoordinator(roles)) {
+      const programIds = await listAssignedProgramIds(admin, userId);
+      if (!programIds.length) return [];
+      query = query.in('program_id', programIds);
+    } else if (!hasGlobalAcademicAccess(roles)) {
       query = query.eq('applicant_id', userId);
     }
 
@@ -44,27 +57,18 @@ export class AdmissionsService {
   async createApplication(userId: string, dto: CreateAdmissionDto) {
     const admin = this.supabase.getAdminClient();
 
-    const { data: program } = await admin
+    const { data: program, error: programError } = await admin
       .from('programs')
       .select('id, name')
       .eq('id', dto.program_id)
+      .eq('is_active', true)
       .maybeSingle();
 
+    if (programError) {
+      throw new InternalServerErrorException('No fue posible consultar el programa.');
+    }
     if (!program) {
       throw new NotFoundException('El programa académico no existe.');
-    }
-
-    const { data: existing } = await admin
-      .from('admission_applications')
-      .select('id, status')
-      .eq('applicant_id', userId)
-      .eq('program_id', dto.program_id)
-      .maybeSingle();
-
-    if (existing) {
-      throw new ConflictException(
-        `Ya cuentas con una postulación a este programa (estado: ${existing.status}).`,
-      );
     }
 
     const { data, error } = await admin
@@ -81,6 +85,9 @@ export class AdmissionsService {
       .select()
       .maybeSingle();
 
+    if (error?.code === '23505') {
+      throw new ConflictException('Ya cuentas con una postulación a este programa.');
+    }
     if (error || !data) {
       this.logger.error(`Error al registrar admisión: ${error?.message}`);
       throw new InternalServerErrorException('No fue posible registrar la postulación.');
@@ -112,83 +119,26 @@ export class AdmissionsService {
   ) {
     const admin = this.supabase.getAdminClient();
 
-    const { data: app, error: findError } = await admin
-      .from('admission_applications')
-      .select('*, profiles!applicant_id (*)')
-      .eq('id', applicationId)
-      .maybeSingle();
-
-    if (findError || !app) {
-      throw new NotFoundException('Solicitud de admisión no encontrada.');
-    }
-
-    const now = new Date().toISOString();
-
-    const { data, error } = await admin
-      .from('admission_applications')
-      .update({
-        status: dto.status,
-        reviewer_id: reviewerId,
-        reviewer_notes: dto.reviewer_notes ?? null,
-        reviewed_at: now,
-      })
-      .eq('id', applicationId)
-      .select()
-      .maybeSingle();
-
-    if (error) {
-      this.logger.error(`Error al dictaminar admisión: ${error.message}`);
-      throw new InternalServerErrorException('No fue posible actualizar el dictamen.');
-    }
-
-    // Si es admitido: asignar en user_programs y agregar rol 'estudiante'
-    if (dto.status === 'admitido') {
-      await admin.from('user_programs').upsert(
-        {
-          user_id: app.applicant_id,
-          program_id: app.program_id,
-          status: 'admitido',
-          authorized_by: reviewerId,
-        },
-        { onConflict: 'user_id,program_id' },
-      );
-
-      // Activar cuenta en profiles si estaba pendiente
-      await admin
-        .from('profiles')
-        .update({ status: 'activo' })
-        .eq('id', app.applicant_id);
-
-      // Asignar rol estudiante si no lo tiene
-      const { data: estudianteRole } = await admin
-        .from('roles')
-        .select('id')
-        .eq('slug', 'estudiante')
-        .maybeSingle();
-
-      if (estudianteRole) {
-        await admin.from('user_roles').upsert(
-          {
-            user_id: app.applicant_id,
-            role_id: estudianteRole.id,
-            is_active: true,
-            assigned_by: reviewerId,
-          },
-          { onConflict: 'user_id,role_id' },
-        );
-      }
-    }
-
-    await admin.from('audit_logs').insert({
-      actor_id: reviewerId,
-      target_user_id: app.applicant_id,
-      action: 'ADMISSION_REVIEWED',
-      entity_name: 'admission_applications',
-      entity_id: applicationId,
-      old_values: { status: app.status },
-      new_values: { status: dto.status, reviewer_notes: dto.reviewer_notes },
+    const { data, error } = await admin.rpc('iinicia_review_admission', {
+      application_id: applicationId,
+      reviewer_id: reviewerId,
+      decision: dto.status,
+      notes: dto.reviewer_notes ?? null,
     });
 
+    if (error?.code === 'P0002') {
+      throw new NotFoundException('Solicitud de admisión no encontrada.');
+    }
+    if (error?.code === '42501') {
+      throw new ForbiddenException('No puedes dictaminar esta postulación.');
+    }
+    if (error?.code === 'P0001') {
+      throw new ConflictException(error.message);
+    }
+    if (error || !data) {
+      this.logger.error('Error al dictaminar admisión: ' + (error?.code ?? 'sin resultado'));
+      throw new InternalServerErrorException('No fue posible actualizar el dictamen.');
+    }
     return data;
   }
 }
