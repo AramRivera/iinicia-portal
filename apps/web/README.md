@@ -15,6 +15,8 @@ Configura `.env.local` antes de iniciar. `NEXT_PUBLIC_API_URL` debe incluir `/ap
 
 Para accesos rápidos locales, crea `apps/web/.env.demo.local` con `NEXT_PUBLIC_DEMO_ACCOUNTS` y ejecuta `npm run dev:demo`. El archivo se ignora en Git. Los botones solo rellenan el formulario: el login real usa NestJS y pide el TOTP configurado para la cuenta. Consulta [guía de demo](../../docs/frontend.md#accesos-rápidos-de-prueba) y [verificación en dos pasos](../../docs/autenticacion-dos-factores.md).
 
+Para trabajar con compañeros por ZeroTier, usa localhost en puerto 4000 y la IP del host ZeroTier en 4007. Consulta la guía para iniciar los dos servidores y configurar CORS de la API.
+
 ```powershell
 npm.cmd run build
 npm.cmd run lint

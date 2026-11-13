@@ -39,9 +39,20 @@ El iniciador y los botones están incluidos en `main`. Crea `apps/web/.env.demo.
 NEXT_PUBLIC_DEMO_ACCOUNTS='[{"label":"Estudiante","email":"estudiante@example.test","password":"CONTRASENA_DE_PRUEBA"}]'
 ```
 
-Desde `apps/web`, ejecuta `npm run dev:demo` y abre <http://127.0.0.1:4000/login>. Si ya hay un servidor en el puerto 4000, detenlo antes. Cada botón rellena el formulario para que puedas iniciar sesión. El comando escucha solo en la interfaz local y las cuentas se cargan en el navegador de desarrollo. Usa únicamente cuentas de prueba; cada inicio sigue pasando por la API y exige TOTP.
+Desde `apps/web`, ejecuta `npm run dev:demo` y abre <http://127.0.0.1:4000/login>. Si ya hay un servidor en el puerto 4000, detenlo antes. Los botones rellenan el formulario con las cuentas de prueba cargadas en el navegador. El inicio de sesión sigue pasando por la API y exige TOTP.
 
-El iniciador actual carga `.env.demo.local` con `process.loadEnvFile()` para evitar el error `--env-file= is not allowed in NODE_OPTIONS` del intento anterior. Si pruebas enlaces de correo desde esta URL, configura el mismo origen en `FRONTEND_URL` y en las redirecciones permitidas de Supabase.
+### Demo por ZeroTier
+
+Inicia el portal con la IP de ZeroTier del equipo que ejecuta Next.js y con la URL de la API de pruebas accesible desde los navegadores del equipo.
+
+```bash
+npm run dev:demo -- --hostname 127.0.0.1 --port 4000 --api-url http://192.168.191.171:4527/api/v1
+npm run dev:demo -- --hostname 192.168.191.171 --port 4007 --api-url http://192.168.191.171:4527/api/v1
+```
+
+En la misma máquina, abre <http://localhost:4000/login>. El equipo por ZeroTier abre <http://192.168.191.171:4007/login>. Los dos procesos usan el mismo código fuente y comparten cuentas configuradas en el archivo local. Next.js genera carpetas de desarrollo separadas por puerto para que puedan correr a la vez. Comparte este modo únicamente con el equipo autorizado para las cuentas de prueba, porque Next.js entrega sus credenciales al navegador. La API debe incluir `http://localhost:4000`, `http://127.0.0.1:4000` y `http://192.168.191.171:4007` en `CORS_ORIGIN`. Para probar enlaces de correo, establece `FRONTEND_URL=http://192.168.191.171:4007` y permite esa ruta en la lista de redirecciones de Supabase.
+
+El iniciador carga `.env.demo.local` con `process.loadEnvFile()` para evitar el error `--env-file= is not allowed in NODE_OPTIONS`. Las dos instancias usan directorios Next aislados por puerto para evitar colisiones.
 
 ## Mapa de páginas
 
