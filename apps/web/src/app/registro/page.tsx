@@ -1,5 +1,7 @@
 'use client';
 
+import { AuthCaptcha, captchaEnabled } from '@/components/AuthCaptcha';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,10 +17,13 @@ export default function RegistroPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || (captchaEnabled && !captchaToken)) return;
     setError(null);
     setLoading(true);
 
@@ -29,6 +34,7 @@ export default function RegistroPage() {
         phone: phone || undefined,
         email,
         password,
+        captcha_token: captchaToken,
       });
 
       setPassword('');
@@ -36,6 +42,8 @@ export default function RegistroPage() {
     } catch (err: any) {
       setError(err.message || 'No fue posible completar el registro. Verifica los datos.');
     } finally {
+      setCaptchaToken(undefined);
+      setCaptchaAttempt((attempt) => attempt + 1);
       setLoading(false);
     }
   };
@@ -147,9 +155,10 @@ export default function RegistroPage() {
               </p>
             </div>
 
+            <AuthCaptcha attempt={captchaAttempt} onToken={setCaptchaToken} />
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (captchaEnabled && !captchaToken)}
               className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? (

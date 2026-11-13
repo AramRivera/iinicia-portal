@@ -37,6 +37,7 @@ export class AuthController {
     return this.supabase.signInWithPassword(
       credentials.email,
       credentials.password,
+      credentials.captcha_token,
     );
   }
 
@@ -74,8 +75,8 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   recoverPassword(@Body() dto: RecoverPasswordDto) {
     return dto.code_challenge
-      ? this.supabase.requestPkcePasswordRecovery(dto.email, dto.code_challenge)
-      : this.supabase.requestPasswordRecovery(dto.email);
+      ? this.supabase.requestPkcePasswordRecovery(dto.email, dto.code_challenge, dto.captcha_token)
+      : this.supabase.requestPasswordRecovery(dto.email, dto.captcha_token);
   }
 
   @Post('reset-password')

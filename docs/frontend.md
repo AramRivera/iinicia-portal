@@ -1,6 +1,6 @@
 # Frontend INICIA — guía vigente
 
-Revisión del código: 12 de noviembre de 2026 (`main`, `6635d9e`). Esta guía describe `apps/web` y el modo de demostración incluido en el repositorio. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Consulta [openapi.yaml](openapi.yaml) para el contrato y la [bitácora](bitacora-proyecto.md) para el historial de cambios.
+Revisión del código: 13 de noviembre de 2026 (`codex/captcha-auth`). Esta guía describe `apps/web` y el modo de demostración incluido en el repositorio. Los ejemplos históricos de [frontend-integration-guide.md](frontend-integration-guide.md) y [manual-portales-y-paginas.md](manual-portales-y-paginas.md) pueden estar desactualizados. Consulta [openapi.yaml](openapi.yaml) para el contrato y la [bitácora](bitacora-proyecto.md) para el historial de cambios.
 
 ## Arquitectura
 
@@ -65,6 +65,8 @@ El iniciador actual carga `.env.demo.local` con `process.loadEnvFile()` para evi
 ## Flujos y contratos usados
 
 **Sesión.** `POST /auth/register` inicia el alta. `POST /auth/login` valida la contraseña y entrega la continuación para el autenticador. `POST /auth/mfa/verify` completa el inicio con TOTP y `GET /auth/me` carga el perfil y sus roles. El cliente conserva en memoria la continuación AAL1 y guarda `iinicia_access_token` en `localStorage` después de verificar la sesión AAL2. `apiFetch` lo envía como Bearer. Si `/auth/me` falla, se borra el token. El logout borra el token local y vuelve al login. Consulta la [guía de verificación en dos pasos](autenticacion-dos-factores.md).
+
+**CAPTCHA.** Si `NEXT_PUBLIC_TURNSTILE_SITE_KEY` está configurada, las vistas de login, registro y recuperación presentan Turnstile y envían el token al backend en `captcha_token`. El token es de un solo uso, así que el portal solicita uno nuevo después de cada intento. La [guía de CAPTCHA](captcha-auth.md) describe Cloudflare y Supabase.
 
 **Oferta.** La portada usa `GET /programs`; el detalle usa `GET /programs/:idOrSlug`. `GET /courses/offerings` requiere sesión. `coursesApi` normaliza los campos de la API para las tarjetas.
 

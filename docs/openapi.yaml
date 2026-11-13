@@ -52,12 +52,19 @@ paths:
               type: object
               required: [email, password]
               properties:
+                captcha_token:
+                  type: string
+                  minLength: 1
+                  maxLength: 2048
+                  description: Obligatorio cuando CAPTCHA está habilitado en Supabase Auth.
                 email:
                   type: string
                   format: email
                 password:
                   type: string
       responses:
+        "400":
+          description: Datos inválidos o CAPTCHA rechazado.
         "200":
           description: Continuación de MFA. La respuesta no se debe almacenar.
           content:
@@ -160,6 +167,11 @@ paths:
               type: object
               required: [email, password, first_name, last_name]
               properties:
+                captcha_token:
+                  type: string
+                  minLength: 1
+                  maxLength: 2048
+                  description: Obligatorio cuando CAPTCHA está habilitado en Supabase Auth.
                 email:
                   type: string
                   format: email
@@ -184,7 +196,7 @@ paths:
                   message:
                     type: string
         "400":
-          description: Datos inválidos o contraseña rechazada.
+          description: Datos inválidos o contraseña rechazada. CAPTCHA rechazado cuando está habilitado.
         "429":
           description: Límite de solicitudes alcanzado.
         "503":
@@ -202,6 +214,11 @@ paths:
               type: object
               required: [email]
               properties:
+                captcha_token:
+                  type: string
+                  minLength: 1
+                  maxLength: 2048
+                  description: Obligatorio cuando CAPTCHA está habilitado en Supabase Auth.
                 email:
                   type: string
                   format: email
@@ -221,7 +238,7 @@ paths:
                   message:
                     type: string
         "400":
-          description: Correo inválido.
+          description: Correo inválido. CAPTCHA rechazado cuando está habilitado.
         "429":
           description: Límite de solicitudes alcanzado.
   /auth/reset-password:

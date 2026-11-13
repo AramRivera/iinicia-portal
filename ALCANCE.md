@@ -445,6 +445,7 @@ Requisitos obligatorios:
 - Variables de entorno para secretos.
 
 - Rate limiting en endpoints sensibles.
+- CAPTCHA Turnstile en inicio de sesión, registro público y solicitud de recuperación, verificado por Supabase Auth.
 
 - Protección de las credenciales y sesiones.
 - Segundo factor TOTP obligatorio para todos los roles en cada inicio de sesión; la sesión AAL1 no habilita datos ni paneles protegidos.

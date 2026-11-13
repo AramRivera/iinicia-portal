@@ -1,5 +1,7 @@
 'use client';
 
+import { AuthCaptcha, captchaEnabled } from '@/components/AuthCaptcha';
+
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -39,6 +41,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [mfa, setMfa] = useState<LoginResponse | null>(null);
   const [factorId, setFactorId] = useState('');
@@ -52,6 +56,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || (!mfa && captchaEnabled && !captchaToken)) return;
     setError(null);
     setLoading(true);
 
@@ -61,7 +66,7 @@ export default function LoginPage() {
         resetMfa();
         router.replace(getDefaultDashboardPath(user.roles));
       } else {
-        const nextStep = await login(email, password);
+        const nextStep = await login(email, password, captchaToken);
         setPassword('');
         setFactorId(nextStep.step === 'setup' ? nextStep.factor_id : nextStep.factors[0]?.id ?? '');
         setMfa(nextStep);
@@ -73,6 +78,10 @@ export default function LoginPage() {
       setCode('');
       setError(err instanceof Error ? err.message : 'No fue posible iniciar sesión.');
     } finally {
+      if (!mfa) {
+        setCaptchaToken(undefined);
+        setCaptchaAttempt((attempt) => attempt + 1);
+      }
       setLoading(false);
     }
   };
@@ -174,9 +183,10 @@ export default function LoginPage() {
             />
           </div>
 
+          <AuthCaptcha attempt={captchaAttempt} onToken={setCaptchaToken} />
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (captchaEnabled && !captchaToken)}
             className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
           >
             {loading ? (

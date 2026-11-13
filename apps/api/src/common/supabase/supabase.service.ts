@@ -14,6 +14,8 @@ import { Database } from './database.types.js';
 import { readSupabaseTokenClaims } from '../auth/supabase-token-claims.js';
 
 /** Primer segmento de la URL a la que PostgREST sirve `/rest/v1/<tabla>`. */
+const CAPTCHA_MESSAGE = 'No se pudo verificar el CAPTCHA. Completa un nuevo desafío.';
+
 const RECOVERY_MESSAGE =
   'Solicitud recibida. Si podemos enviar un enlace para esa dirección, lo recibirás por correo.';
 
@@ -77,6 +79,7 @@ export class SupabaseService {
   async signUp(params: {
     email: string;
     password: string;
+    captchaToken?: string;
     firstName?: string;
     lastName?: string;
     phone?: string;
@@ -92,6 +95,7 @@ export class SupabaseService {
         password: params.password,
         options: {
           emailRedirectTo,
+          ...(params.captchaToken && { captchaToken: params.captchaToken }),
           data: {
             first_name: params.firstName ?? '',
             last_name: params.lastName ?? '',
@@ -100,6 +104,7 @@ export class SupabaseService {
         },
       });
 
+      if (error?.code === 'captcha_failed') throw new BadRequestException(CAPTCHA_MESSAGE);
       if (error?.code === 'user_already_exists') return { message };
       if (error?.status === 429) {
         throw new HttpException(
@@ -162,13 +167,14 @@ export class SupabaseService {
     }
   }
 
-  async signInWithPassword(email: string, password: string) {
+  async signInWithPassword(email: string, password: string, captchaToken?: string) {
     try {
       const { auth } = this.createClient();
       const { data, error } = await auth.signInWithPassword(
         {
           email,
           password,
+          ...(captchaToken && { options: { captchaToken } }),
         },
       );
 
@@ -178,6 +184,7 @@ export class SupabaseService {
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
+      if (error?.code === 'captcha_failed') throw new BadRequestException(CAPTCHA_MESSAGE);
       if (error?.code === 'email_not_confirmed') {
         throw new UnauthorizedException('Confirma tu correo antes de iniciar sesión.');
       }
@@ -384,23 +391,33 @@ export class SupabaseService {
     return this.createClient(accessToken);
   }
 
-  async requestPasswordRecovery(email: string): Promise<{ message: string }> {
+  async requestPasswordRecovery(email: string, captchaToken?: string): Promise<{ message: string }> {
     const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
       redirectTo: this.getAuthRedirect('/restablecer-password'),
+      ...(captchaToken && { captchaToken }),
     });
+    if (error?.code === 'captcha_failed') throw new BadRequestException(CAPTCHA_MESSAGE);
     if (error) this.logRecoveryFailure(error.status);
     // Una respuesta uniforme evita revelar si el correo existe o si alcanzó su cuota.
     return { message: RECOVERY_MESSAGE };
   }
 
-  async requestPkcePasswordRecovery(email: string, challenge: string): Promise<{ message: string }> {
+  async requestPkcePasswordRecovery(email: string, challenge: string, captchaToken?: string): Promise<{ message: string }> {
     const query = new URLSearchParams({ redirect_to: this.getAuthRedirect('/restablecer-password') });
     const response = await this.postAuth(`/recover?${query}`, {
       email,
       code_challenge: challenge,
       code_challenge_method: 's256',
+      ...(captchaToken && { gotrue_meta_security: { captcha_token: captchaToken } }),
     });
-    if (!response.ok) this.logRecoveryFailure(response.status);
+    if (!response.ok) {
+      const failure: { code?: string; error_code?: string } | null =
+        await response.json().catch(() => null);
+      if (failure?.code === 'captcha_failed' || failure?.error_code === 'captcha_failed') {
+        throw new BadRequestException(CAPTCHA_MESSAGE);
+      }
+      this.logRecoveryFailure(response.status);
+    }
     return { message: RECOVERY_MESSAGE };
   }
 
@@ -444,7 +461,7 @@ export class SupabaseService {
     return this.preparePasswordReset(auth, session.access_token, password);
   }
 
-  private async postAuth(path: string, body: Record<string, string>, accessToken?: string): Promise<Response> {
+  private async postAuth(path: string, body: Record<string, unknown>, accessToken?: string): Promise<Response> {
     const { url, publishableKey } = this.getConfiguration();
     try {
       return await fetch(new URL(`/auth/v1${path}`, url), {

@@ -7,6 +7,12 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(2048)
+  captcha_token?: string;
+
   @IsEmail({}, { message: 'El correo electrónico debe ser válido.' })
   @MaxLength(254)
   email!: string;

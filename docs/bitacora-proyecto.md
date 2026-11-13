@@ -1,6 +1,6 @@
 # Bitácora del proyecto IINICIA
 
-**Corte:** 12 de noviembre de 2026 · **Base de código:** `main` en `6635d9e`; coincide con `origin/main` según las referencias locales revisadas.
+**Corte:** 13 de noviembre de 2026 · **Base de código:** rama `codex/captcha-auth`, basada en `main` `1e73a9d`.
 
 Este documento reúne el alcance acordado, las integraciones de Git, las decisiones técnicas y la evidencia. El [estado actual](estado-actual.md) resume los pendientes; los [casos de coordinación](pruebas-coordinacion-supabase.md) y la [validación de identidad](validacion-identidad-supabase.md) permiten repetir las pruebas.
 
@@ -24,6 +24,7 @@ El profesor redujo de dos a **un curso completo en Moodle**. Se mantienen el con
 | 9 nov. | Coordinación acotada a sus programas en las operaciones revisadas de matrículas y Moodle; pruebas para accesos autorizados y denegados. | `11f7dc6` → `ad33159` |
 | 9 nov. | Registro de cambios de demo locales: accesos rápidos configurables por `.env.demo.local` y corrección del iniciador frente a `--env-file= is not allowed in NODE_OPTIONS`. | `ad7059c` |
 | 10 nov. | MFA TOTP obligatorio en cada inicio de sesión, rutas protegidas AAL2, recuperación con confirmación TOTP, contratos OpenAPI y migración separada para exigir MFA en la Data API. | `6635d9e` |
+| 13 nov. | Turnstile en inicio de sesión, registro y recuperación; NestJS reenvía el token a Supabase Auth. Se actualizan contratos OpenAPI y guías. La portada también elimina la mención a Moodle LMS en el texto principal. | `codex/captcha-auth` |
 
 Al corte, `main` y `origin/main` apuntaban a `6635d9e`; la rama `codex/2fa-inicio-sesion` conserva el mismo commit. Esto describe las referencias locales disponibles y no acredita despliegue. Los accesos rápidos de demo están incluidos en el historial, pero cada usuario debe crear su `.env.demo.local`, que permanece fuera de Git.
 
@@ -33,9 +34,13 @@ Al corte, `main` y `origin/main` apuntaban a `6635d9e`; la rama `codex/2fa-inici
 
 **Demostración local.** Los accesos se configuran con `.env.demo.local`, ignorado por Git. El iniciador usa `process.loadEnvFile()` y abre Next.js en `127.0.0.1:4000`, evitando el error previo de `--env-file`. Los botones rellenan el formulario; el inicio real pasa por la API y requiere TOTP. Usar solo cuentas de prueba. Véase [cómo iniciar la demo](frontend.md#accesos-rápidos-de-prueba).
 
+**CAPTCHA.** Turnstile se integra en las páginas de login, registro y recuperación. Next.js envía `captcha_token` en el contrato JSON y NestJS lo pasa a Supabase Auth, que valida la respuesta con la Secret Key configurada en su panel. El modo Managed de Turnstile puede validar automáticamente y presentar reto interactivo solo si hace falta. La integración aún no está configurada con claves reales ni probada contra el Supabase del proyecto. Véase [guía CAPTCHA](captcha-auth.md).
+
 **API.** NestJS agrupa salud, autenticación, perfiles y usuarios, roles y permisos, programas, cursos, inscripciones, admisiones, Moodle, auditoría y CMS. Hay validación, guards y limitación de intentos en los flujos de cuenta. Las solicitudes propias de inscripción quedan pendientes; las asignaciones a terceros en el módulo de matrículas requieren autorización y, para coordinación, ámbito. El resultado distingue autorización local de sincronización con Moodle. Se evita duplicar una solicitud activa y hay operaciones de consulta, aprobación, sincronización y desmatriculación. Véanse la [arquitectura](backend-architecture.md) y el [contrato OpenAPI](openapi.yaml).
 
 La MFA se probó el 10 de noviembre con Supabase Auth `v2.197.0`, PostgREST `v14.6`, PostgreSQL 16 y Mailpit en contenedores locales. La API compiló; pasaron 88 pruebas unitarias y 31 pruebas HTTP con servicios simulados. La web compiló y el lint dirigido de las páginas de inicio/recuperación pasó. La migración de MFA para la Data API sigue pendiente de comprobarse en el Supabase remoto. Evidencia completa: [Verificación en dos pasos](autenticacion-dos-factores.md).
+
+El 13 de noviembre, con Turnstile integrado, la API compiló, pasaron 88 pruebas unitarias y 32 pruebas HTTP con servicios simulados, y la web pasó `tsc --noEmit`. El lint de API conserva dos avisos en `moodle.client.ts`. Falta configurar claves Cloudflare y Supabase y repetir los flujos reales. Las pruebas con mocks no validan Siteverify.
 
 **Supabase.** Se documentó el [modelo mixto de acceso](decisiones/ADR-001-acceso-supabase.md): JWT de usuario para consultas sujetas a RLS y cliente privilegiado solo en NestJS con autorización explícita. El alta pública y la confirmación de correo se comprobaron antes de MFA. La API espera `roles.id/slug` y `user_roles.role_id`, distintos de la [migración inicial](../supabase/migrations/20261020110000_initial_schema.sql). La presencia de scripts alternativos no demuestra cuál se aplicó. Falta exportar y versionar una base compatible, probarla en un entorno vacío y repetir el login de dos pasos en el proyecto remoto. La migración `20261110120000_require_mfa_data_api.sql` aún no consta aplicada.
 

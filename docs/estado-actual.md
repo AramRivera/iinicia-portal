@@ -1,7 +1,7 @@
 # Estado actual del proyecto IINICIA
 
-**Revisión documental y del código:** 12 de noviembre de 2026
-**Rama de referencia:** `main` (`6635d9e`), sincronizada con `origin/main` en las referencias locales consultadas
+**Revisión documental y del código:** 13 de noviembre de 2026
+**Rama de trabajo:** `codex/captcha-auth`, basada en `main` (`1e73a9d`)
 **Alcance vigente del curso de prueba:** un curso
 
 Este documento separa lo que se observa en el repositorio de lo que requiere confirmación en servicios externos. Los módulos, variables de entorno, mocks, ejemplos y documentos por sí solos no prueban que Supabase o Moodle estén conectados ni que una operación real haya funcionado.
@@ -19,10 +19,13 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 | Componente | Evidencia | Validación pendiente |
 | --- | --- | --- |
 | Frontend | Portal rediseñado, accesos rápidos configurables con `dev:demo` y flujo de TOTP integrado. La continuación AAL1 permanece en memoria; el token se guarda después de verificar AAL2. | Revisar accesibilidad, contenido y flujos con cuentas de prueba. Ejecutar de nuevo lint completo del portal; la última revisión completa registrada es anterior a MFA. |
-| Backend | Autenticación con TOTP obligatorio, guards que requieren AAL2, recuperación protegida por TOTP y contratos OpenAPI actualizados. Matrículas y consultas de Moodle aplican autorización y ámbito en las rutas revisadas. | Corregir la autoasignación de programa desde `POST /api/v1/programs/:id/enroll-user` y comprobar el alcance con cuentas reales. |
+| Frontend | Portal rediseñado, demo local y widget Turnstile para login, registro y recuperación. El token CAPTCHA se envía a NestJS y se renueva tras cada solicitud. | Configurar la Site Key por ambiente y verificar los flujos con un widget real. |
+| Backend | Autenticación con TOTP obligatorio, guards que requieren AAL2, recuperación protegida por TOTP y contratos OpenAPI actualizados. NestJS reenvía `captcha_token` a Supabase Auth en login, registro y recuperación. Matrículas y consultas de Moodle aplican autorización y ámbito en las rutas revisadas. | Verificar CAPTCHA con Supabase Auth configurado; corregir la autoasignación de programa desde `POST /api/v1/programs/:id/enroll-user` y comprobar el alcance con cuentas reales. |
 | Supabase | Se comprobó alta pública, confirmación y lecturas puntuales en el proyecto configurado antes de integrar MFA. La pila local Auth/PostgREST/PostgreSQL validó TOTP y rechazo de AAL1. La API vigente consulta `roles.id`, `roles.slug` y `user_roles.role_id`, distintos de la migración inicial. | La migración `20261110120000_require_mfa_data_api.sql` no está acreditada como aplicada al proyecto remoto. Falta línea base compatible, revisar RLS y escrituras privilegiadas con JWT reales, y completar recuperación con correo operativo. SMTP sigue aplazado. |
 | Moodle | Instalación local Moodle 5.3+ (build `20261021`) y Web Service comprobados. Hay [un recurso didáctico candidato](cursos/html-basico/GUIA-MOODLE.txt) para el curso único. | Confirmar nombre e ID del curso, permisos, SSO y mapeo de roles. Registrar evidencia de las actividades y de acceso por rol. |
 | Operación | Compilaciones de API y portal y suites unitarias y de API ejecutadas localmente. | Cerrar configuración de despliegue, HTTPS, respaldos y recuperación. |
+
+La activación del CAPTCHA aún requiere crear el widget Cloudflare, permitir los hostnames usados, configurar `NEXT_PUBLIC_TURNSTILE_SITE_KEY` y pegar la Secret Key en la protección CAPTCHA de Supabase Auth. No se han proporcionado ni configurado claves reales.
 
 ## Validación registrada
 
@@ -30,6 +33,7 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 - Último lint completo del portal registrado antes de MFA: 94 errores y 40 avisos en la copia local de desarrollo. No se volvió a ejecutar lint completo en esta revisión documental.
 - En una revisión anterior, `/api/v1/health` reportó `ok` para Supabase y Moodle en la instancia local. Esto no acredita flujos académicos, SMTP, SSO ni configuración remota de MFA.
 - Las pruebas de identidad contra el Supabase configurado son anteriores a MFA. No se han repetido tras el cambio del contrato de login; la migración de protección de Data API no consta aplicada al proyecto remoto.
+- En la rama CAPTCHA, la API compiló, pasaron 88 pruebas unitarias y 32 pruebas HTTP con mocks. La web pasó `tsc --noEmit`. No se ha hecho una prueba real de Turnstile/Supabase porque no están configuradas las claves ni la protección CAPTCHA remota.
 
 ## Demostración del curso único
 

@@ -68,6 +68,12 @@
                   },
                   "password": {
                     "type": "string"
+                  },
+                  "captcha_token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Obligatorio cuando CAPTCHA est\u00e1 habilitado en Supabase Auth."
                   }
                 }
               }
@@ -103,6 +109,9 @@
           },
           "503": {
             "description": "Servicio de autenticaci\u00f3n o MFA no disponible."
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos o CAPTCHA rechazado."
           }
         }
       }
@@ -140,6 +149,12 @@
                   },
                   "phone": {
                     "type": "string"
+                  },
+                  "captcha_token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Obligatorio cuando CAPTCHA est\u00e1 habilitado en Supabase Auth."
                   }
                 }
               }
@@ -166,7 +181,7 @@
             }
           },
           "400": {
-            "description": "Datos inv\u00e1lidos o contrase\u00f1a rechazada."
+            "description": "Datos inv\u00e1lidos o CAPTCHA rechazado."
           },
           "429": {
             "description": "L\u00edmite de solicitudes alcanzado."
@@ -1417,6 +1432,12 @@
                   "code_challenge": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_-]{43}$"
+                  },
+                  "captcha_token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "Obligatorio cuando CAPTCHA est\u00e1 habilitado en Supabase Auth."
                   }
                 }
               }
@@ -1443,7 +1464,7 @@
             }
           },
           "400": {
-            "description": "Correo inv\u00e1lido."
+            "description": "Datos inv\u00e1lidos o CAPTCHA rechazado."
           },
           "429": {
             "description": "L\u00edmite de solicitudes alcanzado."
