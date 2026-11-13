@@ -69,11 +69,11 @@ describe('POST /api/v1/auth/login', () => {
   it('allows login without a Bearer token and prevents caching', async () => {
     const result = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
-      .send(credentials)
+      .send({ ...credentials, captcha_token: 'challenge-token' })
       .expect(200);
     expect(result.headers['cache-control']).toBe('no-store');
     expect(result.body).toEqual({ step: 'verify', mfa_token: 'partial', factors: [{ id: factorId }] });
-    expect(login).toHaveBeenCalledWith(credentials.email, credentials.password);
+    expect(login).toHaveBeenCalledWith(credentials.email, credentials.password, 'challenge-token');
   });
 
   it('completes login only through MFA verification and disables caching', async () => {
@@ -105,6 +105,7 @@ describe('POST /api/v1/auth/login', () => {
     { email: 'invalid', password: 'password' },
     { email: 'user@example.com', password: '' },
     { ...credentials, role: 'superadmin' },
+    { ...credentials, captcha_token: {} },
   ])('rejects invalid bodies before contacting Supabase: %j', async (body) => {
     await request(app.getHttpServer())
       .post('/api/v1/auth/login')
@@ -140,11 +141,12 @@ describe('POST /api/v1/auth/login', () => {
   it('returns a confirmation message and no session after public signup', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
-      .send({ ...credentials, first_name: 'Persona', last_name: 'De prueba' })
+      .send({ ...credentials, first_name: 'Persona', last_name: 'De prueba', captcha_token: 'challenge-token' })
       .expect(201);
     expect(response.body).toEqual({ message: 'Confirma tu correo.' });
     expect(response.headers['cache-control']).toBe('no-store');
     expect(signup).toHaveBeenCalledOnce();
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ captchaToken: 'challenge-token' }));
     expect(login).not.toHaveBeenCalled();
   });
 
@@ -162,7 +164,7 @@ describe('POST /api/v1/auth/login', () => {
       .send({ email: credentials.email })
       .expect(200);
     expect(response.headers['cache-control']).toBe('no-store');
-    expect(recover).toHaveBeenCalledWith(credentials.email);
+    expect(recover).toHaveBeenCalledWith(credentials.email, undefined);
 
     const tokenHash = 'a'.repeat(56);
     await request(app.getHttpServer())
@@ -187,9 +189,9 @@ describe('POST /api/v1/auth/login', () => {
     const verifier = 'b'.repeat(43);
     await request(app.getHttpServer())
       .post('/api/v1/auth/recover')
-      .send({ email: credentials.email, code_challenge: challenge })
+      .send({ email: credentials.email, code_challenge: challenge, captcha_token: 'challenge-token' })
       .expect(200);
-    expect(recoverPkce).toHaveBeenCalledWith(credentials.email, challenge);
+    expect(recoverPkce).toHaveBeenCalledWith(credentials.email, challenge, 'challenge-token');
 
     await request(app.getHttpServer())
       .post('/api/v1/auth/reset-password')

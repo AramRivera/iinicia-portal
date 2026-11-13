@@ -4,9 +4,10 @@ Portal institucional en Next.js y React, API modular NestJS, Supabase Auth/Postg
 
 ## Estado documentado
 
-- La rama `main` está en `6635d9e` y coincide con `origin/main` en las referencias locales revisadas el 12 de noviembre de 2026.
+- Turnstile está integrado en login, registro y recuperación. Su configuración en Cloudflare/Supabase queda pendiente.
 - El proyecto exige **un curso completo de prueba en Moodle**. Esta actualización del profesor reemplaza los dos cursos indicados originalmente en el PDF.
 - El inicio de sesión requiere TOTP para todos los roles. La API y la web implementan el flujo; la exigencia AAL2 en la Data API remota depende de aplicar y verificar la migración Supabase correspondiente.
+- CAPTCHA se envía a Supabase Auth para validar el desafío. Actívalo en Supabase después de configurar `NEXT_PUBLIC_TURNSTILE_SITE_KEY` y la Secret Key del widget.
 - La integración y los flujos locales no acreditan que las migraciones, permisos, correo, SSO o el curso estén configurados en los servicios de entrega.
 
 La referencia vigente para pendientes y evidencia es [Estado actual](docs/estado-actual.md). El inventario completo está en el [índice de documentación](docs/README.md).
@@ -36,6 +37,8 @@ Los botones de acceso rápido aceptan cuentas definidas localmente en `apps/web/
 ## Autenticación y Supabase
 
 Consulta [Verificación en dos pasos](docs/autenticacion-dos-factores.md) para el contrato, el flujo TOTP, la migración `20261110120000_require_mfa_data_api.sql` y la evidencia de desarrollo. La migración no debe asumirse aplicada al proyecto remoto. Para datos y RLS, revisa la [política de acceso](docs/decisiones/ADR-001-acceso-supabase.md) y [Políticas RLS](docs/politicas-rls.md).
+
+Para Turnstile, configura primero las claves por ambiente siguiendo la [guía CAPTCHA](docs/captcha-auth.md). La verificación externa solo se activa después de habilitar CAPTCHA en Supabase Auth.
 
 ## Moodle y curso de prueba
 

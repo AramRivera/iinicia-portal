@@ -20,6 +20,7 @@ export class AuthService {
       firstName: dto.first_name,
       lastName: dto.last_name,
       phone: dto.phone,
+      captchaToken: dto.captcha_token,
     });
   }
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { AuthCaptcha, captchaEnabled } from '@/components/AuthCaptcha';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
@@ -13,10 +15,13 @@ export default function RecuperarPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || (captchaEnabled && !captchaToken)) return;
     setError(null);
 
     if (!email.trim() || !email.includes('@')) {
@@ -30,12 +35,14 @@ export default function RecuperarPasswordPage() {
     try {
       const proof = await startRecoveryProof();
       verifier = proof.verifier;
-      await authApi.recoverPassword(email.trim(), proof.challenge);
+      await authApi.recoverPassword(email.trim(), proof.challenge, captchaToken);
       setSubmitted(true);
     } catch (err: unknown) {
       if (verifier) clearRecoveryVerifier(verifier);
       setError(err instanceof Error ? err.message : 'No fue posible procesar la solicitud.');
     } finally {
+      setCaptchaToken(undefined);
+      setCaptchaAttempt((attempt) => attempt + 1);
       setLoading(false);
     }
   };
@@ -114,9 +121,10 @@ export default function RecuperarPasswordPage() {
               />
             </div>
 
+            <AuthCaptcha attempt={captchaAttempt} onToken={setCaptchaToken} />
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (captchaEnabled && !captchaToken)}
               className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all disabled:opacity-50"
             >
               {loading ? 'Enviando solicitud...' : 'Enviar instrucciones de recuperación'}

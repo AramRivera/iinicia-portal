@@ -7,7 +7,7 @@ import type { LoginResponse, RegisterResponse, RoleSlug, UserProfile } from '@/t
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<LoginResponse>;
+  login: (email: string, password: string, captchaToken?: string) => Promise<LoginResponse>;
   verifyLoginMfa: (mfaToken: string, factorId: string, code: string) => Promise<UserProfile>;
   register: (payload: {
     email: string;
@@ -15,6 +15,7 @@ interface AuthContextType {
     first_name: string;
     last_name: string;
     phone?: string;
+    captcha_token?: string;
   }) => Promise<RegisterResponse>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -52,10 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchProfile();
   }, [fetchProfile]);
 
-  const login = (email: string, password: string): Promise<LoginResponse> => {
+  const login = (email: string, password: string, captchaToken?: string): Promise<LoginResponse> => {
     removeToken();
     setUser(null);
-    return authApi.login({ email, password });
+    return authApi.login({ email, password, captcha_token: captchaToken });
   };
 
   const verifyLoginMfa = async (mfaToken: string, factorId: string, code: string): Promise<UserProfile> => {
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     first_name: string;
     last_name: string;
     phone?: string;
+    captcha_token?: string;
   }): Promise<RegisterResponse> => {
     setLoading(true);
     try {

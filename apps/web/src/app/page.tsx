@@ -203,7 +203,7 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto max-w-2xl text-balance text-sm sm:text-base lg:text-lg text-muted leading-relaxed">
-            Formación universitaria y continua de alta exigencia técnica. Accede a cursos, diplomados y certificaciones oficiales integradas con nuestro Campus Virtual Moodle LMS.
+            Formación universitaria y continua de alta exigencia técnica. Accede a cursos, diplomados y certificaciones oficiales integradas con nuestro Campus Virtual.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">

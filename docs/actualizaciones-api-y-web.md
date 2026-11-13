@@ -10,6 +10,10 @@ La rama `main` incorpora TOTP obligatorio en cada inicio de sesión para todos l
 
 El alcance docente actual requiere **un curso completo de prueba**. Las menciones a dos cursos y los resultados numéricos de pruebas más abajo pertenecen al historial de esta guía. Consulta [Estado actual](estado-actual.md) y la [bitácora](bitacora-proyecto.md) para evidencia vigente.
 
+## Actualización CAPTCHA (13 de noviembre)
+
+La rama `codex/captcha-auth` agrega Cloudflare Turnstile a inicio de sesión, registro público y recuperación. Next.js incluye la Site Key mediante `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; NestJS reenvía `captcha_token` a Supabase Auth en el campo de seguridad correspondiente. Supabase realiza la validación remota con la Secret Key de Turnstile. La activación y prueba real quedan pendientes de configurar ambas plataformas. Consulta [guía CAPTCHA](captcha-auth.md).
+
 ---
 
 ## 1. Resumen Ejecutivo

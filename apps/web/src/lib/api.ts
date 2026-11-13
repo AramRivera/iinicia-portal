@@ -82,10 +82,10 @@ export async function apiFetch<T>(
 
 // ----------------- Auth API -----------------
 export const authApi = {
-  recoverPassword: async (email: string, challenge: string): Promise<{ message: string }> =>
+  recoverPassword: async (email: string, challenge: string, captchaToken?: string): Promise<{ message: string }> =>
     apiFetch<{ message: string }>('/auth/recover', {
       method: 'POST',
-      body: JSON.stringify({ email, code_challenge: challenge }),
+      body: JSON.stringify({ email, code_challenge: challenge, captcha_token: captchaToken }),
     }),
 
   resetPassword: async (
@@ -104,7 +104,7 @@ export const authApi = {
       body: JSON.stringify({ factor_id: factorId, code, password }),
     }),
 
-  login: (credentials: { email: string; password: string }): Promise<LoginResponse> =>
+  login: (credentials: { email: string; password: string; captcha_token?: string }): Promise<LoginResponse> =>
     apiFetch<LoginResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -123,6 +123,7 @@ export const authApi = {
     first_name: string;
     last_name: string;
     phone?: string;
+    captcha_token?: string;
   }): Promise<RegisterResponse> => {
     return apiFetch<RegisterResponse>('/auth/register', {
       method: 'POST',
