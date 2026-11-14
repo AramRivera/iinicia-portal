@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authApi, getToken, removeToken, setToken } from '@/lib/api';
+import { getRoleDashboards } from '@/lib/role-navigation';
 import type { LoginResponse, RegisterResponse, RoleSlug, UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -110,19 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getDefaultDashboardPath = (customRoles?: RoleSlug[]): string => {
-    const r = customRoles || user?.roles || [];
-    if (r.includes('superadministrador') || r.includes('administrador')) {
-      return '/dashboard/admin';
-    }
-    if (r.includes('coordinador')) return '/dashboard/coordinador';
-    if (r.includes('profesor')) {
-      return '/dashboard/docente';
-    }
-    if (r.includes('estudiante')) {
-      return '/dashboard/estudiante';
-    }
-    if (r.includes('soporte')) return '/dashboard/soporte';
-    return '/dashboard/aspirante';
+    const dashboards = getRoleDashboards(customRoles ?? user?.roles ?? []);
+    return dashboards.length === 1 ? dashboards[0].href : '/dashboard';
   };
 
   return (

@@ -71,7 +71,7 @@ El iniciador carga `.env.demo.local` con `process.loadEnvFile()` para evitar el 
 | `/dashboard/coordinador` | Consulta dentro del ámbito autorizado. |
 | `/dashboard/soporte` | Consulta operativa limitada. |
 
-`AuthContext` prioriza superadministrador/administrador, coordinador, profesor, estudiante, soporte y aspirante para la redirección inicial. Un usuario puede tener varios roles. La API decide qué operaciones y datos son realmente accesibles; ocultar botones no concede seguridad.
+`AuthContext` envía directamente al panel si la cuenta tiene un solo espacio autorizado. Si tiene varios roles, `/dashboard` muestra únicamente sus paneles y la cabecera permite cambiar entre ellos desde escritorio o móvil. Superadministración y administración comparten el mismo panel, así que aparecen una sola vez. Una cuenta sin rol activo ve un aviso para contactar a administración. Los enlaces proceden de los roles efectivos que devuelve `/auth/me`; la API sigue decidiendo qué operaciones y datos son accesibles.
 
 ## Flujos y contratos usados
 

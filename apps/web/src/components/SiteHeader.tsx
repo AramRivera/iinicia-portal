@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
+import { getDashboardForPath, getRoleDashboards } from "@/lib/role-navigation";
 
 const navItems = [
   { label: "Inicio", href: "/#inicio", id: "inicio" },
@@ -21,6 +22,7 @@ const navItems = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const roleMenuRef = useRef<HTMLDetailsElement>(null);
   const [activeSection, setActiveSection] = useState<string>("inicio");
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
@@ -28,15 +30,14 @@ export function SiteHeader() {
   const { theme, toggleTheme } = useTheme();
 
   const isHome = pathname === "/";
+  const dashboards = getRoleDashboards(user?.roles ?? []);
   const dashboardPath = user ? getDefaultDashboardPath() : "/login";
-  const primaryRole =
-    user?.roles?.find((r) => r === "superadministrador") ||
-    user?.roles?.find((r) => r === "administrador") ||
-    user?.roles?.find((r) => r === "coordinador") ||
-    user?.roles?.find((r) => r === "profesor") ||
-    user?.roles?.find((r) => r === "estudiante") ||
-    user?.roles?.[0] ||
-    "aspirante";
+  const currentDashboard = getDashboardForPath(user?.roles ?? [], pathname);
+  const panelLabel = currentDashboard?.label ?? dashboards[0]?.label ?? "Sin rol activo";
+
+  useEffect(() => {
+    if (roleMenuRef.current) roleMenuRef.current.open = false;
+  }, [pathname]);
 
   // Intersection observer & scroll detection according to Apple HIG Functional Layer
   useEffect(() => {
@@ -182,13 +183,36 @@ export function SiteHeader() {
 
             {user ? (
               <div className="flex items-center gap-2">
-                <Link
-                  href={dashboardPath}
-                  className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 hover:bg-primary/20 px-3.5 py-1.5 text-xs font-semibold text-primary transition-all duration-200 shadow-sm active:scale-95"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-lime animate-pulse" />
-                  <span className="capitalize">{primaryRole}</span>
-                </Link>
+                {dashboards.length > 1 ? (
+                  <details ref={roleMenuRef} className="relative">
+                    <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition-all hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
+                      {panelLabel} <span aria-hidden="true">▾</span>
+                    </summary>
+                    <div className="absolute right-0 top-full z-50 mt-2 min-w-48 rounded-xl border border-border bg-surface p-1.5 shadow-xl">
+                      <p className="px-2 py-1 text-[11px] font-semibold text-muted">Cambiar de panel</p>
+                      {dashboards.map(({ href, label }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          aria-current={currentDashboard?.href === href ? "page" : undefined}
+                          onClick={() => { if (roleMenuRef.current) roleMenuRef.current.open = false; }}
+                          className="block rounded-lg px-2 py-2 text-xs font-medium text-foreground hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary aria-[current=page]:bg-primary/10 aria-[current=page]:text-primary"
+                        >
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
+                ) : (
+                  <Link
+                    href={dashboardPath}
+                    className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
+                    {panelLabel}
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={logout}
@@ -280,13 +304,30 @@ export function SiteHeader() {
               <li className="mt-2 flex flex-col gap-2 border-t border-border/60 pt-3">
                 {user ? (
                   <>
-                    <Link
-                      href={dashboardPath}
-                      onClick={() => setOpen(false)}
-                      className="rounded-xl bg-primary-action px-4 py-2 text-center text-xs font-semibold text-white shadow-sm"
-                    >
-                      Ir al Panel ({primaryRole})
-                    </Link>
+                    {dashboards.length > 1 ? (
+                      <div className="space-y-1" aria-label="Tus paneles">
+                        <p className="px-2 text-xs font-semibold text-muted">Tus paneles</p>
+                        {dashboards.map(({ href, label }) => (
+                          <Link
+                            key={href}
+                            href={href}
+                            aria-current={currentDashboard?.href === href ? "page" : undefined}
+                            onClick={() => setOpen(false)}
+                            className="block rounded-xl border border-border px-4 py-2 text-center text-xs font-semibold text-foreground aria-[current=page]:border-primary/40 aria-[current=page]:bg-primary/10"
+                          >
+                            {label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <Link
+                        href={dashboardPath}
+                        onClick={() => setOpen(false)}
+                        className="rounded-xl bg-primary-action px-4 py-2 text-center text-xs font-semibold text-white shadow-sm"
+                      >
+                        Ir al panel ({panelLabel})
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
