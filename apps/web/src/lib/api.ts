@@ -162,9 +162,41 @@ function normalizeCourseOffering(course: CourseMappingResponse): CourseOffering 
   };
 }
 
+type AuthorizedCourseResponse = Partial<AuthorizedCourse> & {
+  id?: string;
+  name?: string;
+  moodle_fullname?: string;
+  moodle_shortname?: string;
+  programs?: { name?: string } | null;
+};
+
+function normalizeAuthorizedCourse(course: AuthorizedCourseResponse): AuthorizedCourse {
+  const courseMappingId = course.course_mapping_id || course.id;
+  const moodleCourseId = Number(course.moodle_course_id);
+  if (!courseMappingId || !Number.isInteger(moodleCourseId) || moodleCourseId <= 0) {
+    throw new Error('La API devolvió un curso sin identificadores válidos.');
+  }
+
+  const moodleRole = course.moodle_role;
+  const roleInCourse = course.role_in_course ||
+    (moodleRole === 'teacher' || moodleRole === 'editingteacher' ? 'teacher' :
+      moodleRole === 'student' ? 'student' : undefined);
+
+  return {
+    ...course,
+    course_mapping_id: courseMappingId,
+    course_code: course.course_code || course.portal_course_code || course.moodle_shortname || '',
+    course_name: course.course_name || course.moodle_fullname || course.name || 'Curso sin nombre',
+    moodle_course_id: moodleCourseId,
+    program_name: course.program_name || course.programs?.name,
+    role_in_course: roleInCourse,
+  };
+}
+
 export const coursesApi = {
   getAuthorizedCourses: async (): Promise<AuthorizedCourse[]> => {
-    return apiFetch<AuthorizedCourse[]>('/courses');
+    const courses = await apiFetch<AuthorizedCourseResponse[]>('/courses');
+    return courses.map(normalizeAuthorizedCourse);
   },
 
   getOfferings: async (): Promise<CourseOffering[]> => {

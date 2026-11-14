@@ -139,8 +139,8 @@ export interface AuthorizedCourse {
   course_code: string;
   course_name: string;
   moodle_course_id: number;
-  enrollment_status: 'autorizada' | 'sincronizada';
-  role_in_course: 'student' | 'teacher';
+  enrollment_status?: 'autorizada' | 'sincronizada';
+  role_in_course?: 'student' | 'teacher';
   enrollment_id?: string;
   moodle_role?: string;
   course_description?: string;
