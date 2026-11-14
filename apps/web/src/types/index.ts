@@ -199,6 +199,16 @@ export interface MoodleLaunchResponse {
   access_url: string;
 }
 
+export interface MoodleCourseParticipant {
+  id: number;
+  username: string;
+  fullname: string;
+  email?: string | null;
+  roles: string[];
+  lastaccess: string | null;
+  lastcourseaccess: string | null;
+}
+
 export interface MoodleCourseProgress {
   course_id: number;
   moodle_user_id: number;

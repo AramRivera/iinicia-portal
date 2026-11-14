@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { coursesApi, moodleApi, enrollmentsApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, EnrollmentRequest } from '@/types';
+import { coursesApi, moodleApi, usersApi } from '@/lib/api';
+import type { AuthorizedCourse, MoodleCourseParticipant } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -32,10 +32,9 @@ import {
 
 type TeacherTab = 'materias' | 'estudiantes' | 'calificaciones' | 'moodle' | 'perfil';
 
-interface StudentUnenrollTarget {
-  id: string;
-  studentName: string;
-  courseName: string;
+interface TeacherStudent {
+  participant: MoodleCourseParticipant;
+  course: AuthorizedCourse;
 }
 
 export default function DocenteDashboardPage() {
@@ -44,7 +43,8 @@ export default function DocenteDashboardPage() {
 
   const [activeTab, setActiveTab] = useState<TeacherTab>('materias');
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
-  const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
+  const [students, setStudents] = useState<TeacherStudent[]>([]);
+  const [participantErrors, setParticipantErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,7 +53,6 @@ export default function DocenteDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Modales interactivos
-  const [unenrollTarget, setUnenrollTarget] = useState<StudentUnenrollTarget | null>(null);
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<AuthorizedCourse | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
@@ -69,12 +68,28 @@ export default function DocenteDashboardPage() {
     try {
       setLoading(true);
       setError(null);
-      const [coursesData, enrollmentsData] = await Promise.all([
-        coursesApi.getAuthorizedCourses(),
-        enrollmentsApi.getAllEnrollments(),
-      ]);
+      const coursesData = await coursesApi.getAuthorizedCourses();
       setCourses(coursesData);
-      setEnrollments(enrollmentsData);
+
+      const participantResults = await Promise.allSettled(
+        coursesData.map((course) => moodleApi.getCourseParticipants(course.moodle_course_id)),
+      );
+      const loadedStudents: TeacherStudent[] = [];
+      const failedCourses: string[] = [];
+      participantResults.forEach((result, index) => {
+        const course = coursesData[index];
+        if (result.status === 'rejected') {
+          failedCourses.push(course.course_name);
+          return;
+        }
+        result.value.forEach((participant) => {
+          if (participant.roles.includes('student')) {
+            loadedStudents.push({ participant, course });
+          }
+        });
+      });
+      setStudents(loadedStudents);
+      setParticipantErrors(failedCourses);
 
       // Cargar resumen de Moodle para cada curso
       if (coursesData.length > 0) {
@@ -195,28 +210,6 @@ export default function DocenteDashboardPage() {
     }
   };
 
-  // Desasignar / dar de baja alumno de la materia
-  const handleConfirmUnenroll = async () => {
-    if (!unenrollTarget) return;
-
-    setActionLoading(`unenroll-${unenrollTarget.id}`);
-    setNotice(null);
-    setError(null);
-
-    try {
-      await enrollmentsApi.deleteEnrollment(unenrollTarget.id);
-      setNotice(
-        `El estudiante ${unenrollTarget.studentName} ha sido desasignado exitosamente de ${unenrollTarget.courseName}.`,
-      );
-      setUnenrollTarget(null);
-      await loadTeacherData();
-    } catch (err: any) {
-      setError(err.message || 'Error al desasignar al estudiante.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   // Filtrado de cursos del profesor
   const filteredCourses = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -229,44 +222,28 @@ export default function DocenteDashboardPage() {
     });
   }, [courses, searchQuery]);
 
-  // Alumnos inscritos en las materias del profesor
-  const teacherCourseMappingIds = useMemo(() => {
-    return new Set(courses.map((c) => c.course_mapping_id));
-  }, [courses]);
-
-  const enrolledStudents = useMemo(() => {
-    return enrollments.filter(
-      (enr) =>
-        teacherCourseMappingIds.has(enr.course_mapping_id) &&
-        (enr.status === 'sincronizada' || enr.status === 'autorizada') &&
-        enr.moodle_role !== 'teacher',
-    );
-  }, [enrollments, teacherCourseMappingIds]);
-
   const filteredStudents = useMemo(() => {
-    let list = enrolledStudents;
+    let list = students;
     if (selectedCourseFilter) {
-      list = list.filter((e) => e.course_mapping_id === selectedCourseFilter);
+      list = list.filter(({ course }) => course.course_mapping_id === selectedCourseFilter);
     }
     const q = searchQuery.toLowerCase().trim();
     if (q) {
-      list = list.filter((e) => {
-        const cName = (e.course_mappings?.courses?.name || '').toLowerCase();
-        const cCode = (e.course_mappings?.code || '').toLowerCase();
-        const sFirst = (e.profiles?.first_name || '').toLowerCase();
-        const sLast = (e.profiles?.last_name || '').toLowerCase();
-        const sEmail = (e.profiles?.email || '').toLowerCase();
+      list = list.filter(({ course, participant }) => {
+        const cName = course.course_name.toLowerCase();
+        const cCode = course.course_code.toLowerCase();
+        const sName = participant.fullname.toLowerCase();
+        const sEmail = (participant.email || '').toLowerCase();
         return (
           cName.includes(q) ||
           cCode.includes(q) ||
-          sFirst.includes(q) ||
-          sLast.includes(q) ||
+          sName.includes(q) ||
           sEmail.includes(q)
         );
       });
     }
     return list;
-  }, [enrolledStudents, selectedCourseFilter, searchQuery]);
+  }, [students, selectedCourseFilter, searchQuery]);
 
   const getBreadcrumbs = (tab: TeacherTab) => {
     switch (tab) {
@@ -388,7 +365,7 @@ export default function DocenteDashboardPage() {
             <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5">
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Alumnos Asignados</span>
               <p className="mt-1 text-sm font-semibold text-foreground">
-                {enrolledStudents.length} estudiante(s) activo(s)
+                {participantErrors.length > 0 ? '—' : students.length} estudiante(s) activo(s)
               </p>
               <span className="text-[11px] text-muted mt-0.5 block">Distribuidos en tus grupos</span>
             </div>
@@ -425,6 +402,15 @@ export default function DocenteDashboardPage() {
             >
               <IconClose className="w-3.5 h-3.5" />
             </button>
+          </div>
+        )}
+
+        {participantErrors.length > 0 && (
+          <div className="rounded-[8px] border border-warning/30 bg-warning/10 p-3.5 text-xs text-foreground flex items-center gap-2" role="status">
+            <IconAlertTriangle className="w-4 h-4 shrink-0" />
+            <span>
+              No se pudieron consultar los participantes de {participantErrors.join(', ')}. Los conteos pueden estar incompletos. Intenta actualizar los datos.
+            </span>
           </div>
         )}
 
@@ -482,12 +468,10 @@ export default function DocenteDashboardPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {filteredCourses.map((course, index) => {
                   const courseKey = course.course_mapping_id || `teacher-course-${index}`;
-                  const studentCount = enrollments.filter(
-                    (e) =>
-                      e.course_mapping_id === course.course_mapping_id &&
-                      (e.status === 'sincronizada' || e.status === 'autorizada') &&
-                      e.moodle_role !== 'teacher',
+                  const studentCount = students.filter(
+                    ({ course: studentCourse }) => studentCourse.course_mapping_id === course.course_mapping_id,
                   ).length;
+                  const participantsUnavailable = participantErrors.includes(course.course_name);
 
                   return (
                     <div
@@ -502,7 +486,7 @@ export default function DocenteDashboardPage() {
                           <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted border border-border">
                             {(() => {
                               const ov = moodleCourseOverviews[course.moodle_course_id];
-                              const count = ov?.total_students != null ? ov.total_students : studentCount;
+                              const count = participantsUnavailable ? '—' : ov?.total_students ?? studentCount;
                               return `${count} alumno(s) Moodle`;
                             })()}
                           </span>
@@ -554,7 +538,7 @@ export default function DocenteDashboardPage() {
                             className="inline-flex items-center gap-1 rounded-[4px] border border-border bg-surface-muted/40 hover:bg-surface-muted px-2.5 py-1 text-muted hover:text-foreground transition-all"
                           >
                             <IconStudents className="w-3 h-3 text-primary" />
-                            <span>Ver Alumnos ({studentCount})</span>
+                            <span>Ver Alumnos ({participantsUnavailable ? '—' : studentCount})</span>
                           </button>
                         </div>
                       </div>
@@ -576,7 +560,7 @@ export default function DocenteDashboardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 2: ALUMNOS Y GRUPOS (CON OPCIÓN DE DESASIGNAR / DAR DE BAJA)      */}
+        {/* PESTAÑA 2: ALUMNOS Y GRUPOS                                                */}
         {/* ========================================================================= */}
         {activeTab === 'estudiantes' && (
           <div className="space-y-4">
@@ -588,7 +572,7 @@ export default function DocenteDashboardPage() {
                     <span>Directorio de Alumnos Inscritos</span>
                   </h2>
                   <p className="text-xs text-muted mt-0.5">
-                    Estudiantes activos en tus materias. Puedes consultar sus expedientes o desasignarlos del grupo si cambiaron de materia o se dieron de baja.
+                    Estudiantes matriculados en Moodle en tus materias. Para bajas o cambios de grupo, contacta a coordinación académica.
                   </p>
                 </div>
 
@@ -628,10 +612,12 @@ export default function DocenteDashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[10px] border border-border bg-surface overflow-hidden shadow-minimal">
+            <div className="rounded-[10px] border border-border bg-surface overflow-x-auto shadow-minimal">
               {filteredStudents.length === 0 ? (
                 <div className="p-8 text-center text-xs text-muted">
-                  No se encontraron estudiantes registrados para los filtros seleccionados.
+                  {participantErrors.length > 0
+                    ? 'No hay participantes disponibles. Actualiza los datos para volver a consultar Moodle.'
+                    : 'No se encontraron estudiantes para los filtros seleccionados.'}
                 </div>
               ) : (
                 <table className="w-full text-left text-xs">
@@ -639,70 +625,46 @@ export default function DocenteDashboardPage() {
                     <tr>
                       <th className="px-5 py-3.5">Estudiante</th>
                       <th className="px-5 py-3.5">Asignatura</th>
-                      <th className="px-5 py-3.5">Estado Moodle</th>
-                      <th className="px-5 py-3.5">Fecha Alta</th>
+                      <th className="px-5 py-3.5">Último acceso al curso</th>
                       <th className="px-5 py-3.5 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredStudents.map((enr) => {
-                      const studentName =
-                        enr.profiles?.first_name || enr.profiles?.last_name
-                          ? `${enr.profiles?.first_name || ''} ${enr.profiles?.last_name || ''}`.trim()
-                          : 'Estudiante Registrado';
-                      const studentEmail = enr.profiles?.email || 'Sin correo disponible';
-                      const courseName =
-                        enr.course_mappings?.courses?.name ||
-                        enr.course_mappings?.portal_course_code ||
-                        'Materia Asignada';
-
+                    {filteredStudents.map(({ participant, course }) => {
                       return (
-                        <tr key={enr.id} className="hover:bg-surface-muted/30 transition-colors">
+                        <tr key={`${course.course_mapping_id}-${participant.id}`} className="hover:bg-surface-muted/30 transition-colors">
                           <td className="px-5 py-3.5">
                             <span className="font-semibold text-foreground block">
-                              {studentName}
+                              {participant.fullname}
                             </span>
                             <span className="font-mono text-[11px] text-muted">
-                              {studentEmail}
+                              {participant.email || 'Sin correo disponible'}
                             </span>
                           </td>
                           <td className="px-5 py-3.5">
                             <span className="font-medium text-foreground block">
-                              {courseName}
+                              {course.course_name}
                             </span>
                             <span className="font-mono text-[11px] text-muted">
-                              {enr.course_mappings?.code || enr.course_mappings?.portal_course_code}
+                              {course.course_code}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5">
-                            <MoodleSyncBadge status={enr.moodle_sync_status} />
-                          </td>
                           <td className="px-5 py-3.5 font-mono text-[11px] text-muted">
-                            {new Date(enr.created_at).toLocaleDateString('es-MX')}
+                            {participant.lastcourseaccess
+                              ? new Date(participant.lastcourseaccess).toLocaleDateString('es-MX')
+                              : 'Sin acceso registrado'}
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <a
-                                href={`mailto:${studentEmail}`}
-                                className="rounded-[4px] border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground hover:bg-surface-muted transition-all"
-                                title="Enviar correo institucional"
-                              >
-                                Contactar
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setUnenrollTarget({
-                                    id: enr.id,
-                                    studentName,
-                                    courseName,
-                                  })
-                                }
-                                className="rounded-[4px] border border-danger/30 bg-danger/10 px-2 py-1 text-[11px] font-medium text-danger hover:bg-danger/20 transition-all"
-                                title="Desasignar a este alumno de la materia"
-                              >
-                                Desasignar
-                              </button>
+                              {participant.email && (
+                                <a
+                                  href={`mailto:${participant.email}`}
+                                  className="rounded-[4px] border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground hover:bg-surface-muted transition-all"
+                                  title="Enviar correo institucional"
+                                >
+                                  Contactar
+                                </a>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -773,10 +735,12 @@ export default function DocenteDashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[10px] border border-border bg-surface overflow-hidden shadow-minimal">
+            <div className="rounded-[10px] border border-border bg-surface overflow-x-auto shadow-minimal">
               {filteredStudents.length === 0 ? (
                 <div className="p-8 text-center text-xs text-muted">
-                  No hay estudiantes matriculados para calificar en esta asignatura.
+                  {participantErrors.length > 0
+                    ? 'No hay participantes disponibles. Actualiza los datos para volver a consultar Moodle.'
+                    : 'No hay estudiantes matriculados para consultar en esta asignatura.'}
                 </div>
               ) : (
                 <table className="w-full text-left text-xs">
@@ -784,60 +748,50 @@ export default function DocenteDashboardPage() {
                     <tr>
                       <th className="px-5 py-3.5">Estudiante</th>
                       <th className="px-5 py-3.5">Materia</th>
-                      <th className="px-5 py-3.5">Estado Moodle</th>
+                      <th className="px-5 py-3.5">Último acceso</th>
                       <th className="px-5 py-3.5">Calificaciones oficiales</th>
                       <th className="px-5 py-3.5 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredStudents.map((enr) => {
-                      const studentName =
-                        enr.profiles?.first_name || enr.profiles?.last_name
-                          ? `${enr.profiles?.first_name || ''} ${enr.profiles?.last_name || ''}`.trim()
-                          : 'Estudiante Registrado';
-                      const courseName =
-                        enr.course_mappings?.courses?.name || 'Materia';
-                      const moodleCourseId = enr.course_mappings?.moodle_course_id;
-                      const courseMappingId = enr.course_mapping_id;
-
+                    {filteredStudents.map(({ participant, course }) => {
                       return (
-                        <tr key={enr.id} className="hover:bg-surface-muted/30 transition-colors">
+                        <tr key={`${course.course_mapping_id}-${participant.id}`} className="hover:bg-surface-muted/30 transition-colors">
                           <td className="px-5 py-3.5">
                             <span className="font-semibold text-foreground block">
-                              {studentName}
+                              {participant.fullname}
                             </span>
                             <span className="font-mono text-[11px] text-muted">
-                              {enr.profiles?.email}
+                              {participant.email || 'Sin correo disponible'}
                             </span>
                           </td>
                           <td className="px-5 py-3.5 font-medium text-foreground">
-                            {courseName}
+                            {course.course_name}
                           </td>
-                          <td className="px-5 py-3.5">
-                            <MoodleSyncBadge
-                              status={enr.moodle_sync_status}
-                              moodleId={enr.profiles?.moodle_user_id}
-                            />
+                          <td className="px-5 py-3.5 text-[11px] text-muted">
+                            {participant.lastcourseaccess
+                              ? new Date(participant.lastcourseaccess).toLocaleDateString('es-MX')
+                              : 'Sin acceso registrado'}
                           </td>
                           <td className="px-5 py-3.5 font-mono text-xs">
                             <span className="text-muted text-[11px]">Consulta el calificador de Moodle</span>
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <div className="inline-flex items-center gap-2">
-                              {courseMappingId && (
+                              {course.course_mapping_id && (
                                 <button
                                   type="button"
-                                  onClick={() => handleLaunchCourseSSO(courseMappingId)}
-                                  disabled={actionLoading === `launch-${courseMappingId}`}
+                                  onClick={() => handleLaunchCourseSSO(course.course_mapping_id)}
+                                  disabled={actionLoading === `launch-${course.course_mapping_id}`}
                                   className="rounded-[4px] border border-border bg-surface-muted/40 hover:bg-surface-muted px-2 py-1 text-[11px] font-medium text-foreground transition-all"
                                 >
                                   Aula SSO ↗
                                 </button>
                               )}
-                              {moodleCourseId && (
+                              {course.moodle_course_id && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenGradebook(moodleCourseId)}
+                                  onClick={() => handleOpenGradebook(course.moodle_course_id)}
                                   className="rounded-[4px] border border-border bg-surface-muted/40 hover:bg-surface-muted px-2 py-1 text-[11px] font-medium text-primary transition-all"
                                 >
                                   Calificador ↗
@@ -944,57 +898,6 @@ export default function DocenteDashboardPage() {
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL: CONFIRMACIÓN PARA DESASIGNAR ESTUDIANTE DE LA MATERIA */}
-        {unenrollTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-md rounded-[14px] border border-border bg-surface p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95">
-              <div className="flex items-center gap-3 text-danger">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-danger/10 border border-danger/20">
-                  <IconAlertTriangle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-foreground">
-                    Desasignar estudiante
-                  </h3>
-                  <p className="text-xs text-muted">Confirmación de baja en la materia</p>
-                </div>
-              </div>
-
-              <div className="rounded-[8px] bg-surface-muted/50 border border-border p-3.5 text-xs text-muted space-y-1">
-                <p>
-                  ¿Estás seguro de que deseas desasignar a{' '}
-                  <strong className="text-foreground">{unenrollTarget.studentName}</strong> de la materia{' '}
-                  <strong className="text-foreground">{unenrollTarget.courseName}</strong>?
-                </p>
-                <p className="text-[11px] text-danger/90 pt-1">
-                  Esta acción revocará su acceso al aula virtual en Moodle LMS y desvinculará su matrícula.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setUnenrollTarget(null)}
-                  disabled={actionLoading === `unenroll-${unenrollTarget.id}`}
-                  className="rounded-[6px] border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmUnenroll}
-                  disabled={actionLoading === `unenroll-${unenrollTarget.id}`}
-                  className="rounded-[6px] bg-danger px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-danger/90 transition-all disabled:opacity-50"
-                >
-                  {actionLoading === `unenroll-${unenrollTarget.id}`
-                    ? 'Desasignando...'
-                    : 'Sí, desasignar alumno'}
-                </button>
               </div>
             </div>
           </div>

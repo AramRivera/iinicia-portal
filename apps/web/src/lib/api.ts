@@ -5,6 +5,7 @@ import type {
   EnrollmentRequest,
   LoginResponse,
   MoodleCourseProgress,
+  MoodleCourseParticipant,
   MoodleLaunchResponse,
   MoodleStatusResponse,
   PasswordResetResponse,
@@ -342,8 +343,8 @@ export const moodleApi = {
     return apiFetch<any[]>(`/moodle/courses/${courseId}/contents`);
   },
 
-  getCourseParticipants: async (courseId: number): Promise<any[]> => {
-    return apiFetch<any[]>(`/moodle/courses/${courseId}/participants`);
+  getCourseParticipants: async (courseId: number): Promise<MoodleCourseParticipant[]> => {
+    return apiFetch<MoodleCourseParticipant[]>(`/moodle/courses/${courseId}/participants`);
   },
 
   getCourseProgress: async (courseId: number, moodleUserId?: number): Promise<MoodleCourseProgress> => {
