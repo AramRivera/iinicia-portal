@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, moodleApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, MoodleCourseParticipant } from '@/types';
+import type { AuthorizedCourse, MoodleCourseParticipant, MoodleCourseProgress } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -45,6 +45,11 @@ export default function DocenteDashboardPage() {
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
   const [students, setStudents] = useState<TeacherStudent[]>([]);
   const [participantErrors, setParticipantErrors] = useState<string[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<TeacherStudent | null>(null);
+  const [studentProgress, setStudentProgress] = useState<MoodleCourseProgress | null>(null);
+  const [studentProgressLoading, setStudentProgressLoading] = useState(false);
+  const [studentProgressError, setStudentProgressError] = useState<string | null>(null);
+  const progressRequestId = useRef(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -175,6 +180,38 @@ export default function DocenteDashboardPage() {
   const handleOpenGradebook = (moodleCourseId: number) => {
     const base = process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle';
     window.open(`${base}/grade/report/grader/index.php?id=${moodleCourseId}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenStudentProgress = async (student: TeacherStudent) => {
+    const requestId = ++progressRequestId.current;
+    setSelectedStudent(student);
+    setStudentProgress(null);
+    setStudentProgressError(null);
+    setStudentProgressLoading(true);
+
+    try {
+      const progress = await moodleApi.getCourseProgress(
+        student.course.moodle_course_id,
+        student.participant.id,
+      );
+      if (requestId === progressRequestId.current) setStudentProgress(progress);
+    } catch (err: unknown) {
+      if (requestId === progressRequestId.current) {
+        setStudentProgressError(
+          err instanceof Error ? err.message : 'No fue posible consultar el avance en Moodle.',
+        );
+      }
+    } finally {
+      if (requestId === progressRequestId.current) setStudentProgressLoading(false);
+    }
+  };
+
+  const handleCloseStudentProgress = () => {
+    progressRequestId.current += 1;
+    setSelectedStudent(null);
+    setStudentProgress(null);
+    setStudentProgressError(null);
+    setStudentProgressLoading(false);
   };
 
   const handleOpenEditProfile = () => {
@@ -656,6 +693,13 @@ export default function DocenteDashboardPage() {
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenStudentProgress({ participant, course })}
+                                className="rounded-[4px] border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/20 transition-all"
+                              >
+                                Ver avance
+                              </button>
                               {participant.email && (
                                 <a
                                   href={`mailto:${participant.email}`}
@@ -778,6 +822,13 @@ export default function DocenteDashboardPage() {
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <div className="inline-flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenStudentProgress({ participant, course })}
+                                className="rounded-[4px] border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/20 transition-all"
+                              >
+                                Ver avance
+                              </button>
                               {course.course_mapping_id && (
                                 <button
                                   type="button"
@@ -898,6 +949,76 @@ export default function DocenteDashboardPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) handleCloseStudentProgress();
+          }}>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="student-progress-title"
+              className="w-full max-w-lg rounded-[14px] border border-border bg-surface p-6 shadow-xl"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
+                <div>
+                  <h3 id="student-progress-title" className="text-base font-bold text-foreground">
+                    Avance de {selectedStudent.participant.fullname}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted">{selectedStudent.course.course_name} · Datos de Moodle</p>
+                </div>
+                <button type="button" onClick={handleCloseStudentProgress} aria-label="Cerrar avance" className="rounded-[6px] p-1 text-muted hover:bg-surface-muted hover:text-foreground">
+                  <IconClose className="h-4 w-4" />
+                </button>
+              </div>
+
+              {studentProgressLoading && (
+                <p className="py-8 text-center text-sm text-muted" role="status">Consultando Moodle...</p>
+              )}
+              {studentProgressError && (
+                <div className="mt-5 rounded-[8px] border border-danger/30 bg-danger/10 p-4 text-sm text-danger" role="alert">
+                  {studentProgressError}
+                </div>
+              )}
+              {studentProgress && (
+                <div className="space-y-5 pt-5 text-sm">
+                  <div>
+                    <div className="flex justify-between gap-3 font-medium text-foreground">
+                      <span>Finalización del curso</span>
+                      <span>{studentProgress.progress_percentage == null ? 'Sin datos de avance' : `${Math.round(studentProgress.progress_percentage)} %`}</span>
+                    </div>
+                    {studentProgress.progress_percentage != null && (
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-muted" role="progressbar" aria-label="Finalización del curso" aria-valuenow={studentProgress.progress_percentage} aria-valuemin={0} aria-valuemax={100}>
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, studentProgress.progress_percentage))}%` }} />
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-muted">
+                      {studentProgress.total_tracked_activities > 0
+                        ? `${studentProgress.completed_activities} de ${studentProgress.total_tracked_activities} actividades completadas`
+                        : 'Este curso no tiene actividades con seguimiento de finalización.'}
+                    </p>
+                  </div>
+                  <div className="rounded-[8px] border border-border bg-surface-muted/30 p-4">
+                    <p className="text-xs text-muted">Calificación oficial en Moodle</p>
+                    <p className="mt-1 font-semibold text-foreground">
+                      {studentProgress.grade_percentage == null
+                        ? 'Sin calificación disponible'
+                        : `${Math.round(studentProgress.grade_percentage)} %`}
+                    </p>
+                    {studentProgress.grade_percentage != null && studentProgress.grade_formatted && (
+                      <p className="mt-1 text-xs text-muted">Nota: {studentProgress.grade_formatted}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="mt-6 flex justify-end">
+                <button type="button" onClick={handleCloseStudentProgress} className="rounded-[6px] border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted">
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>
