@@ -32,6 +32,7 @@ export interface UserProfile {
   last_name: string;
   phone?: string | null;
   avatar_url?: string | null;
+  matricula?: string | null;
   status: UserStatus;
   roles: RoleSlug[];
   active_roles?: RoleSlug[];

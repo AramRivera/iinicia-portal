@@ -79,6 +79,7 @@ export default function AdminDashboardPage() {
   // Datos principales
   const [moodleStatus, setMoodleStatus] = useState<MoodleStatusResponse | null>(null);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [usersLoadError, setUsersLoadError] = useState(false);
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [courses, setCourses] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
@@ -148,11 +149,15 @@ export default function AdminDashboardPage() {
     try {
       setLoading(true);
       setError(null);
+      setUsersLoadError(false);
 
       const [statusRes, usersRes, rolesRes, coursesRes, enrollRes, progRes, auditRes, admissionsRes] =
         await Promise.all([
           moodleApi.getStatus().catch(() => ({ ok: false, message: 'No disponible' })),
-          usersApi.getUsers({ limit: 50 }).catch(() => ({ data: [], meta: {} })),
+          usersApi.getUsers({ limit: 50 }).catch(() => {
+            setUsersLoadError(true);
+            return { data: [], meta: {} };
+          }),
           rolesApi.getRoles().catch(() => []),
           coursesApi.getOfferings().catch(() => []),
           enrollmentsApi.getAllEnrollments().catch(() => []),
@@ -959,7 +964,9 @@ export default function AdminDashboardPage() {
                   {filteredAssignmentUsers.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-8 text-center text-muted">
-                        No se encontraron usuarios con los criterios de búsqueda especificados.
+                        {usersLoadError
+                          ? 'No se pudo consultar el listado de usuarios. Intenta actualizar los datos.'
+                          : 'No se encontraron usuarios con los criterios de búsqueda especificados.'}
                       </td>
                     </tr>
                   ) : (
@@ -1307,7 +1314,7 @@ export default function AdminDashboardPage() {
                           </td>
 
                           <td className="px-6 py-4 text-muted">
-                            {u.programs?.length ? (
+                            {Array.isArray(u.programs) && u.programs.length ? (
                               <div className="flex min-w-40 flex-col gap-1.5">
                                 {u.programs.map((program) => (
                                   <span key={program.program_id} className="rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
@@ -1315,7 +1322,7 @@ export default function AdminDashboardPage() {
                                   </span>
                                 ))}
                               </div>
-                            ) : 'Sin programa'}
+                            ) : Array.isArray(u.programs) ? 'Sin programa' : 'Programa no disponible'}
                           </td>
 
                           <td className="px-6 py-4 text-muted">

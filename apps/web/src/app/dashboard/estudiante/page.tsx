@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, enrollmentsApi, moodleApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, CourseOffering, EnrollmentRequest, MoodleCourseProgress } from '@/types';
+import type { AuthorizedCourse, CourseOffering, EnrollmentRequest, MoodleCourseProgress, UserProfile } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -46,6 +46,8 @@ export default function EstudianteDashboardPage() {
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
+  const [ownProfile, setOwnProfile] = useState<UserProfile | null>(null);
+  const [ownProfileError, setOwnProfileError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -79,6 +81,16 @@ export default function EstudianteDashboardPage() {
       setCourses(userCourses);
       setEnrollments(myEnrollments);
       setOfferings(allOfferings);
+
+      if (user) {
+        try {
+          setOwnProfile(await usersApi.getUserById(user.id));
+          setOwnProfileError(false);
+        } catch {
+          setOwnProfile(null);
+          setOwnProfileError(true);
+        }
+      }
 
       // Cargar progreso en tiempo real desde Moodle LMS para cada materia
       if (userCourses.length > 0) {
@@ -982,13 +994,23 @@ export default function EstudianteDashboardPage() {
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-muted">Matrícula Escolar</span>
                     <span className="font-mono font-bold text-primary">
-                      {user?.id ? `AL-${user.id.slice(0, 8).toUpperCase()}` : 'AL-2026-REG'}
+                      {ownProfileError ? 'No disponible' : ownProfile?.matricula || 'No asignada'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 py-1 border-b border-border/50">
+                    <span className="text-muted">Programa académico</span>
+                    <span className="text-right font-medium text-foreground">
+                      {ownProfileError || !Array.isArray(ownProfile?.programs)
+                        ? 'No disponible'
+                        : ownProfile.programs.map((program) => program.name).join(', ') || 'Sin programa asignado'}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Estatus Académico</span>
                     <span className="capitalize text-emerald-600 dark:text-emerald-400 font-medium">
-                      {user?.status || 'activo'}
+                      {ownProfileError || !Array.isArray(ownProfile?.programs)
+                        ? 'No disponible'
+                        : ownProfile.programs.map((program) => program.academic_status).join(', ') || 'Sin programa asignado'}
                     </span>
                   </div>
                 </div>
@@ -1008,7 +1030,7 @@ export default function EstudianteDashboardPage() {
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-muted">Moodle ID</span>
                     <span className="font-mono text-foreground">
-                      {user?.moodle_user_id ? `#${user.moodle_user_id}` : 'Enlazado por correo'}
+                      {user?.moodle_user_id ? `#${user.moodle_user_id}` : 'No vinculado'}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
@@ -1021,7 +1043,7 @@ export default function EstudianteDashboardPage() {
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Acceso SSO Transparente</span>
                     <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                      Activo (auth_userkey)
+                      {user?.moodle_sync_status === 'sincronizado' ? 'Disponible' : 'Pendiente de vinculación'}
                     </span>
                   </div>
                 </div>
