@@ -209,6 +209,20 @@ export interface MoodleCourseParticipant {
   lastcourseaccess: string | null;
 }
 
+export interface MoodleCourseModule {
+  id: number;
+  name: string;
+  modname: string;
+  visible?: number;
+}
+
+export interface MoodleCourseSection {
+  id: number;
+  name?: string;
+  modules?: MoodleCourseModule[];
+  visible?: number;
+}
+
 export interface MoodleCourseProgress {
   course_id: number;
   moodle_user_id: number;

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, moodleApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, MoodleCourseParticipant, MoodleCourseProgress } from '@/types';
+import type { AuthorizedCourse, MoodleCourseParticipant, MoodleCourseProgress, MoodleCourseSection } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -59,6 +59,10 @@ export default function DocenteDashboardPage() {
 
   // Modales interactivos
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<AuthorizedCourse | null>(null);
+  const [courseContents, setCourseContents] = useState<MoodleCourseSection[]>([]);
+  const [courseContentsLoading, setCourseContentsLoading] = useState(false);
+  const [courseContentsError, setCourseContentsError] = useState<string | null>(null);
+  const contentsRequestId = useRef(0);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
     first_name: '',
@@ -180,6 +184,35 @@ export default function DocenteDashboardPage() {
   const handleOpenGradebook = (moodleCourseId: number) => {
     const base = process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle';
     window.open(`${base}/grade/report/grader/index.php?id=${moodleCourseId}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenCourseContents = async (course: AuthorizedCourse) => {
+    const requestId = ++contentsRequestId.current;
+    setSelectedCourseDetail(course);
+    setCourseContents([]);
+    setCourseContentsError(null);
+    setCourseContentsLoading(true);
+
+    try {
+      const sections = await moodleApi.getCourseContents(course.moodle_course_id);
+      if (requestId === contentsRequestId.current) setCourseContents(sections);
+    } catch (err: unknown) {
+      if (requestId === contentsRequestId.current) {
+        setCourseContentsError(
+          err instanceof Error ? err.message : 'No fue posible consultar los contenidos de Moodle.',
+        );
+      }
+    } finally {
+      if (requestId === contentsRequestId.current) setCourseContentsLoading(false);
+    }
+  };
+
+  const handleCloseCourseContents = () => {
+    contentsRequestId.current += 1;
+    setSelectedCourseDetail(null);
+    setCourseContents([]);
+    setCourseContentsError(null);
+    setCourseContentsLoading(false);
   };
 
   const handleOpenStudentProgress = async (student: TeacherStudent) => {
@@ -557,6 +590,14 @@ export default function DocenteDashboardPage() {
 
                         {/* Accesos rápidos docentes de Moodle */}
                         <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCourseContents(course)}
+                            className="inline-flex items-center gap-1 rounded-[4px] border border-border bg-surface-muted/40 px-2.5 py-1 text-muted transition-all hover:bg-surface-muted hover:text-foreground"
+                          >
+                            <IconBookOpen className="h-3 w-3 text-primary" />
+                            <span>Ver contenidos</span>
+                          </button>
                           <a
                             href={`${process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle'}/grade/report/grader/index.php?id=${course.moodle_course_id}`}
                             target="_blank"
@@ -949,6 +990,64 @@ export default function DocenteDashboardPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedCourseDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) handleCloseCourseContents();
+          }}>
+            <div role="dialog" aria-modal="true" aria-labelledby="course-contents-title" className="flex w-full max-w-2xl flex-col rounded-[14px] border border-border bg-surface p-5 shadow-xl sm:p-6">
+              <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
+                <div>
+                  <h3 id="course-contents-title" className="text-base font-bold text-foreground">Contenidos del curso</h3>
+                  <p className="mt-1 text-xs text-muted">{selectedCourseDetail.course_name} · Secciones y actividades de Moodle</p>
+                </div>
+                <button type="button" onClick={handleCloseCourseContents} aria-label="Cerrar contenidos" className="rounded-[6px] p-1 text-muted hover:bg-surface-muted hover:text-foreground">
+                  <IconClose className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[65vh] space-y-3 overflow-y-auto py-5">
+                {courseContentsLoading && <p className="py-8 text-center text-sm text-muted" role="status">Consultando contenidos en Moodle...</p>}
+                {courseContentsError && (
+                  <div className="rounded-[8px] border border-danger/30 bg-danger/10 p-4 text-sm text-danger" role="alert">{courseContentsError}</div>
+                )}
+                {!courseContentsLoading && !courseContentsError && courseContents.length === 0 && (
+                  <p className="rounded-[8px] border border-border bg-surface-muted/30 p-4 text-sm text-muted">
+                    Moodle no devolvió secciones. Abre el aula para comprobar si el curso aún no tiene contenidos o si la consulta falló.
+                  </p>
+                )}
+                {!courseContentsLoading && !courseContentsError && courseContents.map((section, index) => (
+                  <section key={section.id ?? index} className="rounded-[8px] border border-border bg-surface-muted/20 p-4">
+                    <h4 className="font-semibold text-foreground">
+                      {section.name || `Tema ${index + 1}`}
+                      {section.visible === 0 && <span className="ml-2 text-xs font-normal text-warning">Oculto a estudiantes</span>}
+                    </h4>
+                    {section.modules?.length ? (
+                      <ul className="mt-3 space-y-2">
+                        {section.modules.map((module) => (
+                          <li key={module.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[6px] border border-border bg-surface px-3 py-2 text-xs">
+                            <span className="font-medium text-foreground">{module.name}</span>
+                            <span className="text-muted">
+                              {module.modname || 'Actividad o recurso'}
+                              {module.visible === 0 ? ' · Oculto' : ''}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted">No hay actividades o recursos visibles en esta sección.</p>
+                    )}
+                  </section>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+                <button type="button" onClick={handleCloseCourseContents} className="rounded-[6px] border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted">Cerrar</button>
+                <LaunchCourseButton courseMappingId={selectedCourseDetail.course_mapping_id} courseName={selectedCourseDetail.course_name} isAuthorized={true} />
               </div>
             </div>
           </div>
