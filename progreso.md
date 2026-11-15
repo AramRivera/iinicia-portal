@@ -25,8 +25,8 @@
 
 | Criterio | Estado observado | Qué falta para cerrarlo |
 | --- | --- | --- |
-| CA-01 · Sustituir WordPress | Portal nuevo en código; inventario preliminar de portada. | Inventario completo, respaldo, migración, redirecciones 301, corte y verificación en producción. |
-| CA-02 · React/Next.js | Implementado; evidencia previa de compilación y tipos. | Recorrer las páginas públicas y privadas en el despliegue de entrega. |
+| CA-01 · Sustituir WordPress | Portal Next.js operativo; inventario de 12 URLs legadas en semillas (`public.wp_migration_inventory`) y 11 redirecciones activas 301 vía `GET /api/v1/migration/redirects`. Guía técnica en `docs/migracion-wordpress.md`. | Ejecutar el respaldo final de base de datos WP y corte definitivo de DNS en producción. |
+| CA-02 · React/Next.js | Implementado; 25 páginas estáticas compiladas sin errores; contrato de redirecciones 301 documentado para middleware. | Recorrer las páginas públicas y privadas en el despliegue de entrega. |
 | CA-03 · Supabase Auth | Registro, login, confirmación, recuperación, TOTP y CAPTCHA en código. | Validar en pruebas con CAPTCHA habilitado, correo operativo y cuentas reales de prueba. |
 | CA-04 · Perfiles, roles y relaciones | Línea base unificada `20261115000000_baseline_schema.sql` y `seed.sql` verificadas en base limpia. | Desplegar en el entorno final de entrega y registrar evidencia integral. |
 | CA-05 · Roles y permisos | Paneles y guards para los roles previstos. Catálogo completo y matriz de 30 permisos consolidada en semillas. | Probar cada rol en la API con casos permitidos y denegados. |

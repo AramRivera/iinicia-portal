@@ -416,4 +416,28 @@ describe('Portal Lifecycle E2E Test Suite', () => {
       expect(res.body.course_mapping_id).toBe(courseMappingId);
     });
   });
+
+  describe('6. WordPress Migration & SEO Redirects (CA-01, CA-02)', () => {
+    it('GET /api/v1/migration/redirects returns active 301 mappings', async () => {
+      const mockRedirects = [
+        { legacy_url: '/?page_id=1172', new_target_url: '/universidad', http_redirect_code: 301 },
+        { legacy_url: '/?page_id=1202', new_target_url: '/cursos', http_redirect_code: 301 },
+      ];
+
+      mockClient.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            not: vi.fn().mockResolvedValue({ data: mockRedirects, error: null }),
+          }),
+        }),
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/migration/redirects')
+        .expect(200);
+
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toEqual(mockRedirects);
+    });
+  });
 });

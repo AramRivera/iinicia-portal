@@ -1195,7 +1195,23 @@ paths:
       description: Consumido por el middleware de Next.js para preservar SEO de las URLs históricas.
       responses:
         "200":
-          description: Lista de mapeos de redirección.
+          description: Lista de mapeos de redirección activos para preservación de SEO.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    legacy_url:
+                      type: string
+                      example: "/?page_id=1172"
+                    new_target_url:
+                      type: string
+                      example: "/universidad"
+                    http_redirect_code:
+                      type: integer
+                      example: 301
 
 components:
   securitySchemes:

@@ -118,8 +118,8 @@ La tabla sigue la numeración del PDF (sección 19), con CA-08 ajustado por el p
 
 | ID | Criterio | Estado y evidencia de cierre |
 | --- | --- | --- |
-| CA-01 | Sustituir WordPress | Arquitectura nueva en el repositorio. Falta verificar que el portal de producción y sus redirecciones ya no dependan de WordPress. |
-| CA-02 | Portal React/Next.js | Implementado y compilado en una revisión previa. Falta registrar la navegación completa de la versión de entrega. |
+| CA-01 | Sustituir WordPress | Portal Next.js operativo; inventario de 12 URLs legadas en semillas (`public.wp_migration_inventory`) y 11 redirecciones activas 301 vía `GET /api/v1/migration/redirects`. Guía técnica en `docs/migracion-wordpress.md`. Falta ejecutar respaldo final de BD WP y corte definitivo de DNS en producción. |
+| CA-02 | Portal React/Next.js | Implementado; 25 páginas estáticas compiladas sin errores; contrato de redirecciones 301 documentado para middleware. Falta registrar la navegación completa de la versión de entrega. |
 | CA-03 | Registro, login con TOTP obligatorio y recuperación con Supabase | Registro/confirmación se comprobaron antes de MFA. TOTP y recuperación protegida se probaron localmente; falta repetir login/recuperación con el Supabase remoto y habilitar correo operativo. |
 | CA-04 | Perfiles, roles y relaciones en Supabase; credenciales en Auth | Línea base unificada `20261115000000_baseline_schema.sql` y `seed.sql` probadas con éxito desde cero en PostgreSQL 16 aislado (`test_clean_baseline`). Se verificó alta de perfil (`pendiente`), rol `aspirante`, auditoría `USER_REGISTERED`, rechazo AAL1 / aceptación AAL2, dictamen de admisión atómico y asignación de rol `estudiante`. |
 | CA-05 | Roles y permisos diferenciados | Roles y paneles implementados. Matriz de 7 roles, 12 permisos y 30 asignaciones consolidada en `seed.sql`. Verificada la restricción de dictamen por ámbito en coordinación. |

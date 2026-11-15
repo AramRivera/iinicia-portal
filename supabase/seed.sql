@@ -107,4 +107,39 @@ ON CONFLICT (id) DO UPDATE SET
   moodle_course_url = EXCLUDED.moodle_course_url,
   is_active = EXCLUDED.is_active;
 
+-- 7. INVENTARIO DE MIGRACION DESDE WORDPRESS Y REDIRECCIONES 301 (CA-01, CA-02)
+INSERT INTO public.wp_migration_inventory (
+  legacy_url,
+  legacy_title,
+  asset_type,
+  action,
+  new_target_url,
+  http_redirect_code,
+  is_redirect_active,
+  migration_completed,
+  seo_notes
+) VALUES
+  ('/?page_id=1172', 'Universidad IINICIA', 'page', 'MIGRAR', '/universidad', 301, true, true, 'Página institucional migrada a ruta estática Next.js /universidad'),
+  ('/?page_id=1202', 'Cursos IINICIA', 'page', 'MIGRAR', '/cursos', 301, true, true, 'Catálogo de cursos migrado a /cursos'),
+  ('/?page_id=1652', 'Certificaciones IINICIA', 'page', 'MIGRAR', '/certificaciones', 301, true, true, 'Oferta de certificaciones migrada a /certificaciones'),
+  ('/?page_id=1653', 'Diplomados IINICIA', 'page', 'MIGRAR', '/diplomados', 301, true, true, 'Oferta de diplomados migrada a /diplomados'),
+  ('/?page_id=16', 'Regístrate', 'page', 'MIGRAR', '/registro', 301, true, true, 'Formulario legado sustituido por registro Supabase Auth con CAPTCHA en /registro'),
+  ('/?page_id=2179', 'Iniciar sesión', 'page', 'MIGRAR', '/login', 301, true, true, 'Acceso al campus redirigido a login seguro con TOTP en /login'),
+  ('/contacto/', 'Contacto Institucional', 'page', 'MIGRAR', '/contacto', 301, true, true, 'Formulario institucional de contacto migrado a /contacto'),
+  ('/admisiones/', 'Admisiones', 'page', 'MIGRAR', '/admisiones', 301, true, true, 'Convocatoria y postulación de aspirantes migrada a /admisiones'),
+  ('/?page_id=15', 'Recuperar Contraseña', 'page', 'MIGRAR', '/recuperar-password', 301, true, true, 'Flujo legado de recuperación sustituido por PKCE en /recuperar-password'),
+  ('/wp-login.php', 'WordPress Login', 'system', 'MIGRAR', '/login', 301, true, true, 'Ruta de autenticación WP redirigida a /login para prevenir accesos huérfanos'),
+  ('/wp-admin/', 'WordPress Admin', 'system', 'MIGRAR', '/login', 301, true, true, 'Panel administrativo WP redirigido a /login'),
+  ('/', 'Página Principal IINICIA', 'page', 'MIGRAR', '/', 301, false, true, 'Portada sustituida por landing page Next.js en / (sin redirección activa para evitar bucles)')
+ON CONFLICT (legacy_url) DO UPDATE SET
+  legacy_title = EXCLUDED.legacy_title,
+  asset_type = EXCLUDED.asset_type,
+  action = EXCLUDED.action,
+  new_target_url = EXCLUDED.new_target_url,
+  http_redirect_code = EXCLUDED.http_redirect_code,
+  is_redirect_active = EXCLUDED.is_redirect_active,
+  migration_completed = EXCLUDED.migration_completed,
+  seo_notes = EXCLUDED.seo_notes,
+  updated_at = now();
+
 COMMIT;

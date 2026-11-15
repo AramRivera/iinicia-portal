@@ -51,21 +51,24 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 4. Prueba manual confirmada por el usuario: el estudiante entregó una actividad, el profesor la calificó y el estudiante pudo ver la nota y la actividad marcada como completada.
 5. Registrar fecha, ambiente, resultados y evidencia sin secretos. Probar el correo de recuperación y TOTP con cuentas de prueba después de configurar el envío de correo del ambiente.
 
-## Inventario inicial de WordPress
+## Inventario de WordPress y Redirecciones 301 (CA-01, CA-02)
 
-El [portal público de WordPress](https://iinicia.org/) mostró estos enlaces en portada el 9 de noviembre de 2026. El endpoint local `GET /api/v1/migration/redirects` devolvió una lista vacía. Los destinos son propuestas para revisar con el equipo editorial.
+El inventario de migración desde WordPress se encuentra consolidado y cargado en `public.wp_migration_inventory` vía `supabase/seed.sql` y `docker/init-db/03-seed.sql`. El endpoint `GET /api/v1/migration/redirects` devuelve las 11 redirecciones activas 301, y la política RLS `wp_migration_select_public_redirects` protege la integridad del inventario permitiendo lectura pública y restringiendo modificaciones a administradores. Para detalles operativos y contrato con Next.js, consultar [docs/migracion-wordpress.md](migracion-wordpress.md).
 
-| Enlace publicado | Etiqueta | Destino propuesto |
-| --- | --- | --- |
-| `/` | Inicio | `/` |
-| `/?page_id=1172` | Universidad IINICIA | `/universidad` |
-| `/?page_id=1202` | Cursos | `/cursos` |
-| `/?page_id=1652` | Certificaciones | `/certificaciones` |
-| `/?page_id=1653` | Diplomados | `/diplomados` |
-| `/?page_id=16` | Regístrate | `/registro` |
-| `/?page_id=2179` | Iniciar sesión | `/login` |
-
-La revisión cubrió la navegación visible en la portada. Completar el inventario con una exportación de WordPress, comparar contenidos y metadatos y verificar las redirecciones al publicar el portal.
+| Enlace publicado (WP) | Etiqueta | Destino en Next.js | Código | Estado |
+| --- | --- | --- | :---: | :---: |
+| `/` | Inicio | `/` | 301 | Portada Next.js (inactivo 301 para evitar bucle) |
+| `/?page_id=1172` | Universidad IINICIA | `/universidad` | 301 | Activo |
+| `/?page_id=1202` | Cursos | `/cursos` | 301 | Activo |
+| `/?page_id=1652` | Certificaciones | `/certificaciones` | 301 | Activo |
+| `/?page_id=1653` | Diplomados | `/diplomados` | 301 | Activo |
+| `/?page_id=16` | Regístrate | `/registro` | 301 | Activo |
+| `/?page_id=2179` | Iniciar sesión | `/login` | 301 | Activo |
+| `/contacto/` | Contacto | `/contacto` | 301 | Activo |
+| `/admisiones/` | Admisiones | `/admisiones` | 301 | Activo |
+| `/?page_id=15` | Recuperar contraseña | `/recuperar-password` | 301 | Activo |
+| `/wp-login.php` | Acceso WP | `/login` | 301 | Activo |
+| `/wp-admin/` | Panel WP | `/login` | 301 | Activo |
 
 ## Criterio para marcar una tarea como terminada
 
