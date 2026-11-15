@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 1 | Completar la demo de Moodle con HTML Básico Desde Cero, un profesor y dos estudiantes (CA-07 a CA-13). | Entrega, nota y finalización de una actividad confirmadas por el usuario. Falta guardar evidencia con un profesor y dos estudiantes y comprobar el reintento si Moodle falla. El usuario confirmó que la baja bloqueó el acceso al portal y al curso mediante el enlace directo de Moodle. |
 | 2 | Cerrar identidad y permisos (CA-03 a CA-06, CA-10 y CA-19). | Registro, confirmación y recuperación reportados por el usuario como funcionales por ZeroTier. Repetir con SMTP operativo y guardar evidencia de CAPTCHA y TOTP. Ejecutar la matriz de permisos de todos los roles y revisar la auditoría. |
-| 3 | Reproducir el entorno de entrega (CA-04, CA-07, CA-14, CA-15, CA-18 y CA-20). | Línea base unificada `20261115000000_baseline_schema.sql` y `seed.sql` probadas con éxito en PostgreSQL 16 aislado (`test_clean_baseline`). Desplegar con HTTPS y comprobar respaldo y restauración. [Auditoría de Supabase](docs/supabase-auditoria-esquema.md) |
+| 3 | Reproducir el entorno de entrega (CA-04, CA-07, CA-14, CA-15, CA-18 y CA-20). | Línea base y semillas probadas en base limpia. Dockerfiles multi-etapa para API y Web, orquestación completa en `docker/compose.yaml`, variables documentadas en `.env.example` y manual de despliegue, healthchecks, HTTPS, respaldo y restauración en aislamiento en `docs/despliegue-recuperacion.md`. |
 | 4 | Cerrar migración y experiencia del portal (CA-01, CA-02, CA-16 y CA-17). | Completar inventario de WordPress, redirecciones y comprobación del sitio migrado. Revisar móvil, teclado, contraste y coherencia visual con Moodle. |
 | 5 | Empaquetar la entrega (CA-18 y CA-20). | Completar manuales de instalación, administración, profesor y estudiante. Adjuntar reporte de pruebas, evidencias y video o presentación. |
 
@@ -44,7 +44,7 @@
 | CA-17 · Identidad visual | Portal rediseñado y tema Moodle en SCSS. | Aplicar el tema y comparar ambas interfaces en el ambiente objetivo. |
 | CA-18 · Documentación operativa | Arquitectura, OpenAPI y guías existentes. | Validar instalación desde cero y completar manuales de profesor y estudiante con el curso real. |
 | CA-19 · Auditoría | Módulo de lectura e inserciones en flujos administrativos. | Confirmar altas, roles, estados, programas y matrículas con actor, resultado y lectura restringida. |
-| CA-20 · Despliegue reproducible | Arranque local y plantillas de entorno. `docker/compose.yaml` está vacío. | Probar despliegue en staging, HTTPS, variables por ambiente, respaldo, restauración y reversión del corte. |
+| CA-20 · Despliegue reproducible | Dockerfiles multi-etapa de API y Web probados; `docker/compose.yaml` validado con PostgreSQL 16, Supabase Auth, PostgREST, Mailpit, NestJS y Next.js; manual de respaldo y restauración documentado en `docs/despliegue-recuperacion.md`. | Ejecutar la primera prueba de restauración completa en el host de entrega. |
 
 ## Flujos prioritarios para trabajar
 

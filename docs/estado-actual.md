@@ -22,7 +22,7 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 | Identidad | CAPTCHA integrado, TOTP obligatorio y origen permitido en enlaces de confirmación y recuperación. | El usuario reportó que registro, confirmación y recuperación funcionaron por ZeroTier. Repetir la prueba con SMTP operativo y guardar evidencia de CAPTCHA y TOTP. |
 | Supabase y API | Línea base unificada `20261115000000_baseline_schema.sql` y `supabase/seed.sql` probadas con éxito en PostgreSQL 16 limpio. Se verificaron AAL2, rechazo AAL1, ámbito de coordinación, admisión atómica, RLS y alta con `auth.users`. | Desplegar en el entorno reproducible de entrega y ampliar la matriz de pruebas con todos los roles. |
 | Moodle | Curso ID 4. Admisión con matrícula automática en cursos obligatorios activos del primer módulo, SSO estudiantil y acceso docente al calificador. | El usuario confirmó entrega, calificación y finalización de una actividad. Falta guardar evidencia y verificar tema y permisos en el despliegue de entrega. |
-| Operación | Compilaciones y pruebas ejecutadas en desarrollo. | Cerrar despliegue con HTTPS, respaldo, restauración y evidencia de corte. |
+| Operación | Dockerfiles de producción para API y Web; `docker/compose.yaml` validado con PostgreSQL 16, GoTrue, PostgREST, Mailpit y Moodle; manual de despliegue, healthchecks, HTTPS y respaldo/restauración en aislamiento en [`docs/despliegue-recuperacion.md`](despliegue-recuperacion.md). | Ejecutar la primera restauración periódica programada y evidencia de corte. |
 
 ## Validación registrada
 

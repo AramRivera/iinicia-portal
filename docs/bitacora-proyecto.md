@@ -137,7 +137,7 @@ La tabla sigue la numeración del PDF (sección 19), con CA-08 ajustado por el p
 | CA-17 | Identidad visual consistente | Portal rediseñado y SCSS de Moodle disponible. Falta comparar el tema aplicado en Moodle con el portal. |
 | CA-18 | Instalación, administración y mantenimiento documentados | Guías y manuales disponibles. Falta probarlos en un entorno limpio y completar el procedimiento de operación y respaldo. |
 | CA-19 | Auditoría de cambios de usuarios y roles | Hay bitácora y flujos que registran operaciones. Falta probar quién puede leerla y verificar entradas reales con actor, objeto y acción. |
-| CA-20 | Despliegue de producción reproducible | Pendientes el procedimiento probado, ambientes separados, HTTPS, comprobaciones posteriores, respaldo y restauración. |
+| CA-20 | Despliegue de producción reproducible | Dockerfiles multi-etapa de API y Web probados; `docker/compose.yaml` validado con PostgreSQL 16, Supabase Auth, PostgREST, Mailpit, NestJS y Next.js; manual operativo de despliegue, healthchecks, HTTPS, respaldo y restauración en aislamiento en [`docs/despliegue-recuperacion.md`](despliegue-recuperacion.md). |
 
 Además de los criterios, la entrega pide el inventario de migración, manuales de administración y de profesor/estudiante, reporte de pruebas y un video o presentación del flujo integral. La demostración final debe recorrer registro, rol de estudiante, aprovisionamiento en Moodle, matrícula, Mi IINICIA, acceso al campus y paneles de profesor y administración, con el único curso acordado.
 
