@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import {
   hasGlobalAcademicAccess,
@@ -377,11 +378,43 @@ export class EnrollmentsService {
       }
     }
 
-    // Desmatricular en Moodle LMS
+    // Desmatricular en Moodle LMS de manera tolerante a fallos
     try {
       await this.moodleService.unenrolStudent(enrollmentId);
     } catch (err: any) {
-      this.logger.warn(`Error al desmatricular en Moodle: ${err?.message}`);
+      this.logger.error(`Error al desmatricular en Moodle (${enrollmentId}): ${err?.message}`);
+      await admin
+        .from('enrollment_requests')
+        .update({
+          status: 'error_sincronizacion',
+          sync_attempts: ((enrollment.sync_attempts as number) || 0) + 1,
+          sync_error_message: `Fallo al desmatricular en Moodle: ${err?.message || 'Error de comunicación'}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', enrollmentId);
+
+      const courseMapping = enrollment.course_mappings;
+      await admin.from('audit_logs').insert({
+        actor_id: actorId,
+        target_user_id: enrollment.user_id,
+        action: 'ENROLLMENT_UNENROL_FAILED',
+        entity_name: 'enrollment_requests',
+        entity_id: enrollmentId,
+        old_values: {
+          course_mapping_id: enrollment.course_mapping_id,
+          course_name: courseMapping?.course_name,
+          moodle_role: enrollment.moodle_role,
+          status: enrollment.status,
+        },
+        new_values: {
+          error: err?.message,
+          sync_attempts: ((enrollment.sync_attempts as number) || 0) + 1,
+        },
+      });
+
+      throw new ServiceUnavailableException(
+        'El servicio del campus no respondió al tramitar la baja. El registro se conservó para reintento y auditoría.',
+      );
     }
 
     // Eliminar de enrollment_requests

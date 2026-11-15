@@ -526,18 +526,14 @@ export class MoodleService {
     const profile = (enrollment as any).profiles;
 
     if (profile?.moodle_user_id && courseMapping?.moodle_course_id) {
-      try {
-        const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
-        const roleId = this.getMoodleRoleId(moodleRole);
+      const moodleRole: MoodleRoleType = enrollment.moodle_role || 'student';
+      const roleId = this.getMoodleRoleId(moodleRole);
 
-        await this.client.unenrolUser({
-          userId: Number(profile.moodle_user_id),
-          courseId: Number(courseMapping.moodle_course_id),
-          roleId,
-        });
-      } catch (err: any) {
-        this.logger.warn(`Advertencia al desmatricular en Moodle (${enrollmentId}): ${err?.message}`);
-      }
+      await this.client.unenrolUser({
+        userId: Number(profile.moodle_user_id),
+        courseId: Number(courseMapping.moodle_course_id),
+        roleId,
+      });
     }
 
     return { success: true };

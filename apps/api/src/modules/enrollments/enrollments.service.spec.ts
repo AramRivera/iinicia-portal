@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
@@ -412,6 +417,65 @@ describe('EnrollmentsService', () => {
 
       expect(res.success).toBe(true);
       expect(moodleServiceMock.unenrolStudent).toHaveBeenCalledWith('enr-1');
+    });
+
+    it('preserves local enrollment in error_sincronizacion when Moodle unenrollment fails (P0, CA-12)', async () => {
+      const current = {
+        id: 'enr-1',
+        user_id: 'usr-1',
+        status: 'sincronizada',
+        sync_attempts: 1,
+        course_mappings: { course_name: 'Curso Demo' },
+      };
+
+      const updateMock = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      });
+      const deleteMock = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      });
+      const insertMock = vi.fn().mockResolvedValue({ error: null });
+
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'enrollment_requests') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: current, error: null }),
+              }),
+            }),
+            update: updateMock,
+            delete: deleteMock,
+          };
+        }
+        if (table === 'audit_logs') {
+          return {
+            insert: insertMock,
+          };
+        }
+        return {};
+      });
+
+      moodleServiceMock.unenrolStudent.mockRejectedValueOnce(new Error('Connection timed out'));
+
+      await expect(
+        service.deleteEnrollment('enr-1', 'usr-1'),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+      expect(updateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error_sincronizacion',
+          sync_attempts: 2,
+          sync_error_message: expect.stringContaining('Connection timed out'),
+        }),
+      );
+      expect(deleteMock).not.toHaveBeenCalled();
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'ENROLLMENT_UNENROL_FAILED',
+          target_user_id: 'usr-1',
+        }),
+      );
     });
   });
 });
