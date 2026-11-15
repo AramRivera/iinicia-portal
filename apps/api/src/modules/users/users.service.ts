@@ -10,6 +10,7 @@ import {
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import type { Database } from '../../common/supabase/database.types.js';
 import { MoodleClient } from '../moodle/moodle.client.js';
+import { MoodleService } from '../moodle/moodle.service.js';
 import { QueryUsersDto } from './dto/query-users.dto.js';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
 import { UpdateOwnProfileDto } from './dto/update-own-profile.dto.js';
@@ -22,6 +23,7 @@ export class UsersService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly moodleClient: MoodleClient,
+    private readonly moodleService: MoodleService,
   ) {}
 
   /**
@@ -280,31 +282,13 @@ export class UsersService {
       { onConflict: 'user_id,role_id' },
     );
 
-    // 5. Sincronización proactiva con Moodle LMS
-    let moodleUser: any = null;
+    // 5. Sincronización proactiva con Moodle LMS (sin sincronizar contraseña en texto plano y evitando duplicados)
+    let moodleUserId: number | null = null;
     try {
-      const safeUsername = dto.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_.-]/g, '');
-      moodleUser = await this.moodleClient.createUser({
-        username: safeUsername,
-        password: dto.password,
-        firstname: dto.first_name.trim(),
-        lastname: dto.last_name.trim(),
-        email: dto.email.trim().toLowerCase(),
-      });
-
-      if (moodleUser) {
-        await admin
-          .from('profiles')
-          .update({
-            moodle_user_id: moodleUser.id,
-            moodle_username: moodleUser.username,
-            moodle_sync_status: 'sincronizado',
-            moodle_last_sync_at: new Date().toISOString(),
-          })
-          .eq('id', newUserId);
-      }
+      const syncResult = await this.moodleService.syncUser(newUserId);
+      moodleUserId = syncResult?.moodle_user_id ? Number(syncResult.moodle_user_id) : null;
     } catch (moodleErr: any) {
-      this.logger.warn(`Usuario creado pero fallo sincronización inicial Moodle: ${moodleErr.message}`);
+      this.logger.warn(`Usuario creado pero falló sincronización inicial Moodle: ${moodleErr.message}`);
     }
 
     // 6. Registro en bitácora de auditoría
@@ -319,7 +303,7 @@ export class UsersService {
         first_name: dto.first_name,
         last_name: dto.last_name,
         assigned_role: role.slug,
-        moodle_user_id: moodleUser?.id ?? null,
+        moodle_user_id: moodleUserId,
       },
     });
 

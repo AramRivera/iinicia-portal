@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { MoodleClient } from '../moodle/moodle.client.js';
+import { MoodleService } from '../moodle/moodle.service.js';
 import { UsersService } from './users.service.js';
 
 describe('UsersService', () => {
@@ -14,6 +15,9 @@ describe('UsersService', () => {
   let moodleClientMock: {
     updateUser: ReturnType<typeof vi.fn>;
   };
+  let moodleServiceMock: {
+    syncUser: ReturnType<typeof vi.fn>;
+  };
 
   let clientMock: any;
   let adminClientMock: any;
@@ -24,6 +28,11 @@ describe('UsersService', () => {
     };
     adminClientMock = {
       from: vi.fn(),
+      auth: {
+        admin: {
+          createUser: vi.fn(),
+        },
+      },
     };
 
     supabaseMock = {
@@ -35,11 +44,21 @@ describe('UsersService', () => {
       updateUser: vi.fn().mockResolvedValue(undefined),
     };
 
+    moodleServiceMock = {
+      syncUser: vi.fn().mockResolvedValue({
+        success: true,
+        user_id: 'new-user-id',
+        moodle_user_id: 88,
+        moodle_username: 'profe_test',
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: SupabaseService, useValue: supabaseMock },
         { provide: MoodleClient, useValue: moodleClientMock },
+        { provide: MoodleService, useValue: moodleServiceMock },
       ],
     }).compile();
 
@@ -157,6 +176,95 @@ describe('UsersService', () => {
       expect(result.current_status).toBe('suspendido');
       expect(moodleClientMock.updateUser).toHaveBeenCalledWith(99, { suspended: 1 });
       expect(insertMock).toHaveBeenCalled();
+    });
+  });
+
+  describe('createUserByAdmin (CA-04, CA-10, CA-19)', () => {
+    it('creates auth user, assigns role, syncs moodle without plaintext credentials and writes audit log', async () => {
+      adminClientMock.auth.admin.createUser.mockResolvedValue({
+        data: { user: { id: 'new-user-id', email: 'profe@iinicia.org' } },
+        error: null,
+      });
+
+      const roleData = { id: 4, slug: 'profesor', name: 'Profesor' };
+      const aspiranteRoleData = { id: 7, slug: 'aspirante' };
+      const profileData = { id: 'new-user-id', email: 'profe@iinicia.org', active_roles: ['profesor'] };
+
+      const deleteMock = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      });
+
+      const upsertMock = vi.fn().mockResolvedValue({ error: null });
+      const insertMock = vi.fn().mockResolvedValue({ error: null });
+
+      adminClientMock.from.mockImplementation((table: string) => {
+        if (table === 'roles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockImplementation(() => {
+                  return Promise.resolve({ data: roleData, error: null });
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'user_roles') {
+          return {
+            delete: deleteMock,
+            upsert: upsertMock,
+          };
+        }
+        if (table === 'audit_logs') {
+          return { insert: insertMock };
+        }
+        if (table === 'v_user_complete_profile') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: profileData, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      });
+
+      const result = await service.createUserByAdmin(
+        {
+          email: 'profe@iinicia.org',
+          password: 'Password123!',
+          first_name: 'Carlos',
+          last_name: 'Profesor',
+          role_id: 4,
+        },
+        'admin-actor-id',
+      );
+
+      expect(result).toEqual(profileData);
+      expect(adminClientMock.auth.admin.createUser).toHaveBeenCalledWith({
+        email: 'profe@iinicia.org',
+        password: 'Password123!',
+        email_confirm: true,
+        user_metadata: {
+          first_name: 'Carlos',
+          last_name: 'Profesor',
+          phone: null,
+        },
+      });
+      // Verificación de desacoplamiento de credenciales y sincronización Moodle
+      expect(moodleServiceMock.syncUser).toHaveBeenCalledWith('new-user-id');
+      // Verificación de auditoría de creación administrativa
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'USER_CREATED_BY_ADMIN',
+          actor_id: 'admin-actor-id',
+          target_user_id: 'new-user-id',
+          entity_name: 'profiles',
+        }),
+      );
     });
   });
 });

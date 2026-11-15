@@ -440,4 +440,74 @@ describe('Portal Lifecycle E2E Test Suite', () => {
       expect(res.body).toEqual(mockRedirects);
     });
   });
+
+  describe('7. Security & Audit Operations (CA-05, CA-06, CA-19)', () => {
+    it('GET /api/v1/audit rejects student with 403 Forbidden', async () => {
+      currentRoles = ['estudiante'];
+      currentPermissions = ['campus.access'];
+      mockSupabase.getAuthenticatedUser.mockResolvedValue({ id: studentUserId, email: 'student@example.com' });
+      mockSupabase.getUserRoleSlugs.mockResolvedValue(['estudiante']);
+      mockSupabase.getUserPermissions.mockResolvedValue(['campus.access']);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/audit')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+    });
+
+    it('GET /api/v1/audit allows administrator with audit.logs.read permission', async () => {
+      currentRoles = ['administrador'];
+      currentPermissions = ['audit.logs.read'];
+      mockSupabase.getAuthenticatedUser.mockResolvedValue({ id: adminUserId, email: 'admin@iinicia.org' });
+      mockSupabase.getUserRoleSlugs.mockResolvedValue(['administrador']);
+      mockSupabase.getUserPermissions.mockResolvedValue(['audit.logs.read']);
+
+      const mockLogs = [
+        { id: 'log-1', action: 'ROLE_ASSIGNED', entity_name: 'user_roles' },
+      ];
+
+      mockClient.from.mockImplementation((table: string) => {
+        if (table === 'user_roles') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({
+                  data: [{ role_id: 2, is_active: true, expires_at: null }],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'role_permissions') {
+          return {
+            select: vi.fn().mockReturnValue({
+              in: vi.fn().mockResolvedValue({
+                data: [{ perms: { code: 'audit.logs.read' } }],
+                error: null,
+              }),
+            }),
+          };
+        }
+        if (table === 'audit_logs') {
+          return {
+            select: vi.fn().mockReturnValue({
+              range: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: mockLogs, error: null, count: 1 }),
+              }),
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/audit')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body.data).toEqual(mockLogs);
+      expect(res.body.meta.total).toBe(1);
+    });
+  });
 });
