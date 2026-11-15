@@ -43,6 +43,15 @@ Desde `apps/web`, ejecuta `npm run dev:demo` y abre <http://127.0.0.1:4000/login
 
 ### Demo por ZeroTier
 
+Para usar el laboratorio local de admisiones, ejecuta estos comandos en terminales separadas desde `apps/web`.
+
+```bash
+npm run dev:demo -- --lab
+npm run dev:demo -- --lab --hostname 192.168.191.171 --port 4007
+```
+
+`--lab` carga el archivo local `.env.demo.lab.local`, ignorado por Git, con `NEXT_PUBLIC_API_URL` y las cuentas de prueba del mismo Supabase que usa la API de laboratorio. En este host la API escucha en `http://192.168.191.171:4527/api/v1`. Si el archivo no existe, créalo con esos dos valores del laboratorio antes de arrancar. El comando sin `--lab` carga la configuración normal de demo.
+
 Inicia el portal con la IP de ZeroTier del equipo que ejecuta Next.js y con la URL de la API de pruebas accesible desde los navegadores del equipo.
 
 ```bash
@@ -116,3 +125,37 @@ Solicita el correo desde `/recuperar-password` y abre el enlace en ese mismo nav
 - El código de interfaz no acredita por sí solo pruebas de accesibilidad, contenido aprobado ni conexión real a Moodle/Supabase.
 
 Cuando cambie un contrato, actualiza `docs/openapi.yaml`, `src/types/index.ts`, `src/lib/api.ts` y la pantalla que consume el dato. Prueba con un rol autorizado y otro denegado.
+
+### Supabase remoto de pruebas · 14/11/2026
+
+Arrancar la API desde `apps/api` con `npm run start:dev`; su `.env` contiene el proyecto remoto. Desde `apps/web`:
+
+```bash
+npm run dev:demo
+npm run dev:demo -- --hostname 192.168.191.171 --port 4007 --api-url http://192.168.191.171:3000/api/v1
+```
+
+La primera instancia sirve localhost:4000 y la segunda ZeroTier:4007. Ambas consultan la misma API. No usar `--lab` para estas pruebas. Al cambiar de ambiente, cerrar sesión y entrar con una cuenta de ese ambiente. Los directorios `.next-demo-remote-*` separan los artefactos de los del laboratorio; Next.js añade sus tipos a `tsconfig.json`.
+
+La asignación de programa no matricula automáticamente todos sus cursos. En Postulaciones, admitir y después usar **Asignar curso**; en Matrículas se revisan las solicitudes y se reintentan sincronizaciones fallidas. El estudiante puede actualizar su panel y entrar cuando Moodle confirma la matrícula.
+
+### Enlaces de correo por localhost y ZeroTier
+
+Registro y recuperación toman el encabezado `Origin` enviado por el navegador. NestJS solo admite orígenes exactos incluidos en `FRONTEND_URL` o `CORS_ORIGIN`; si no hay Origin, utiliza FRONTEND_URL. No se aceptan destinos arbitrarios. No cambia el JSON del frontend.
+
+En Supabase → Authentication → URL Configuration → Redirect URLs, autorizar:
+
+- `http://localhost:4000/confirmar-correo`
+- `http://localhost:4000/restablecer-password`
+- `http://127.0.0.1:4000/confirmar-correo`
+- `http://127.0.0.1:4000/restablecer-password`
+- `http://192.168.191.171:4007/confirmar-correo`
+- `http://192.168.191.171:4007/restablecer-password`
+
+La plantilla estándar de confirmación debe conservar `{{ .ConfirmationURL }}` como enlace de verificación, sin una dirección localhost fija. La API no puede modificar estas opciones del dashboard mediante su clave de Data API. Los correos ya emitidos conservan su destino; solicitar uno nuevo desde el origen correcto y abrirlo en un equipo conectado a ZeroTier. La recuperación PKCE debe completarse en el mismo navegador donde se solicitó.
+
+Referencia: https://supabase.com/docs/guides/auth/redirect-urls
+
+### Búsqueda en los paneles
+
+La cabecera abre una búsqueda mediante el botón o Ctrl/⌘ K, también disponible en móvil. Cursos, programas, postulaciones y alumnos docentes se buscan en los datos cargados del panel, con coincidencia sin distinguir mayúsculas ni acentos. Los resultados con sección permiten navegar a ella. El directorio de usuarios se consulta en la API si la cuenta tiene `users.read`, con espera de 300 ms, máximo de 20 resultados y aviso para afinar consultas amplias. Las consultas anteriores se descartan cuando cambia el texto. El diálogo admite Escape, cierre explícito y navegación de foco nativa.

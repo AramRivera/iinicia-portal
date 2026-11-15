@@ -106,6 +106,12 @@ El 13 de noviembre, con Turnstile integrado, la API compiló, pasaron 88 pruebas
 
 Para repetir los comandos de aplicación: `npm test`, `npm run test:e2e`, `npm run build` y `npm run lint` en `apps/api`; `npm run build` y `npm run lint` en `apps/web`. Para pruebas reales, anotar fecha, ambiente, rama/commit, rol, solicitud, resultado esperado y observado; redactar secretos, datos personales, JWT y enlaces de un solo uso.
 
+## Cierre de cambios del 14 de noviembre de 2026
+
+- `7f46b29` conserva el origen autorizado en confirmación y recuperación. Queda por validar el envío real por ZeroTier después de configurar los destinos y SMTP de Supabase.
+- `1cd2c4d` integra la reparación del catálogo y admisiones, la matrícula automática, el panel docente y su calificador vía SSO, la búsqueda por rol y el arranque de la demo remota.
+- El código de ambos commits pasó 110 pruebas unitarias y 32 pruebas HTTP con servicios simulados, además de las compilaciones de API y web. Las comprobaciones previas con servicios reales y sus límites están en la [guía de admisiones](flujo-admisiones.md).
+
 ## Matriz de criterios de aceptación
 
 La tabla sigue la numeración del PDF (sección 19), con CA-08 ajustado por el profesor. «Implementado» indica que el código lo contempla; la columna final señala la evidencia de entrega que aún se necesita.
@@ -117,14 +123,14 @@ La tabla sigue la numeración del PDF (sección 19), con CA-08 ajustado por el p
 | CA-03 | Registro, login con TOTP obligatorio y recuperación con Supabase | Registro/confirmación se comprobaron antes de MFA. TOTP y recuperación protegida se probaron localmente; falta repetir login/recuperación con el Supabase remoto y habilitar correo operativo. |
 | CA-04 | Perfiles, roles y relaciones en Supabase; credenciales en Auth | Perfil y rol inicial comprobados. Falta reproducir el esquema vigente y validar relaciones y privilegios con los casos administrativos. |
 | CA-05 | Roles y permisos diferenciados | Roles y paneles implementados; comprobaciones parciales. Falta una matriz efectiva por rol, incluidos coordinación y soporte. |
-| CA-06 | RLS y backend bloquean acceso indebido y exigen AAL2 | AAL1 se rechaza en pruebas locales. Pendientes migración MFA remota, políticas y escrituras con JWT reales, además de corregir la autoasignación de programa por API. |
+| CA-06 | RLS y backend bloquean acceso indebido y exigen AAL2 | AAL1 se rechazó en NestJS y Data API remotos de pruebas. Coordinación recibió denegación al dictaminar fuera de su ámbito. Falta ampliar la matriz por rol y verificar el despliegue final. |
 | CA-07 | Moodle instalado, configurado y personalizado | Instalación local y Web Service comprobados. Falta inventario de funciones/permisos, SSO, tema aplicado y configuración reproducible. |
-| CA-08 | Un curso completo utilizable | Recurso candidato disponible. Falta seleccionar y acreditar el curso con actividades nativas, evaluación y finalización. |
+| CA-08 | Un curso completo utilizable | HTML Básico Desde Cero (ID 4) se usó para comprobar matrícula y acceso. Falta acreditar entrega, evaluación, nota y finalización. |
 | CA-09 | Un profesor y dos estudiantes matriculados | Hay cuentas de prueba; falta acreditar las tres asignaciones en el curso elegido. |
 | CA-10 | Crear o vincular usuarios Moodle sin duplicados | Flujo implementado. Falta separar la contraseña de Moodle en el alta administrativa y probar usuario existente, usuario nuevo y repetición con la misma identidad. |
-| CA-11 | Mostrar solo cursos autorizados | Portal y API implementados. Falta probar el catálogo personal y Mi IINICIA con cuentas reales y curso controlado. |
+| CA-11 | Mostrar solo cursos autorizados | El catálogo personal mostró el curso después de la matrícula en Supabase de pruebas y Moodle. Falta comprobar baja y pérdida efectiva de acceso. |
 | CA-12 | Estudiante solo en cursos matriculados | Controles implementados. Falta comprobar acceso y denegación tanto desde el portal como directamente en Moodle. |
-| CA-13 | Profesor solo en sus cursos docentes | Controles implementados. Falta probar contenido, participantes y calificador con un curso asignado y otro acceso denegado. |
+| CA-13 | Profesor solo en sus cursos docentes | Se verificaron participantes y calificador SSO del curso asignado y la denegación del resumen docente fuera de ámbito. Falta la prueba de calificación de una entrega. |
 | CA-14 | Secretos fuera del frontend | Las integraciones privilegiadas están en el backend. Falta verificar el artefacto final, sus variables y solicitudes de navegador. |
 | CA-15 | React no escribe en la BD de Moodle | Cumplido por diseño en el código revisado: NestJS usa Web Services. Conservar comprobación de la configuración desplegada. |
 | CA-16 | Móvil, tableta y escritorio | Hay estilos responsive. Falta registrar pruebas de tamaños de pantalla, teclado, foco, contraste y rendimiento, con WCAG 2.2 AA como objetivo del proyecto. |
@@ -135,4 +141,4 @@ La tabla sigue la numeración del PDF (sección 19), con CA-08 ajustado por el p
 
 Además de los criterios, la entrega pide el inventario de migración, manuales de administración y de profesor/estudiante, reporte de pruebas y un video o presentación del flujo integral. La demostración final debe recorrer registro, rol de estudiante, aprovisionamiento en Moodle, matrícula, Mi IINICIA, acceso al campus y paneles de profesor y administración, con el único curso acordado.
 
-Antes de dar por cerrada la seguridad de entrega, registrar la revisión de HTTPS, orígenes CORS, protección de sesión y entradas, limitación de intentos, permisos mínimos de Supabase y Moodle, MFA, auditoría, respaldo y restauración. El código exige TOTP para todos los roles; falta acreditar configuración de MFA en Supabase remoto, aplicar la migración de la Data API y ejecutar la validación final en el ambiente de entrega.
+Antes de dar por cerrada la seguridad de entrega, registrar la revisión de HTTPS, orígenes CORS, protección de sesión y entradas, limitación de intentos, permisos mínimos de Supabase y Moodle, MFA, auditoría, respaldo y restauración. El código exige TOTP para todos los roles; la migración de la Data API se comprobó en el Supabase remoto de pruebas y queda la validación final en el ambiente de entrega.

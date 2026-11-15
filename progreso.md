@@ -1,6 +1,16 @@
 # Progreso de IINICIA — borrador de trabajo
 
-**Base revisada:** `main` en `79b952d`. Auditoría estática del repositorio y de la evidencia registrada. Las pruebas históricas no se volvieron a ejecutar en esta revisión y no se consultaron los paneles ni los servicios externos.
+**Actualizado el 14 de noviembre de 2026.** La evidencia reciente se recoge en [Estado actual](docs/estado-actual.md). Los apuntes de revisiones anteriores se conservan abajo como historial.
+
+## Prioridades de entrega
+
+| Orden | Trabajo | Evidencia para cerrarlo |
+| --- | --- | --- |
+| 1 | Completar la demo de Moodle con HTML Básico Desde Cero, un profesor y dos estudiantes (CA-07 a CA-13). | Grabar acceso por rol, entrega, calificación, avance, finalización y denegación fuera del curso. Revisar la baja y reconciliar Moodle si falla la sincronización. |
+| 2 | Cerrar identidad y permisos (CA-03 a CA-06, CA-10 y CA-19). | Probar registro, confirmación, recuperación, CAPTCHA y TOTP en un navegador con SMTP operativo. Ejecutar la matriz de permisos de todos los roles y revisar la auditoría. |
+| 3 | Reproducir el entorno de entrega (CA-04, CA-07, CA-14, CA-15, CA-18 y CA-20). | Aplicar el esquema completo en una base vacía, desplegar con HTTPS, documentar integración y comprobar respaldo y restauración. |
+| 4 | Cerrar migración y experiencia del portal (CA-01, CA-02, CA-16 y CA-17). | Completar inventario de WordPress, redirecciones y comprobación del sitio migrado. Revisar móvil, teclado, contraste y coherencia visual con Moodle. |
+| 5 | Empaquetar la entrega (CA-18 y CA-20). | Completar manuales de instalación, administración, profesor y estudiante. Adjuntar reporte de pruebas, evidencias y video o presentación. |
 
 **Fuentes:** [documento del proyecto](Proyecto_Rediseno_Migracion_Portal_IINICIA_React_Moodle.md), [alcance vigente](ALCANCE.md), [estado documentado](docs/estado-actual.md), [bitácora](docs/bitacora-proyecto.md) y [contrato de API](docs/openapi.yaml). Para CA-08 y la demostración se aplica el cambio acordado con el profesor: **un curso completo**. Se conservan las actividades, los roles y la evidencia exigida. La fecha de entrega final indicada en el documento es el **1 de diciembre de 2026**.
 
@@ -11,7 +21,7 @@
 - **Moodle:** cliente de Web Services, vinculación y creación de usuarios, matrículas, consultas de cursos y enlaces de acceso mediante el plugin `auth_userkey`. El portal distingue avance y nota. La bitácora registra una instalación local y respuesta del Web Service. El [material de HTML básico](docs/cursos/html-basico/GUIA-MOODLE.txt) y el [tema SCSS](docs/moodle-theme.scss) son insumos para configurar la instancia.
 - **Evidencia disponible:** compilación de la API, 88 pruebas unitarias, 32 pruebas HTTP con mocks y comprobación de tipos web en la revisión de CAPTCHA. MFA y recuperación se ensayaron antes en contenedores locales con Mailpit. Hubo comprobaciones puntuales de identidad y correo en Supabase remoto antes de MFA. No consta la validación remota del flujo actual con CAPTCHA, TOTP y SMTP.
 
-## Criterios de aceptación
+## Criterios de aceptación · revisión histórica
 
 | Criterio | Estado observado | Qué falta para cerrarlo |
 | --- | --- | --- |
