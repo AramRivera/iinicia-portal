@@ -80,6 +80,7 @@ export class SupabaseService {
     email: string;
     password: string;
     captchaToken?: string;
+    origin?: string;
     firstName?: string;
     lastName?: string;
     phone?: string;
@@ -87,7 +88,7 @@ export class SupabaseService {
     const message =
       'Si puedes registrar esta dirección, recibirás un enlace para confirmar tu correo.';
     try {
-      const emailRedirectTo = this.getAuthRedirect('/confirmar-correo');
+      const emailRedirectTo = this.getAuthRedirect('/confirmar-correo', params.origin);
       await this.requireEmailConfirmation();
 
       const { data, error } = await this.createClient().auth.signUp({
@@ -154,10 +155,14 @@ export class SupabaseService {
     }
   }
 
-  private getAuthRedirect(path: '/confirmar-correo' | '/restablecer-password'): string {
+  private getAuthRedirect(path: '/confirmar-correo' | '/restablecer-password', origin?: string): string {
     const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4000';
+    const allowed = [frontendUrl, ...(this.config.get<string>('CORS_ORIGIN') ?? '').split(',')].map((value) => value.trim());
+    if (origin && !allowed.includes(origin)) {
+      throw new BadRequestException('El origen del portal no está autorizado para enlaces de correo.');
+    }
     try {
-      const redirectTo = new URL(path, frontendUrl);
+      const redirectTo = new URL(path, origin || frontendUrl);
       if (!['http:', 'https:'].includes(redirectTo.protocol)) {
         throw new Error('Protocolo no válido.');
       }
@@ -391,9 +396,9 @@ export class SupabaseService {
     return this.createClient(accessToken);
   }
 
-  async requestPasswordRecovery(email: string, captchaToken?: string): Promise<{ message: string }> {
+  async requestPasswordRecovery(email: string, captchaToken?: string, origin?: string): Promise<{ message: string }> {
     const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
-      redirectTo: this.getAuthRedirect('/restablecer-password'),
+      redirectTo: this.getAuthRedirect('/restablecer-password', origin),
       ...(captchaToken && { captchaToken }),
     });
     if (error?.code === 'captcha_failed') throw new BadRequestException(CAPTCHA_MESSAGE);
@@ -402,8 +407,8 @@ export class SupabaseService {
     return { message: RECOVERY_MESSAGE };
   }
 
-  async requestPkcePasswordRecovery(email: string, challenge: string, captchaToken?: string): Promise<{ message: string }> {
-    const query = new URLSearchParams({ redirect_to: this.getAuthRedirect('/restablecer-password') });
+  async requestPkcePasswordRecovery(email: string, challenge: string, captchaToken?: string, origin?: string): Promise<{ message: string }> {
+    const query = new URLSearchParams({ redirect_to: this.getAuthRedirect('/restablecer-password', origin) });
     const response = await this.postAuth(`/recover?${query}`, {
       email,
       code_challenge: challenge,

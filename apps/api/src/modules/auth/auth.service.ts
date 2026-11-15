@@ -13,7 +13,7 @@ export class AuthService {
     private readonly supabase: SupabaseService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, origin?: string) {
     return this.supabase.signUp({
       email: dto.email,
       password: dto.password,
@@ -21,6 +21,7 @@ export class AuthService {
       lastName: dto.last_name,
       phone: dto.phone,
       captchaToken: dto.captcha_token,
+      origin,
     });
   }
 

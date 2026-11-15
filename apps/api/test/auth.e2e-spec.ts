@@ -164,7 +164,7 @@ describe('POST /api/v1/auth/login', () => {
       .send({ email: credentials.email })
       .expect(200);
     expect(response.headers['cache-control']).toBe('no-store');
-    expect(recover).toHaveBeenCalledWith(credentials.email, undefined);
+    expect(recover).toHaveBeenCalledWith(credentials.email, undefined, undefined);
 
     const tokenHash = 'a'.repeat(56);
     await request(app.getHttpServer())
@@ -191,7 +191,7 @@ describe('POST /api/v1/auth/login', () => {
       .post('/api/v1/auth/recover')
       .send({ email: credentials.email, code_challenge: challenge, captcha_token: 'challenge-token' })
       .expect(200);
-    expect(recoverPkce).toHaveBeenCalledWith(credentials.email, challenge, 'challenge-token');
+    expect(recoverPkce).toHaveBeenCalledWith(credentials.email, challenge, 'challenge-token', undefined);
 
     await request(app.getHttpServer())
       .post('/api/v1/auth/reset-password')

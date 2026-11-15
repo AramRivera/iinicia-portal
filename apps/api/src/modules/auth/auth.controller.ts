@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Header,
+  Headers,
   HttpCode,
   Post,
   Req,
@@ -64,8 +65,8 @@ export class AuthController {
   @HttpCode(201)
   @Header('Cache-Control', 'no-store')
   @UseGuards(ThrottlerGuard)
-  register(@Body() data: RegisterDto) {
-    return this.authService.register(data);
+  register(@Body() data: RegisterDto, @Headers('origin') origin?: string) {
+    return this.authService.register(data, origin);
   }
 
   @Post('recover')
@@ -73,10 +74,10 @@ export class AuthController {
   @Header('Cache-Control', 'no-store')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  recoverPassword(@Body() dto: RecoverPasswordDto) {
+  recoverPassword(@Body() dto: RecoverPasswordDto, @Headers('origin') origin?: string) {
     return dto.code_challenge
-      ? this.supabase.requestPkcePasswordRecovery(dto.email, dto.code_challenge, dto.captcha_token)
-      : this.supabase.requestPasswordRecovery(dto.email, dto.captcha_token);
+      ? this.supabase.requestPkcePasswordRecovery(dto.email, dto.code_challenge, dto.captcha_token, origin)
+      : this.supabase.requestPasswordRecovery(dto.email, dto.captcha_token, origin);
   }
 
   @Post('reset-password')

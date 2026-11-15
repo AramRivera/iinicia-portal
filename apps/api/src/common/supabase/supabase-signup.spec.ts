@@ -17,6 +17,7 @@ describe('Registro con confirmación de correo', () => {
     SUPABASE_URL: 'https://example.supabase.co',
     SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',
     FRONTEND_URL: 'https://portal.example.test',
+    CORS_ORIGIN: 'http://localhost:4000,http://192.168.191.171:4007',
   }));
 
   beforeEach(() => {
@@ -47,6 +48,17 @@ describe('Registro con confirmación de correo', () => {
         data: { first_name: 'Persona', last_name: '', phone: null },
       },
     });
+  });
+
+  it.each(['http://localhost:4000', 'http://192.168.191.171:4007'])('conserva el origen permitido %s', async (origin) => {
+    signup.mockResolvedValue({ data: { user: { id: 'id' }, session: null }, error: null });
+    await service.signUp({ ...credentials, origin });
+    expect(signup).toHaveBeenCalledWith(expect.objectContaining({ options: expect.objectContaining({ emailRedirectTo: origin + '/confirmar-correo' }) }));
+  });
+
+  it('rechaza destinos externos antes de solicitar el correo', async () => {
+    await expect(service.signUp({ ...credentials, origin: 'https://evil.test' })).rejects.toMatchObject({ status: 400 });
+    expect(signup).not.toHaveBeenCalled();
   });
 
   it('rechaza el registro si Supabase confirma correos automáticamente', async () => {
