@@ -152,17 +152,17 @@ describe('EnrollmentsService', () => {
         notes: null,
       };
 
-      const updated = {
-        ...current,
-        status: 'autorizada',
-      };
+      const updated = { ...current, status: 'autorizada' };
+      const persisted = { ...current, status: 'sincronizada' };
+      let reads = 0;
+      moodleServiceMock.syncEnrollment.mockResolvedValue({ success: true, status: 'sincronizada' });
 
       adminClientMock.from.mockImplementation((table: string) => {
         if (table === 'enrollment_requests') {
           return {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({ data: current, error: null }),
+                maybeSingle: vi.fn().mockImplementation(async () => ({ data: ++reads === 1 ? current : persisted, error: null })),
               }),
             }),
             update: vi.fn().mockReturnValue({
@@ -188,7 +188,7 @@ describe('EnrollmentsService', () => {
         'admin-1',
       );
 
-      expect(result.enrollment.status).toBe('autorizada');
+      expect(result.enrollment?.status).toBe('sincronizada');
       expect(moodleServiceMock.syncEnrollment).toHaveBeenCalledWith('enr-1');
     });
   });
@@ -234,6 +234,40 @@ describe('EnrollmentsService', () => {
 
     const result = await service.findEnrollments('coord', 'access-token');
     expect(result.map(({ id }) => id)).toEqual(['personal', 'allowed']);
+  });
+
+  it('reactivates an expired student role when retrying a confirmed enrollment', async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    adminClientMock.from.mockImplementation((table: string) => {
+      if (table === 'user_roles') return { upsert };
+      return {
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({
+          data: table === 'roles' ? { id: 5 } : { user_id: 'student', moodle_role: 'student' }, error: null,
+        }) }) }),
+      };
+    });
+    await service.syncToMoodle('enrollment', 'admin');
+    expect(upsert).toHaveBeenCalledWith(
+      { user_id: 'student', role_id: 5, assigned_by: 'admin', is_active: true, expires_at: null },
+      { onConflict: 'user_id,role_id' },
+    );
+  });
+
+  it('returns the persisted failure after a Moodle synchronization error', async () => {
+    let reads = 0;
+    const current = { id: 'enrollment', user_id: 'student', status: 'pendiente', moodle_role: 'teacher' };
+    const failed = { ...current, status: 'error_sincronizacion', sync_attempts: 1 };
+    adminClientMock.from.mockImplementation((table: string) => {
+      if (table === 'audit_logs') return { insert: async () => ({ error: null }) };
+      return {
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: ++reads === 1 ? current : failed, error: null }) }) }),
+        update: () => ({ eq: () => ({ select: () => ({ maybeSingle: async () => ({ data: { ...current, status: 'autorizada' }, error: null }) }) }) }),
+      };
+    });
+    moodleServiceMock.syncEnrollment.mockRejectedValue(new Error('Moodle unavailable'));
+    const result = await service.updateEnrollmentStatus('enrollment', { status: 'autorizada', sync_to_moodle: true }, 'admin');
+    expect(result.enrollment).toEqual(failed);
+    expect(result.moodle_sync).toBeNull();
   });
 
   describe('deleteEnrollment', () => {

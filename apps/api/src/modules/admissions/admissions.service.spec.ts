@@ -11,10 +11,11 @@ describe('AdmissionsService', () => {
     eq: vi.fn().mockResolvedValue({ data: [] }),
     in: vi.fn().mockResolvedValue({ data: [] }),
   };
+  const enrollAdmittedStudent = vi.fn().mockResolvedValue({ state: 'synced', total: 1, synced: 1 });
   const service = new AdmissionsService({
     getAdminClient: () => ({ from: fromAdmin, rpc }),
     getResilientClient: () => ({ from: () => query }),
-  } as unknown as SupabaseService);
+  } as unknown as SupabaseService, { enrollAdmittedStudent } as unknown as ConstructorParameters<typeof AdmissionsService>[1]);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,10 +58,11 @@ describe('AdmissionsService', () => {
   });
 
   it('returns the committed decision from the database', async () => {
-    const row = { id: 'application', status: 'admitido' };
+    const row = { id: 'application', status: 'admitido', applicant_id: 'student', program_id: 'program' };
     rpc.mockResolvedValueOnce({ data: row });
     await expect(service.reviewApplication('application', { status: 'admitido' }, 'reviewer'))
-      .resolves.toEqual(row);
+      .resolves.toEqual({ ...row, enrollment_summary: { state: 'synced', total: 1, synced: 1 } });
+    expect(enrollAdmittedStudent).toHaveBeenCalledWith('student', 'program', 'reviewer');
     expect(rpc).toHaveBeenCalledWith('iinicia_review_admission', {
       application_id: 'application',
       reviewer_id: 'reviewer',
@@ -69,7 +71,7 @@ describe('AdmissionsService', () => {
     });
   });
 
-  it.each([['42501', 403], ['P0002', 404], ['P0001', 409], ['23503', 500]])(
+  it.each([['42501', 403], ['P0002', 404], ['P0001', 409], ['23503', 500], ['PGRST202', 503]])(
     'maps database error %s to HTTP %s',
     async (code, status) => {
       rpc.mockResolvedValueOnce({ error: { code, message: 'Error' } });

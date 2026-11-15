@@ -28,6 +28,49 @@ export class EnrollmentsService {
     private readonly moodleService: MoodleService,
   ) {}
 
+  // Se invoca tras el dictamen transaccional que autoriza al revisor y al programa.
+  async enrollAdmittedStudent(userId: string, programId: string, reviewerId: string) {
+    const admin = this.supabase.getAdminClient();
+    const { data: courses, error } = await admin.from('course_mappings')
+      .select('id').eq('program_id', programId).eq('is_active', true)
+      .eq('is_mandatory', true).eq('term_or_module', 1);
+    if (error) throw new InternalServerErrorException('No fue posible consultar los cursos iniciales.');
+    let synced = 0;
+    for (const course of courses ?? []) {
+      const rows = admin.from('enrollment_requests');
+      const values = {
+        user_id: userId, course_mapping_id: course.id, program_id: programId,
+        moodle_role: 'student' as const, status: 'autorizada' as const,
+        authorized_by: reviewerId, authorized_at: new Date().toISOString(),
+      };
+      try {
+        const { error: insertError } = await rows.upsert(
+          { ...values, requested_by: userId },
+          { onConflict: 'user_id,course_mapping_id', ignoreDuplicates: true },
+        );
+        if (insertError) throw insertError;
+        const { error: updateError } = await rows.update(values)
+          .eq('user_id', userId).eq('course_mapping_id', course.id)
+          .eq('status', 'pendiente').eq('moodle_role', 'student');
+        if (updateError) throw updateError;
+        const { data: enrollment, error: readError } = await rows.select('id, status, moodle_role')
+          .eq('user_id', userId).eq('course_mapping_id', course.id).single();
+        if (readError) throw readError;
+        if (enrollment.moodle_role !== 'student') continue;
+        if (enrollment.status === 'sincronizada') {
+          synced++;
+        } else if (['autorizada', 'error_sincronizacion'].includes(enrollment.status)) {
+          await this.moodleService.syncEnrollment(enrollment.id);
+          synced++;
+        }
+      } catch {
+        this.logger.warn('Una matrícula automática de admisión quedó sin confirmar.');
+      }
+    }
+    const total = courses?.length ?? 0;
+    return { total, synced, state: !total ? 'no_courses' as const : synced === total ? 'synced' as const : 'incomplete' as const };
+  }
+
   async findEnrollments(userId: string, accessToken: string) {
     const admin = this.supabase.getAdminClient();
     const roles = await loadActiveRoleSlugs(admin, userId);
@@ -164,12 +207,13 @@ export class EnrollmentsService {
     });
 
     if (isAssignment) {
+      if (role === 'student') await this.ensureStudentRole(userId, actorId);
       try {
         const result = await this.moodleService.syncEnrollment(data.id);
-        if (role === 'student') await this.ensureStudentRole(userId, actorId);
         return { ...data, status: result.status };
       } catch {
-        this.logger.warn('La asignación se autorizó, pero no se confirmó la matrícula en Moodle.');
+        this.logger.warn('La asignación requiere revisión de sincronización o del rol del estudiante.');
+        return this.readEnrollment(data.id);
       }
     }
     return data;
@@ -236,22 +280,22 @@ export class EnrollmentsService {
       new_values: { status: dto.status },
     });
 
+    if (dto.status === 'autorizada' && current.moodle_role === 'student') {
+      await this.ensureStudentRole(current.user_id, actorId);
+    }
     let syncResult = null;
     if (dto.status === 'autorizada' && dto.sync_to_moodle) {
       try {
         syncResult = await this.moodleService.syncEnrollment(enrollmentId);
-        if (current.moodle_role === 'student') {
-          await this.ensureStudentRole(current.user_id, actorId);
-        }
-      } catch (err: any) {
-        this.logger.warn(
-          `Matrícula autorizada pero falló sincronización inmediata con Moodle: ${err.message}`,
-        );
+      } catch {
+        this.logger.warn('La matrícula requiere revisión de sincronización o del rol del estudiante.');
+        syncResult = null;
       }
     }
 
     return {
-      enrollment: data,
+      enrollment: dto.status === 'autorizada' && dto.sync_to_moodle
+        ? await this.readEnrollment(enrollmentId) : data,
       moodle_sync: syncResult,
     };
   }
@@ -284,15 +328,23 @@ export class EnrollmentsService {
       .eq('slug', 'estudiante')
       .maybeSingle();
     if (roleError || !role) {
-      this.logger.warn('No fue posible consultar el rol de estudiante.');
-      return;
+      throw new InternalServerErrorException('La matrícula está guardada, pero falta el rol Estudiante. Reintenta la sincronización.');
     }
 
     const { error } = await admin.from('user_roles').upsert(
-      { user_id: userId, role_id: role.id, assigned_by: actorId },
-      { onConflict: 'user_id,role_id', ignoreDuplicates: true },
+      { user_id: userId, role_id: role.id, assigned_by: actorId, is_active: true, expires_at: null },
+      { onConflict: 'user_id,role_id' },
     );
-    if (error) this.logger.warn('No fue posible asignar el rol de estudiante.');
+    if (error) throw new InternalServerErrorException('No fue posible activar el rol Estudiante. Reintenta la sincronización.');
+  }
+
+  private async readEnrollment(id: string) {
+    const { data, error } = await this.supabase.getAdminClient()
+      .from('enrollment_requests').select('*').eq('id', id).maybeSingle();
+    if (error || !data) {
+      throw new InternalServerErrorException('No fue posible confirmar el estado de la matrícula. Actualiza la lista antes de reintentar.');
+    }
+    return data;
   }
 
   /**

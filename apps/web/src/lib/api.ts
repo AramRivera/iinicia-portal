@@ -161,6 +161,11 @@ function normalizeCourseOffering(course: CourseMappingResponse): CourseOffering 
 }
 
 export const coursesApi = {
+  getCatalog: async (): Promise<CourseOffering[]> => {
+    const courses = await apiFetch<CourseMappingResponse[]>('/courses');
+    return courses.map(normalizeCourseOffering);
+  },
+
   getAuthorizedCourses: async (): Promise<AuthorizedCourse[]> => {
     return apiFetch<AuthorizedCourse[]>('/courses');
   },
@@ -184,8 +189,8 @@ export const coursesApi = {
     });
   },
 
-  launchCourse: async (courseMappingId: string): Promise<MoodleLaunchResponse> => {
-    return apiFetch<MoodleLaunchResponse>(`/moodle/courses/${courseMappingId}/launch`, {
+  launchCourse: async (courseMappingId: string, destination: 'launch' | 'launch-gradebook' = 'launch'): Promise<MoodleLaunchResponse> => {
+    return apiFetch<MoodleLaunchResponse>(`/moodle/courses/${courseMappingId}/${destination}`, {
       method: 'POST',
     });
   },
@@ -381,8 +386,8 @@ export const programsApi = {
     });
   },
 
-  enrollUserInProgram: async (programId: string, payload: { user_id: string; moodle_role?: string }): Promise<any> => {
-    return apiFetch(`/programs/${programId}/enroll-user`, {
+  enrollUserInProgram: (programId: string, payload: { user_id: string; status: 'inscrito' }) => {
+    return apiFetch<{ id: string; status: string }>(`/programs/${programId}/enroll-user`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });

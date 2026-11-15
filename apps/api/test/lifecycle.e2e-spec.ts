@@ -314,6 +314,8 @@ describe('Portal Lifecycle E2E Test Suite', () => {
       };
 
       mockAdminClient.from.mockImplementation((table: string) => {
+        if (table === 'roles') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: 5 }, error: null }) }) }) };
+        if (table === 'user_roles') return { upsert: async () => ({ error: null }) };
         if (table === 'enrollment_requests') {
           return {
             select: vi.fn().mockReturnValue({
@@ -321,15 +323,11 @@ describe('Portal Lifecycle E2E Test Suite', () => {
                 maybeSingle: vi.fn().mockResolvedValue({ data: mockEnrollment, error: null }),
               }),
             }),
-            update: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                select: vi.fn().mockReturnValue({
-                  maybeSingle: vi.fn().mockResolvedValue({
-                    data: { ...mockEnrollment, status: 'autorizada', moodle_sync_status: 'sincronizado' },
-                    error: null,
-                  }),
-                }),
-              }),
+            update: vi.fn().mockImplementation((values) => {
+              Object.assign(mockEnrollment, values);
+              return { eq: () => ({ error: null, select: () => ({
+                maybeSingle: async () => ({ data: { ...mockEnrollment }, error: null }),
+              }) }) };
             }),
           };
         }
@@ -348,7 +346,8 @@ describe('Portal Lifecycle E2E Test Suite', () => {
         .send({ status: 'autorizada' })
         .expect(200);
 
-      expect(res.body.enrollment.status).toBe('autorizada');
+      expect(res.body.enrollment.status).toBe('sincronizada');
+      expect(res.body.moodle_sync.success).toBe(true);
       expect(mockMoodleClient.enrolUser).toHaveBeenCalledWith({
         roleId: 5,
         userId: 45,
@@ -372,7 +371,7 @@ describe('Portal Lifecycle E2E Test Suite', () => {
                   maybeSingle: vi.fn().mockResolvedValue({
                     data: {
                       id: 'enr-999',
-                      status: 'autorizada',
+                      status: 'sincronizada',
                       moodle_role: 'student',
                       course_mappings: {
                         id: courseMappingId,

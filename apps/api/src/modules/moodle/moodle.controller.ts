@@ -98,6 +98,18 @@ export class MoodleController {
     });
   }
 
+  @Post('courses/:courseMappingId/launch-gradebook')
+  @HttpCode(200)
+  @UseGuards(SupabaseAuthGuard)
+  launchGradebook(
+    @Param('courseMappingId') courseMappingId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.moodleService.getCourseAccessUrl({
+      userId: req.user.id, courseMappingId, destination: 'gradebook',
+    });
+  }
+
   /**
    * Obtiene la estructura de temas y módulos de un curso en Moodle.
    * Requiere matrícula activa en el curso o perfil de gestión (staff).

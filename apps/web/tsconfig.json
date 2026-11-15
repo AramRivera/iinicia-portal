@@ -38,7 +38,11 @@
     ".next-demo-4007/types/**/*.ts",
     ".next-demo-4007/dev/types/**/*.ts",
     ".next-demo-4000/types/**/*.ts",
-    ".next-demo-4000/dev/types/**/*.ts"
+    ".next-demo-4000/dev/types/**/*.ts",
+    ".next-demo-remote-4000/types/**/*.ts",
+    ".next-demo-remote-4000/dev/types/**/*.ts",
+    ".next-demo-remote-4007/types/**/*.ts",
+    ".next-demo-remote-4007/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

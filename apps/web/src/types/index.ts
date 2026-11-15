@@ -183,10 +183,12 @@ export interface EnrollmentRequest {
 }
 
 export interface AdmissionApplication {
+  enrollment_summary?: { total: number; synced: number; state: 'synced' | 'incomplete' | 'no_courses' };
   id: string;
   applicant_id: string;
   program_id: string;
   status: 'postulado' | 'en_revision' | 'admitido' | 'rechazado';
+  reviewer_notes?: string | null;
   submitted_at?: string;
   programs?: { code: string; name: string; slug: string } | null;
   profiles?: { id: string; email: string; first_name: string; last_name: string; phone?: string | null } | null;

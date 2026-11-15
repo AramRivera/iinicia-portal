@@ -26,7 +26,7 @@ export class CoursesController {
   @Get('offerings')
   @UseGuards(SupabaseAuthGuard)
   findOfferings(@Req() req: AuthenticatedRequest) {
-    return this.coursesService.findCourses(req.user.id, true, req.accessToken);
+    return this.coursesService.findOfferings(req.accessToken);
   }
 
   /**

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authApi, getToken, removeToken, setToken } from '@/lib/api';
+import { ApiError, authApi, getToken, removeToken, setToken } from '@/lib/api';
 import type { LoginResponse, RegisterResponse, RoleSlug, UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -41,9 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const profile = await authApi.getMe();
       setUser(profile);
-    } catch {
-      removeToken();
-      setUser(null);
+    } catch (error) {
+      if (error instanceof ApiError && [401, 403].includes(error.statusCode)) {
+        removeToken();
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -51,6 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchProfile();
+    const refreshOnFocus = () => { if (getToken()) void fetchProfile(); };
+    window.addEventListener('focus', refreshOnFocus);
+    return () => window.removeEventListener('focus', refreshOnFocus);
   }, [fetchProfile]);
 
   const login = (email: string, password: string, captchaToken?: string): Promise<LoginResponse> => {

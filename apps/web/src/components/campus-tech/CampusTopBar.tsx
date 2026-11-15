@@ -54,12 +54,12 @@ export function CampusTopBar({
         <button
           type="button"
           onClick={onOpenSearch}
-          className="hidden md:flex items-center gap-2.5 rounded-[6px] border border-border bg-surface-muted/60 px-3 py-1.5 text-xs text-muted hover:border-primary/50 hover:text-foreground transition-all"
+          className="flex items-center gap-2.5 rounded-[6px] border border-border bg-surface-muted/60 px-3 py-1.5 text-xs text-muted hover:border-primary/50 hover:text-foreground transition-all"
         >
           <IconSearch className="w-3.5 h-3.5 text-muted" />
-          <span>Buscar estudiante, curso o ID...</span>
+          <span>Buscar en mi panel</span>
           <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted">
-            ⌘K
+            Ctrl/⌘ K
           </kbd>
         </button>
 

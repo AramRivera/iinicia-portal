@@ -160,7 +160,8 @@ export function RoleWorkspace({ role }: Props) {
   );
 
   return (
-    <CampusShell currentTab="resumen" onSelectTab={(tab) => document.getElementById(tab)?.scrollIntoView({ behavior: 'smooth' })} breadcrumbs={['INICIA', title]} customSections={sections}>
+    <CampusShell
+      searchItems={scopedCourses.map((course) => ({ id: course.id, title: course.name || course.course_name || '', detail: course.code, section: 'Cursos' }))} currentTab="resumen" onSelectTab={(tab) => document.getElementById(tab)?.scrollIntoView({ behavior: 'smooth' })} breadcrumbs={['INICIA', title]} customSections={sections}>
       <div className="mx-auto max-w-6xl space-y-6">
         <header id="resumen" className="scroll-mt-20 rounded-xl border border-border bg-surface p-6 shadow-minimal">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">Panel de {title.toLowerCase()}</p>

@@ -17,7 +17,7 @@ import {
 
 export default function AspiranteDashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
 
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
@@ -29,6 +29,7 @@ export default function AspiranteDashboardPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [admissionError, setAdmissionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -44,18 +45,22 @@ export default function AspiranteDashboardPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [offData, enrData, programData, applicationData] = await Promise.all([
-          coursesApi.getOfferings(),
-          enrollmentsApi.getMyEnrollments(),
+        const [catalog, history, offeringsResult, enrollmentsResult] = await Promise.allSettled([
           programsApi.getPrograms(),
           admissionsApi.getMyApplications(),
+          coursesApi.getOfferings(),
+          enrollmentsApi.getMyEnrollments(),
         ]);
-        setOfferings(offData);
-        setEnrollments(enrData);
-        setPrograms(programData.filter((program) => program.is_active));
-        setApplications(applicationData);
-      } catch (err: any) {
-        setError(err.message || 'Error al cargar ofertas académicas.');
+        if (catalog.status === 'fulfilled') setPrograms(catalog.value.filter((program) => program.is_active));
+        if (history.status === 'fulfilled') setApplications(history.value);
+        if (offeringsResult.status === 'fulfilled') setOfferings(offeringsResult.value);
+        if (enrollmentsResult.status === 'fulfilled') setEnrollments(enrollmentsResult.value);
+        setAdmissionError(catalog.status === 'rejected' || history.status === 'rejected'
+          ? 'No fue posible cargar los programas o tus postulaciones. Pulsa Actualizar estado para reintentar.'
+          : null);
+        setError(offeringsResult.status === 'rejected' || enrollmentsResult.status === 'rejected'
+          ? 'No fue posible cargar la oferta de cursos o tus inscripciones.'
+          : null);
       } finally {
         setLoading(false);
       }
@@ -84,7 +89,7 @@ export default function AspiranteDashboardPage() {
   };
 
   const isAlreadyEnrolled = (courseMappingId: string) => {
-    return enrollments.some((e) => e.course_mapping_id === courseMappingId);
+    return enrollments.some((e) => e.course_mapping_id === courseMappingId && e.status !== 'rechazada');
   };
 
   const handleApplication = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -94,16 +99,42 @@ export default function AspiranteDashboardPage() {
     setError(null);
     setMessage(null);
     try {
-      await admissionsApi.createApplication({
+      const application = await admissionsApi.createApplication({
         program_id: selectedProgram,
         motivation_letter: motivation.trim() || undefined,
       });
-      setApplications(await admissionsApi.getMyApplications());
+      setApplications((current) => [application, ...current]);
       setSelectedProgram('');
       setMotivation('');
       setMessage('Tu postulación quedó registrada. Puedes seguir su estado en esta página.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No fue posible registrar la postulación.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const availablePrograms = programs.filter(
+    (program) => !applications.some((application) => application.program_id === program.id),
+  );
+
+  const refreshAdmissions = async () => {
+    setActionLoading('refresh-admissions');
+    setAdmissionError(null);
+    try {
+      const [catalog, history] = await Promise.all([
+        programsApi.getPrograms(),
+        admissionsApi.getMyApplications(),
+      ]);
+      setPrograms(catalog.filter((program) => program.is_active));
+      setApplications(history);
+      setSelectedProgram('');
+      const [offerings, enrollments] = await Promise.all([coursesApi.getOfferings(), enrollmentsApi.getMyEnrollments()]);
+      setOfferings(offerings);
+      setEnrollments(enrollments);
+      await refreshUser();
+    } catch (err: unknown) {
+      setAdmissionError(err instanceof Error ? err.message : 'No fue posible actualizar tus postulaciones.');
     } finally {
       setActionLoading(null);
     }
@@ -122,6 +153,9 @@ export default function AspiranteDashboardPage() {
 
   return (
     <CampusShell
+      searchItems={[...offerings.map((course) => ({ id: course.course_mapping_id, title: course.name || '', detail: course.portal_course_code, section: 'Cursos' })),
+...programs.map((program) => ({ id: program.id, title: program.name, detail: program.code, section: 'Programas' })),
+...applications.map((application) => ({ id: application.id, title: application.programs?.name || 'Postulación', detail: [application.profiles?.email, application.status].filter(Boolean).join(' · '), section: 'Postulaciones' })),]}
       currentTab="ofertas"
       onSelectTab={() => {}}
       breadcrumbs={['INICIA', 'Portal de Admisiones', 'Oferta Académica']}
@@ -191,7 +225,16 @@ export default function AspiranteDashboardPage() {
           <div>
             <h2 id="admisiones-heading" className="text-base font-semibold text-foreground">Postulación a programas</h2>
             <p className="mt-1 text-xs text-muted">Registra tu interés y consulta el dictamen de admisiones.</p>
+            <button type="button" onClick={refreshAdmissions} disabled={actionLoading !== null} className="mt-2 text-xs font-semibold text-primary underline disabled:opacity-50">
+              Actualizar estado
+            </button>
           </div>
+          {admissionError && <p role="alert" className="text-sm text-danger">{admissionError}</p>}
+          {(user?.roles.includes('estudiante') || applications.some((application) => application.status === 'admitido')) && (
+            <button type="button" onClick={() => window.location.assign('/dashboard/estudiante')} className="text-sm font-semibold text-primary underline">
+              Ir a mi panel de estudiante
+            </button>
+          )}
           {applications.length > 0 && (
             <ul className="space-y-2">
               {applications.map((application) => (
@@ -202,15 +245,18 @@ export default function AspiranteDashboardPage() {
               ))}
             </ul>
           )}
+          {!admissionError && availablePrograms.length === 0 && (
+            <p className="text-sm text-muted">No hay programas disponibles para una nueva postulación.</p>
+          )}
           <form onSubmit={handleApplication} className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
             <div className="space-y-1.5">
               <label htmlFor="programa-postulacion" className="block text-xs font-medium text-foreground">Programa de interés</label>
               <select id="programa-postulacion" required value={selectedProgram} onChange={(event) => setSelectedProgram(event.target.value)} className="w-full rounded-[6px] border border-border bg-surface px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none">
                 <option value="">Selecciona un programa</option>
-                {programs.map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
+                {availablePrograms.map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
               </select>
             </div>
-            <button type="submit" disabled={actionLoading === 'admission' || programs.length === 0} className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={actionLoading !== null || !selectedProgram} className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
               {actionLoading === 'admission' ? 'Enviando...' : 'Enviar postulación'}
             </button>
             <div className="sm:col-span-2">
@@ -277,6 +323,7 @@ export default function AspiranteDashboardPage() {
             </span>
           </div>
 
+          {!error && offerings.length === 0 && <p className="text-sm text-muted">No hay cursos publicados disponibles. Administración debe revisar la oferta y su configuración de acceso.</p>}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {offerings.map((off) => {
               const already = isAlreadyEnrolled(off.course_mapping_id);

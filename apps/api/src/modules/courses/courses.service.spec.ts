@@ -1,0 +1,59 @@
+import { ConfigService } from '@nestjs/config';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { SupabaseService } from '../../common/supabase/supabase.service.js';
+import type { MoodleClient } from '../moodle/moodle.client.js';
+import { CoursesService } from './courses.service.js';
+
+describe('CoursesService catalog and authorization', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function setup(rows: unknown, status = 200) {
+    const fetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify(rows), {
+      status, headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetch);
+    const supabase = new SupabaseService(new ConfigService({
+      SUPABASE_URL: 'https://test.supabase.co', SUPABASE_PUBLISHABLE_KEY: 'public-test',
+    }));
+    const sync = vi.fn();
+    const service = new CoursesService(supabase, { getAllCourses: sync } as unknown as MoodleClient);
+    return { service, fetch, sync };
+  }
+
+  it('reads active offerings under the user JWT without importing Moodle courses', async () => {
+    const { service, fetch, sync } = setup([{ id: 'offering' }]);
+    expect(await service.findOfferings('applicant-jwt')).toEqual([{ id: 'offering' }]);
+    const [url, init] = fetch.mock.calls[0];
+    expect(String(url)).toContain('is_active=eq.true');
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer applicant-jwt');
+    expect(sync).not.toHaveBeenCalled();
+  });
+
+  it('keeps the authorized course query restricted to the authenticated user', async () => {
+    const { service, fetch } = setup([]);
+    expect(await service.findCourses('student-id', false, 'student-jwt')).toEqual([]);
+    expect(String(fetch.mock.calls[0][0])).toContain('v_user_authorized_courses');
+    expect(String(fetch.mock.calls[0][0])).toContain('user_id=eq.student-id');
+  });
+
+  it('does not disguise catalog failures as an empty offer', async () => {
+    const { service } = setup({ code: '42501', message: 'denied' }, 403);
+    await expect(service.findOfferings('jwt')).rejects.toMatchObject({ status: 500 });
+  });
+
+  it('does not give an unassigned coordinator the global administrative catalog', async () => {
+    const client = { from: () => ({ select: () => ({ order: () => ({}) }) }) };
+    const admin = { from: (table: string) => ({ select: () => ({ eq: () => (
+      table === 'user_roles'
+        ? { eq: async () => ({ data: [{ roles: { slug: 'coordinador' }, expires_at: null }] }) }
+        : { in: async () => ({ data: [] }) }
+    ) }) }) };
+    const supabase = {
+      getAdminClient: () => admin, getResilientClient: () => client,
+    } as unknown as SupabaseService;
+    const sync = vi.fn();
+    const service = new CoursesService(supabase, { getAllCourses: sync } as unknown as MoodleClient);
+    expect(await service.findCourses('coordinator', true, 'jwt')).toEqual([]);
+    expect(sync).not.toHaveBeenCalled();
+  });
+});

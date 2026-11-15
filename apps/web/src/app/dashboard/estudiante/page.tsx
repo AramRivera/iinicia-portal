@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, enrollmentsApi, moodleApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, CourseOffering, EnrollmentRequest, MoodleCourseProgress } from '@/types';
+import type { AuthorizedCourse, CourseOffering, EnrollmentRequest, MoodleCourseProgress, UserProgramMembership } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -46,6 +46,8 @@ export default function EstudianteDashboardPage() {
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
+  const [programs, setPrograms] = useState<UserProgramMembership[] | null>(null);
+  const [programsError, setProgramsError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -67,39 +69,38 @@ export default function EstudianteDashboardPage() {
     bio: '',
   });
 
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    let current = true;
+    usersApi.getUserById(userId).then(
+      (profile) => { if (current) setPrograms(profile.programs ?? []); },
+      () => { if (current) setProgramsError(true); },
+    );
+    return () => { current = false; };
+  }, [userId]);
+
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [userCourses, myEnrollments, allOfferings] = await Promise.all([
+      const [courseResult, enrollmentResult, offeringResult] = await Promise.allSettled([
         coursesApi.getAuthorizedCourses(),
         enrollmentsApi.getMyEnrollments(),
         coursesApi.getOfferings(),
       ]);
-      setCourses(userCourses);
-      setEnrollments(myEnrollments);
-      setOfferings(allOfferings);
+      const userCourses = courseResult.status === 'fulfilled' ? courseResult.value : [];
+      if (courseResult.status === 'fulfilled') setCourses(userCourses);
+      if (enrollmentResult.status === 'fulfilled') setEnrollments(enrollmentResult.value);
+      if (offeringResult.status === 'fulfilled') setOfferings(offeringResult.value);
+      const failures = [
+        courseResult.status === 'rejected' && 'tus cursos',
+        enrollmentResult.status === 'rejected' && 'tus inscripciones',
+        offeringResult.status === 'rejected' && 'la oferta',
+      ].filter(Boolean);
+      if (failures.length) setError(`No fue posible actualizar ${failures.join(', ')}. Pulsa Actualizar para reintentar.`);
 
-      // Cargar progreso en tiempo real desde Moodle LMS para cada materia
-      if (userCourses.length > 0) {
-        const progMap: Record<number, MoodleCourseProgress> = {};
-        await Promise.all(
-          userCourses.map(async (c) => {
-            if (c.moodle_course_id) {
-              try {
-                const prog = await moodleApi.getCourseProgress(
-                  c.moodle_course_id,
-                  user?.moodle_user_id || undefined,
-                );
-                if (prog) progMap[c.moodle_course_id] = prog;
-              } catch {
-                // Silencioso si Moodle está procesando
-              }
-            }
-          }),
-        );
-        setCourseProgressMap(progMap);
-      }
+
     } catch (err: any) {
       setError(err.message || 'No fue posible cargar tus cursos.');
     } finally {
@@ -120,6 +121,24 @@ export default function EstudianteDashboardPage() {
 
     loadData();
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    let current = true;
+    void Promise.all(courses.map(async (course) => {
+      try {
+        const progress = await moodleApi.getCourseProgress(course.moodle_course_id);
+        return [course.moodle_course_id, progress] as const;
+      } catch {
+        return null;
+      }
+    })).then((results) => {
+      if (!current) return;
+      const progress: Record<number, MoodleCourseProgress> = {};
+      for (const result of results) if (result) progress[result[0]] = result[1];
+      setCourseProgressMap(progress);
+    });
+    return () => { current = false; };
+  }, [courses]);
 
   const handleOpenSyllabus = async (course: AuthorizedCourse) => {
     setSyllabusTarget(course);
@@ -351,6 +370,7 @@ export default function EstudianteDashboardPage() {
 
   return (
     <CampusShell
+      searchItems={[...courses.map((course) => ({ id: course.course_mapping_id, title: course.course_name || '', detail: course.portal_course_code, section: 'Cursos', tab: 'cursos' })),]}
       currentTab={activeTab}
       onSelectTab={(tabId) => {
         if (tabId === 'moodle') {
@@ -389,6 +409,17 @@ export default function EstudianteDashboardPage() {
               <p className="text-xs sm:text-sm text-muted">
                 Bienvenido a tu entorno de aprendizaje. Accede a tus materias, consulta calificaciones e interactúa en Moodle LMS.
               </p>
+              {programsError && <p role="status" className="text-sm text-danger">No fue posible consultar tus programas.</p>}
+              {programs !== null && (
+                <div className="text-sm">
+                  <h2 className="font-semibold">Mis programas</h2>
+                  {programs.length ? (
+                    <ul>{programs.map((program) => (
+                      <li key={program.program_id}>{program.name} · {program.academic_status.replaceAll('_', ' ')}</li>
+                    ))}</ul>
+                  ) : <p className="text-muted">Aún no tienes un programa asignado.</p>}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -581,7 +612,7 @@ export default function EstudianteDashboardPage() {
                             {course.course_code || course.portal_course_code}
                           </span>
                           <span className="rounded-[4px] bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            Matrícula Oficial
+                            {course.enrollment_status === 'sincronizada' ? 'Matrícula confirmada' : 'Pendiente de sincronización'}
                           </span>
                         </div>
 
@@ -650,7 +681,7 @@ export default function EstudianteDashboardPage() {
                         <LaunchCourseButton
                           courseMappingId={course.course_mapping_id}
                           courseName={course.course_name}
-                          isAuthorized={true}
+                          isAuthorized={course.enrollment_status === 'sincronizada'}
                           className="flex-1"
                         />
 

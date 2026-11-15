@@ -1,3 +1,4 @@
+import { EnrollmentsService } from '../enrollments/enrollments.service.js';
 import {
   ConflictException,
   ForbiddenException,
@@ -5,6 +6,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import {
   hasGlobalAcademicAccess,
@@ -20,7 +22,7 @@ import { ReviewAdmissionDto } from './dto/review-admission.dto.js';
 export class AdmissionsService {
   private readonly logger = new Logger(AdmissionsService.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly supabase: SupabaseService, private readonly enrollments: EnrollmentsService) {}
 
   /**
    * Consulta solicitudes de admisión.
@@ -126,6 +128,12 @@ export class AdmissionsService {
       notes: dto.reviewer_notes ?? null,
     });
 
+    if (error?.code === 'PGRST202' || error?.code === '42883') {
+      throw new ServiceUnavailableException(
+        'El entorno de Supabase requiere la migración de admisiones. Contacta a administración; el dictamen no se guardó.',
+      );
+    }
+
     if (error?.code === 'P0002') {
       throw new NotFoundException('Solicitud de admisión no encontrada.');
     }
@@ -139,6 +147,15 @@ export class AdmissionsService {
       this.logger.error('Error al dictaminar admisión: ' + (error?.code ?? 'sin resultado'));
       throw new InternalServerErrorException('No fue posible actualizar el dictamen.');
     }
-    return data;
+    if (dto.status !== 'admitido') return data;
+    try {
+      const enrollment_summary = await this.enrollments.enrollAdmittedStudent(
+        data.applicant_id, data.program_id, reviewerId,
+      );
+      return { ...data, enrollment_summary };
+    } catch {
+      this.logger.error('Admisión guardada, pero no se pudo completar la preparación de matrículas.');
+      return { ...data, enrollment_summary: { state: 'incomplete' as const, total: 0, synced: 0 } };
+    }
   }
 }

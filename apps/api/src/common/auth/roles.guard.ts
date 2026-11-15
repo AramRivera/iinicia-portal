@@ -26,10 +26,6 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest<RequestWithRoles>();
     const accessToken = request.accessToken;
     const user = request.user;
@@ -40,6 +36,12 @@ export class RolesGuard implements CanActivate {
 
     if (!request.userRoles) {
       request.userRoles = await this.resolveUserRoles(accessToken, user.id);
+    }
+
+    // Controllers such as GET /courses also need the roles to choose their
+    // scoped query, even when all authenticated roles may call the route.
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
     }
 
     const userRoles = request.userRoles;

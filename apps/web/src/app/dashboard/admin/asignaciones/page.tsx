@@ -61,16 +61,20 @@ export default function AsignacionesPage() {
     try {
       setLoading(true);
       setError(null);
-      const [usersRes, coursesData, rolesData, enrollmentsData] = await Promise.all([
+      const [usersRes, coursesData, rolesData, enrollmentsData] = await Promise.allSettled([
         usersApi.getUsers({ limit: 100 }),
-        coursesApi.getOfferings().catch(() => []),
-        rolesApi.getRoles().catch(() => []),
-        enrollmentsApi.getAllEnrollments().catch(() => []),
+        coursesApi.getCatalog(),
+        rolesApi.getRoles(),
+        enrollmentsApi.getAllEnrollments(),
       ]);
-      setUsers(usersRes.data || []);
-      setCourses(coursesData);
-      setRoles(rolesData);
-      setEnrollments(enrollmentsData);
+      if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data);
+      if (coursesData.status === 'fulfilled') setCourses(coursesData.value);
+      if (rolesData.status === 'fulfilled') setRoles(rolesData.value);
+      if (enrollmentsData.status === 'fulfilled') setEnrollments(enrollmentsData.value);
+      if ([usersRes, coursesData, rolesData, enrollmentsData].some((result) => result.status === 'rejected')) {
+        setError('No se pudo actualizar toda la información de asignaciones. Pulsa Actualizar para reintentar.');
+      }
+
     } catch (err: any) {
       setError(err.message || 'Error al cargar datos de asignaciones.');
     } finally {
@@ -227,6 +231,7 @@ export default function AsignacionesPage() {
 
   return (
     <CampusShell
+      searchItems={courses.map((course) => ({ id: course.id, title: course.name, detail: course.code, section: 'Cursos' }))}
       currentTab="asignaciones"
       onSelectTab={(tab) => {
         if (tab === 'usuarios' || tab === 'cursos' || tab === 'auditoria') {

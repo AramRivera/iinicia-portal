@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
+import { isScopedCoordinator, listAssignedProgramIds, loadActiveRoleSlugs } from '../../common/auth/program-scope.js';
 import type { Json } from '../../common/supabase/database.types.js';
 import { MoodleClient } from '../moodle/moodle.client.js';
 import { CreateCourseMappingDto } from './dto/create-course-mapping.dto.js';
@@ -19,6 +20,19 @@ export class CoursesService {
     private readonly supabase: SupabaseService,
     private readonly moodleClient: MoodleClient,
   ) {}
+
+  /** Catálogo de solicitud; no concede matrícula ni modifica Moodle al consultar. */
+  async findOfferings(accessToken: string) {
+    const { data, error } = await this.supabase.getResilientClient(accessToken)
+      .from('course_mappings')
+      .select('id, program_id, portal_course_code, slug, course_name, course_description, thumbnail_url, moodle_course_id, moodle_shortname, is_active, term_or_module, is_mandatory, programs!program_id (code, name, slug)')
+      .eq('is_active', true)
+      .order('course_name');
+    if (error) {
+      throw new InternalServerErrorException('No fue posible consultar la oferta de cursos.');
+    }
+    return data ?? [];
+  }
 
   /**
    * Cursos del usuario:
@@ -43,17 +57,26 @@ export class CoursesService {
       return data || [];
     }
 
-    // Auto-sincronización automática de cursos creados en Moodle LMS
-    try {
-      await this.syncCoursesFromMoodle();
-    } catch (syncErr: any) {
-      this.logger.warn(`Auto-sync de cursos Moodle reportó advertencia: ${syncErr?.message}`);
+    const admin = this.supabase.getAdminClient();
+    const scoped = isScopedCoordinator(await loadActiveRoleSlugs(admin, userId));
+    if (!scoped) {
+      try {
+        await this.syncCoursesFromMoodle();
+      } catch {
+        this.logger.warn('No fue posible actualizar el catálogo desde Moodle.');
+      }
     }
 
-    const { data, error } = await client
+    let query = client
       .from('course_mappings')
       .select('*, programs!program_id ( code, name, slug )')
       .order('created_at', { ascending: false });
+    if (scoped) {
+      const programIds = await listAssignedProgramIds(admin, userId);
+      if (!programIds.length) return [];
+      query = query.in('program_id', programIds);
+    }
+    const { data, error } = await query;
 
     if (error) {
       this.logger.error(`Error al consultar catálogo de cursos: ${error.message}`);

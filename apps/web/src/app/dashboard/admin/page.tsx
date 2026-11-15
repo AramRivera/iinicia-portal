@@ -83,7 +83,13 @@ export default function AdminDashboardPage() {
   const [courses, setCourses] = useState<CourseOffering[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
   const [applications, setApplications] = useState<AdmissionApplication[]>([]);
+  const [applicationsError, setApplicationsError] = useState<string | null>(null);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [programsError, setProgramsError] = useState<string | null>(null);
+  const [programToAssign, setProgramToAssign] = useState('');
+  const [programUserId, setProgramUserId] = useState('');
+  const [programUserSearch, setProgramUserSearch] = useState('');
+  const [programUsers, setProgramUsers] = useState<UserProfile[] | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Filtros de asignaciones
@@ -150,31 +156,37 @@ export default function AdminDashboardPage() {
       setError(null);
 
       const [statusRes, usersRes, rolesRes, coursesRes, enrollRes, progRes, auditRes, admissionsRes] =
-        await Promise.all([
-          moodleApi.getStatus().catch(() => ({ ok: false, message: 'No disponible' })),
-          usersApi.getUsers({ limit: 50 }).catch(() => ({ data: [], meta: {} })),
-          rolesApi.getRoles().catch(() => []),
-          coursesApi.getOfferings().catch(() => []),
-          enrollmentsApi.getAllEnrollments().catch(() => []),
-          programsApi.getPrograms().catch(() => []),
-          auditApi.getLogs({ limit: 30 }).catch(() => []),
-          admissionsApi.getMyApplications().catch(() => []),
+        await Promise.allSettled([
+          moodleApi.getStatus(),
+          usersApi.getUsers({ limit: 100 }),
+          rolesApi.getRoles(),
+          coursesApi.getCatalog(),
+          enrollmentsApi.getAllEnrollments(),
+          programsApi.getPrograms(),
+          auditApi.getLogs({ limit: 30 }),
+          admissionsApi.getMyApplications(),
         ]);
 
-      setMoodleStatus(statusRes);
-      setUsers(Array.isArray(usersRes?.data) ? usersRes.data : Array.isArray(usersRes) ? usersRes : []);
-      setRoles(Array.isArray(rolesRes) ? rolesRes : (rolesRes as any)?.data || []);
-      setCourses(Array.isArray(coursesRes) ? coursesRes : (coursesRes as any)?.data || []);
-      const enrollList = Array.isArray(enrollRes) ? enrollRes : ((enrollRes as any)?.data || []);
-      setEnrollments(enrollList);
-      setApplications(admissionsRes);
-      setPrograms(Array.isArray(progRes) ? progRes : (progRes as any)?.data || []);
-      const auditList = Array.isArray(auditRes)
-        ? auditRes
-        : Array.isArray((auditRes as any)?.data)
-        ? (auditRes as any).data
-        : [];
-      setAuditLogs(auditList);
+      setMoodleStatus(statusRes.status === 'fulfilled' ? statusRes.value : { ok: false, message: 'No disponible' });
+      if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data);
+      if (rolesRes.status === 'fulfilled') setRoles(rolesRes.value);
+      if (coursesRes.status === 'fulfilled') setCourses(coursesRes.value);
+      if (enrollRes.status === 'fulfilled') setEnrollments(enrollRes.value);
+      if (admissionsRes.status === 'fulfilled') setApplications(admissionsRes.value);
+      setApplicationsError(admissionsRes.status === 'rejected' ? 'No fue posible cargar las postulaciones.' : null);
+      if (progRes.status === 'fulfilled') setPrograms(progRes.value);
+      setProgramsError(progRes.status === 'rejected' ? 'No fue posible cargar los programas.' : null);
+      if (auditRes.status === 'fulfilled') {
+        setAuditLogs(Array.isArray(auditRes.value) ? auditRes.value : auditRes.value?.data ?? []);
+      }
+      const failures = [
+        usersRes.status === 'rejected' && 'usuarios',
+        rolesRes.status === 'rejected' && 'roles',
+        coursesRes.status === 'rejected' && 'cursos',
+        enrollRes.status === 'rejected' && 'matrículas',
+      ].filter(Boolean);
+      if (failures.length) setError(`No fue posible actualizar ${failures.join(', ')}. Pulsa Actualizar para reintentar.`);
+
     } catch (err: any) {
       setError(err.message || 'Error al cargar los módulos administrativos.');
     } finally {
@@ -233,11 +245,48 @@ export default function AdminDashboardPage() {
     setError(null);
     setNotice(null);
     try {
-      await admissionsApi.reviewApplication(applicationId, status);
-      setApplications(await admissionsApi.getMyApplications());
-      setNotice('El dictamen de admisión se guardó correctamente.');
+      const reviewed = await admissionsApi.reviewApplication(applicationId, status, applications.find((item) => item.id === applicationId)?.reviewer_notes ?? undefined);
+      setApplications((current) => current.map((application) =>
+        application.id === applicationId ? { ...application, ...reviewed } : application,
+      ));
+      const summary = reviewed.enrollment_summary;
+      if (status !== 'admitido') setNotice('El dictamen de admisión se guardó correctamente.');
+      else if (summary?.state === 'synced') setNotice('Admisión confirmada. Moodle confirmó las matrículas de los cursos iniciales.');
+      else if (summary?.state === 'no_courses') setNotice('Admisión confirmada. El programa no tiene cursos obligatorios activos en el primer módulo.');
+      else setNotice('Admisión confirmada. Quedaron matrículas sin confirmar. Revisa Matrículas o vuelve a sincronizar los cursos iniciales.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No fue posible actualizar la postulación.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const searchProgramUsers = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setActionLoading('program-user-search');
+    setError(null);
+    setProgramUserId('');
+    try {
+      const result = await usersApi.getUsers({ search: programUserSearch.trim(), limit: 50 });
+      setProgramUsers(result.data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No fue posible buscar usuarios.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const assignProgram = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!programToAssign || !programUserId) return;
+    setActionLoading('assign-program');
+    setError(null);
+    setNotice(null);
+    try {
+      await programsApi.enrollUserInProgram(programToAssign, { user_id: programUserId, status: 'inscrito' });
+      setNotice('El programa quedó asignado al usuario.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No fue posible asignar el programa.');
     } finally {
       setActionLoading(null);
     }
@@ -666,6 +715,8 @@ export default function AdminDashboardPage() {
         return 'Grupos y Asignaturas';
       case 'matriculas':
         return 'Solicitudes y Matrículas';
+      case 'admisiones':
+        return 'Admisiones';
       case 'programas':
         return 'Programas Académicos';
       case 'moodle':
@@ -682,6 +733,9 @@ export default function AdminDashboardPage() {
   return (
     <>
       <CampusShell
+      searchItems={[...courses.map((course) => ({ id: course.id, title: course.course_name || '', detail: course.portal_course_code, section: 'Cursos', tab: 'cursos' })),
+...programs.map((program) => ({ id: program.id, title: program.name, detail: program.code, section: 'Programas', tab: 'programas' })),
+...applications.map((application) => ({ id: application.id, title: application.programs?.name || 'Postulación', detail: [application.profiles?.email, application.status].filter(Boolean).join(' · '), section: 'Postulaciones', tab: 'admisiones' })),]}
       currentTab={activeTab}
       onSelectTab={(tabId) => setActiveTab(tabId as AdminTab)}
       breadcrumbs={['INICIA', 'Control Maestro', getTabLabel(activeTab)]}
@@ -1670,7 +1724,12 @@ export default function AdminDashboardPage() {
             <h2 className="text-lg font-semibold text-foreground">Postulaciones a programas</h2>
             <p className="mt-1 text-sm text-muted">Revisa cada solicitud y registra el dictamen. Admitir activa el perfil del aspirante según las reglas de la API.</p>
           </div>
-          {applications.length === 0 ? <p className="text-sm text-muted">No hay postulaciones registradas.</p> : (
+          {applicationsError ? (
+            <div className="flex items-center gap-3 text-sm">
+              <p role="alert" className="text-danger">{applicationsError}</p>
+              <button type="button" onClick={() => void loadData()} className="font-semibold text-primary underline">Reintentar</button>
+            </div>
+          ) : applications.length === 0 ? <p className="text-sm text-muted">No hay postulaciones registradas.</p> : (
             <ul className="space-y-3">
               {applications.map((application) => (
                 <li key={application.id} className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4">
@@ -1679,13 +1738,32 @@ export default function AdminDashboardPage() {
                     <p className="text-muted">{application.profiles?.email} · {application.programs?.name || 'Programa académico'}</p>
                     <p className="mt-1 text-xs capitalize text-primary">Estado: {application.status.replace('_', ' ')}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {(['en_revision', 'admitido', 'rechazado'] as const).map((status) => (
-                      <button key={status} type="button" disabled={actionLoading === `admission-${application.id}` || application.status === status} onClick={() => handleReviewApplication(application.id, status)} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium capitalize text-foreground hover:border-primary disabled:opacity-50">
-                        {status.replace('_', ' ')}
+                  {application.status === 'admitido' && (
+                    <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => {
+                      setAssignTargetUserId(application.applicant_id);
+                      setAssignCourseId('');
+                      setAssignMoodleRole('student');
+                      setShowAssignCourseModal(true);
+                    }} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-primary">
+                      Asignar curso
+                    </button>
+                    <button type="button" disabled={actionLoading !== null} onClick={() => handleReviewApplication(application.id, 'admitido')} className="rounded-md border border-border px-3 py-1.5 text-xs">
+                      Sincronizar cursos iniciales
+                    </button>
+                    </div>
+                  )}
+                  {application.status !== 'admitido' && <div className="flex flex-wrap gap-2">
+                    {([
+                      ['en_revision', 'Poner en revisión'],
+                      ['admitido', 'Admitir'],
+                      ['rechazado', 'Rechazar'],
+                    ] as const).map(([status, label]) => (
+                      <button key={status} type="button" disabled={actionLoading !== null || application.status === status} onClick={() => handleReviewApplication(application.id, status)} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary disabled:opacity-50">
+                        {label}
                       </button>
                     ))}
-                  </div>
+                  </div>}
                 </li>
               ))}
             </ul>
@@ -1716,6 +1794,34 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </div>
+
+          <section className="space-y-4 rounded-xl border border-border bg-surface p-5" aria-labelledby="assign-program-heading">
+            <h3 id="assign-program-heading" className="font-semibold">Asignar programa a un usuario</h3>
+            <p className="text-sm text-muted">Usa Postulaciones para aprobar una postulación y habilitar el rol Estudiante. Aquí puedes registrar la inscripción académica a un programa.</p>
+            {programsError && <p role="alert" className="text-sm text-danger">{programsError} <button type="button" onClick={() => void loadData()} className="underline">Reintentar</button></p>}
+            <form onSubmit={searchProgramUsers} className="flex flex-wrap items-end gap-2">
+              <label className="text-sm">Buscar usuario por nombre o correo
+                <input value={programUserSearch} onChange={(event) => setProgramUserSearch(event.target.value)} className="block w-full rounded-md border border-border bg-surface px-3 py-2" />
+              </label>
+              <button type="submit" disabled={actionLoading !== null} className="rounded-md border border-border px-3 py-2 text-sm">Buscar</button>
+            </form>
+            {programUsers?.length === 0 && <p className="text-sm text-muted">No se encontraron usuarios.</p>}
+            <form onSubmit={assignProgram} className="flex flex-wrap items-end gap-3">
+              <label className="text-sm">Usuario
+                <select required value={programUserId} onChange={(event) => setProgramUserId(event.target.value)} className="block max-w-full rounded-md border border-border bg-surface px-3 py-2">
+                  <option value="">Selecciona un usuario</option>
+                  {(programUsers ?? users).map((person) => <option key={person.id} value={person.id}>{person.first_name} {person.last_name} · {person.email}</option>)}
+                </select>
+              </label>
+              <label className="text-sm">Programa
+                <select required value={programToAssign} onChange={(event) => setProgramToAssign(event.target.value)} className="block max-w-full rounded-md border border-border bg-surface px-3 py-2">
+                  <option value="">Selecciona un programa</option>
+                  {programs.filter((program) => program.is_active).map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
+                </select>
+              </label>
+              <button type="submit" disabled={actionLoading !== null || !programUserId || !programToAssign || Boolean(programsError)} className="rounded-md bg-primary-action px-3 py-2 text-sm text-white disabled:opacity-50">Asignar programa</button>
+            </form>
+          </section>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {programs.map((prog) => (

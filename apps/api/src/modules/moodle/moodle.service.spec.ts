@@ -302,10 +302,10 @@ describe('MoodleService', () => {
   });
 
   describe('getCourseAccessUrl', () => {
-    it('returns launch URL and logs access when enrollment is authorized', async () => {
+    it('returns launch URL and logs access when enrollment is synchronized', async () => {
       const enrollment = {
         id: 'enr-3',
-        status: 'autorizada',
+        status: 'sincronizada',
         course_mappings: {
           course_name: 'Curso de React',
           moodle_course_id: 3,
@@ -365,6 +365,17 @@ describe('MoodleService', () => {
           succeeded: true,
         }),
       );
+    });
+
+    it.each(['autorizada', 'pendiente', 'error_sincronizacion'])('denies campus launch for unconfirmed enrollment %s', async (status) => {
+      adminClientMock.from.mockImplementation((table: string) => table === 'campus_access_logs'
+        ? { insert: async () => ({ error: null }) }
+        : { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({
+          data: { id: 'enrollment', status, course_mappings: { moodle_course_id: 4, is_active: true } }, error: null,
+        }) }) }) }) });
+      await expect(service.getCourseAccessUrl({ userId: 'student', courseMappingId: 'course' }))
+        .rejects.toBeInstanceOf(ForbiddenException);
+      expect(clientMock.requestUserKeyLoginUrl).not.toHaveBeenCalled();
     });
 
     it('rejects with ForbiddenException and logs failure when enrollment is not authorized', async () => {

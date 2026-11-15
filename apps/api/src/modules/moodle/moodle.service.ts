@@ -360,6 +360,7 @@ export class MoodleService {
    */
   async getCourseAccessUrl(params: {
     userId: string;
+    destination?: 'gradebook';
     courseMappingId: string;
     ipAddress?: string;
     userAgent?: string;
@@ -380,7 +381,8 @@ export class MoodleService {
     const isAuthorized =
       !error &&
       enrollment &&
-      (enrollment.status === 'autorizada' || enrollment.status === 'sincronizada');
+      enrollment.status === 'sincronizada' && courseMapping?.is_active !== false &&
+      (params.destination !== 'gradebook' || ['teacher', 'editingteacher'].includes(enrollment.moodle_role));
 
     if (!isAuthorized) {
       // Registrar intento no autorizado en campus_access_logs
@@ -396,7 +398,7 @@ export class MoodleService {
       });
 
       throw new ForbiddenException(
-        'No cuentas con una matrícula autorizada para acceder a este curso en Moodle.',
+        'El acceso requiere una matrícula confirmada en Moodle y un curso activo. Consulta el estado de sincronización con administración.',
       );
     }
 
@@ -419,7 +421,8 @@ export class MoodleService {
       .eq('id', enrollment.id);
 
     const moodleBase = await this.client.getEffectiveBaseUrl();
-    const courseUrl = `${moodleBase}/course/view.php?id=${moodleCourseId}`;
+    const path = params.destination === 'gradebook' ? '/grade/report/grader/index.php' : '/course/view.php';
+    const courseUrl = `${moodleBase}${path}?id=${moodleCourseId}`;
 
     let accessUrl = courseUrl;
 
@@ -584,7 +587,7 @@ export class MoodleService {
       .select('id, status, moodle_role')
       .eq('user_id', userId)
       .eq('course_mapping_id', courseMapping.id)
-      .in('status', ['autorizada', 'sincronizada'])
+      .in('status', ['sincronizada'])
       .maybeSingle();
 
     if (!enrollment) {

@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CampusTopBar } from './CampusTopBar';
 import { CampusSidebar, type SidebarSection } from './CampusSidebar';
+import { CampusSearch, type CampusSearchItem } from './CampusSearch';
 import { IconMenu } from './Icons';
 
 interface CampusShellProps {
+  searchItems?: CampusSearchItem[];
   currentTab: string;
   onSelectTab: (tabId: string) => void;
   breadcrumbs?: string[];
@@ -22,6 +24,7 @@ interface CampusShellProps {
 }
 
 export function CampusShell({
+  searchItems = [],
   currentTab,
   onSelectTab,
   breadcrumbs = ['INICIA', 'Control Maestro'],
@@ -33,15 +36,28 @@ export function CampusShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', shortcut);
+    return () => window.removeEventListener('keydown', shortcut);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-150">
       {/* TopBar with Global Search, Theme Switch */}
       <CampusTopBar
         breadcrumbs={breadcrumbs}
-        onOpenSearch={() => {}}
+        onOpenSearch={() => setSearchOpen(true)}
         onLaunchMoodleSSO={onLaunchCampusSSO}
       />
 
+      <CampusSearch open={searchOpen} onClose={() => setSearchOpen(false)} items={searchItems} onSelectTab={onSelectTab} />
       <div className="flex flex-1 min-h-[calc(100vh-3.5rem)]">
         {/* Persistent Collapsible Sidebar */}
         <CampusSidebar

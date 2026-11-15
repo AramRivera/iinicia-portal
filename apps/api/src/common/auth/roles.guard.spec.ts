@@ -38,10 +38,14 @@ describe('RolesGuard', () => {
 
   it('allows access when no roles are required', async () => {
     vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-    const context = createMockContext(null);
+    supabaseMock.getResilientClient.mockReturnValue({
+      rpc: vi.fn().mockResolvedValue({ data: ['administrador'], error: null }),
+    });
+    const context = createMockContext({ id: 'admin' }, 'token');
 
     const result = await guard.canActivate(context);
     expect(result).toBe(true);
+    expect(context.switchToHttp().getRequest().userRoles).toEqual(['administrador']);
   });
 
   it('allows superadministrador access regardless of required roles', async () => {

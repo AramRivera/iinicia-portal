@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { coursesApi, moodleApi, enrollmentsApi, usersApi } from '@/lib/api';
-import type { AuthorizedCourse, EnrollmentRequest } from '@/types';
+import { coursesApi, moodleApi, usersApi } from '@/lib/api';
+import type { AuthorizedCourse } from '@/types';
 import { LaunchCourseButton } from '@/components/moodle/LaunchCourseButton';
 import { MoodleSyncBadge } from '@/components/moodle/MoodleSyncBadge';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
@@ -32,10 +32,11 @@ import {
 
 type TeacherTab = 'materias' | 'estudiantes' | 'calificaciones' | 'moodle' | 'perfil';
 
-interface StudentUnenrollTarget {
-  id: string;
-  studentName: string;
-  courseName: string;
+interface TeacherOverview {
+  total_students: number;
+  total_activities: number;
+  total_sections: number;
+  students: { id: number; fullname: string; email?: string }[];
 }
 
 export default function DocenteDashboardPage() {
@@ -44,7 +45,6 @@ export default function DocenteDashboardPage() {
 
   const [activeTab, setActiveTab] = useState<TeacherTab>('materias');
   const [courses, setCourses] = useState<AuthorizedCourse[]>([]);
-  const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,7 +53,6 @@ export default function DocenteDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Modales interactivos
-  const [unenrollTarget, setUnenrollTarget] = useState<StudentUnenrollTarget | null>(null);
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<AuthorizedCourse | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
@@ -63,35 +62,24 @@ export default function DocenteDashboardPage() {
     bio: '',
   });
 
-  const [moodleCourseOverviews, setMoodleCourseOverviews] = useState<Record<number, any>>({});
+  const [moodleCourseOverviews, setMoodleCourseOverviews] = useState<Record<number, TeacherOverview>>({});
 
   const loadTeacherData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [coursesData, enrollmentsData] = await Promise.all([
-        coursesApi.getAuthorizedCourses(),
-        enrollmentsApi.getAllEnrollments(),
-      ]);
+      const coursesData = (await coursesApi.getAuthorizedCourses()).filter(
+        (course) => course.enrollment_status === 'sincronizada' &&
+          (course.moodle_role === 'teacher' || course.moodle_role === 'editingteacher'),
+      );
       setCourses(coursesData);
-      setEnrollments(enrollmentsData);
-
-      // Cargar resumen de Moodle para cada curso
-      if (coursesData.length > 0) {
-        const overviews: Record<number, any> = {};
-        await Promise.all(
-          coursesData.map(async (c) => {
-            if (c.moodle_course_id) {
-              try {
-                const ov = await moodleApi.getCourseTeacherOverview(c.moodle_course_id);
-                if (ov) overviews[c.moodle_course_id] = ov;
-              } catch {
-                // Silencioso
-              }
-            }
-          }),
-        );
-        setMoodleCourseOverviews(overviews);
+      const overviews: Record<number, TeacherOverview> = {};
+      const results = await Promise.allSettled(coursesData.map(async (course) => {
+        overviews[course.moodle_course_id] = await moodleApi.getCourseTeacherOverview(course.moodle_course_id);
+      }));
+      setMoodleCourseOverviews(overviews);
+      if (results.some((result) => result.status === 'rejected')) {
+        setError('No fue posible consultar los estudiantes de todas tus materias en Moodle.');
       }
     } catch (err: any) {
       setError(err.message || 'No fue posible cargar tus asignaturas.');
@@ -136,7 +124,7 @@ export default function DocenteDashboardPage() {
     }
   };
 
-  const handleLaunchCourseSSO = async (courseMappingId: string) => {
+  const handleLaunchCourseSSO = async (courseMappingId: string, destination: 'launch' | 'launch-gradebook' = 'launch') => {
     const launchWindow = openMoodleLaunchWindow();
     if (!launchWindow) {
       setError('Permite las ventanas emergentes para abrir Moodle.');
@@ -147,7 +135,7 @@ export default function DocenteDashboardPage() {
     setError(null);
 
     try {
-      const res = await coursesApi.launchCourse(courseMappingId);
+      const res = await coursesApi.launchCourse(courseMappingId, destination);
       navigateMoodleLaunchWindow(launchWindow, res.access_url);
     } catch (err: any) {
       closeMoodleLaunchWindow(launchWindow);
@@ -158,8 +146,8 @@ export default function DocenteDashboardPage() {
   };
 
   const handleOpenGradebook = (moodleCourseId: number) => {
-    const base = process.env.NEXT_PUBLIC_MOODLE_URL || 'http://192.168.191.171/moodle';
-    window.open(`${base}/grade/report/grader/index.php?id=${moodleCourseId}`, '_blank', 'noopener,noreferrer');
+    const course = courses.find((item) => item.moodle_course_id === moodleCourseId);
+    if (course) void handleLaunchCourseSSO(course.course_mapping_id, 'launch-gradebook');
   };
 
   const handleOpenEditProfile = () => {
@@ -196,77 +184,27 @@ export default function DocenteDashboardPage() {
   };
 
   // Desasignar / dar de baja alumno de la materia
-  const handleConfirmUnenroll = async () => {
-    if (!unenrollTarget) return;
-
-    setActionLoading(`unenroll-${unenrollTarget.id}`);
-    setNotice(null);
-    setError(null);
-
-    try {
-      await enrollmentsApi.deleteEnrollment(unenrollTarget.id);
-      setNotice(
-        `El estudiante ${unenrollTarget.studentName} ha sido desasignado exitosamente de ${unenrollTarget.courseName}.`,
-      );
-      setUnenrollTarget(null);
-      await loadTeacherData();
-    } catch (err: any) {
-      setError(err.message || 'Error al desasignar al estudiante.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   // Filtrado de cursos del profesor
   const filteredCourses = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return courses;
     return courses.filter((c) => {
       const name = (c.course_name || '').toLowerCase();
-      const code = (c.course_code || '').toLowerCase();
+      const code = (c.course_code || c.portal_course_code || '').toLowerCase();
       const mId = String(c.moodle_course_id || '');
       return name.includes(q) || code.includes(q) || mId.includes(q);
     });
   }, [courses, searchQuery]);
 
-  // Alumnos inscritos en las materias del profesor
-  const teacherCourseMappingIds = useMemo(() => {
-    return new Set(courses.map((c) => c.course_mapping_id));
-  }, [courses]);
-
-  const enrolledStudents = useMemo(() => {
-    return enrollments.filter(
-      (enr) =>
-        teacherCourseMappingIds.has(enr.course_mapping_id) &&
-        (enr.status === 'sincronizada' || enr.status === 'autorizada') &&
-        enr.moodle_role !== 'teacher',
-    );
-  }, [enrollments, teacherCourseMappingIds]);
-
-  const filteredStudents = useMemo(() => {
-    let list = enrolledStudents;
-    if (selectedCourseFilter) {
-      list = list.filter((e) => e.course_mapping_id === selectedCourseFilter);
-    }
-    const q = searchQuery.toLowerCase().trim();
-    if (q) {
-      list = list.filter((e) => {
-        const cName = (e.course_mappings?.courses?.name || '').toLowerCase();
-        const cCode = (e.course_mappings?.code || '').toLowerCase();
-        const sFirst = (e.profiles?.first_name || '').toLowerCase();
-        const sLast = (e.profiles?.last_name || '').toLowerCase();
-        const sEmail = (e.profiles?.email || '').toLowerCase();
-        return (
-          cName.includes(q) ||
-          cCode.includes(q) ||
-          sFirst.includes(q) ||
-          sLast.includes(q) ||
-          sEmail.includes(q)
-        );
-      });
-    }
-    return list;
-  }, [enrolledStudents, selectedCourseFilter, searchQuery]);
+  const enrolledStudents = courses.flatMap((course) =>
+    (moodleCourseOverviews[course.moodle_course_id]?.students ?? []).map((student) => ({ course, student })),
+  );
+  const filteredStudents = enrolledStudents.filter(({ course, student }) => {
+    if (selectedCourseFilter && course.course_mapping_id !== selectedCourseFilter) return false;
+    const query = searchQuery.toLowerCase().trim();
+    return [course.course_name, course.portal_course_code, student.fullname, student.email]
+      .some((value) => value?.toLowerCase().includes(query));
+  });
 
   const getBreadcrumbs = (tab: TeacherTab) => {
     switch (tab) {
@@ -296,6 +234,8 @@ export default function DocenteDashboardPage() {
 
   return (
     <CampusShell
+      searchItems={[...courses.map((course) => ({ id: course.course_mapping_id, title: course.course_name || '', detail: course.portal_course_code, section: 'Cursos', tab: 'materias' })),
+...enrolledStudents.map(({ course, student }) => ({ id: course.course_mapping_id + student.id, title: student.fullname, detail: [student.email, course.course_name].join(' · '), section: 'Estudiantes', tab: 'estudiantes' })),]}
       currentTab={activeTab}
       onSelectTab={(tabId) => {
         if (tabId === 'moodle') {
@@ -482,12 +422,7 @@ export default function DocenteDashboardPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {filteredCourses.map((course, index) => {
                   const courseKey = course.course_mapping_id || `teacher-course-${index}`;
-                  const studentCount = enrollments.filter(
-                    (e) =>
-                      e.course_mapping_id === course.course_mapping_id &&
-                      (e.status === 'sincronizada' || e.status === 'autorizada') &&
-                      e.moodle_role !== 'teacher',
-                  ).length;
+                  const studentCount = moodleCourseOverviews[course.moodle_course_id]?.total_students;
 
                   return (
                     <div
@@ -497,14 +432,10 @@ export default function DocenteDashboardPage() {
                       <div>
                         <div className="flex items-center justify-between">
                           <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary">
-                            {course.course_code}
+                            {(course.course_code || course.portal_course_code)}
                           </span>
                           <span className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted border border-border">
-                            {(() => {
-                              const ov = moodleCourseOverviews[course.moodle_course_id];
-                              const count = ov?.total_students != null ? ov.total_students : studentCount;
-                              return `${count} alumno(s) Moodle`;
-                            })()}
+                            {studentCount == null ? 'Alumnos sin consultar' : `${studentCount} alumno(s) Moodle`}
                           </span>
                         </div>
 
@@ -601,7 +532,7 @@ export default function DocenteDashboardPage() {
                     <option value="">Todas mis asignaturas</option>
                     {courses.map((c) => (
                       <option key={c.course_mapping_id} value={c.course_mapping_id}>
-                        {c.course_code} - {c.course_name}
+                        {(c.course_code || c.portal_course_code)} - {c.course_name}
                       </option>
                     ))}
                   </select>
@@ -640,24 +571,18 @@ export default function DocenteDashboardPage() {
                       <th className="px-5 py-3.5">Estudiante</th>
                       <th className="px-5 py-3.5">Asignatura</th>
                       <th className="px-5 py-3.5">Estado Moodle</th>
-                      <th className="px-5 py-3.5">Fecha Alta</th>
+
                       <th className="px-5 py-3.5 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredStudents.map((enr) => {
-                      const studentName =
-                        enr.profiles?.first_name || enr.profiles?.last_name
-                          ? `${enr.profiles?.first_name || ''} ${enr.profiles?.last_name || ''}`.trim()
-                          : 'Estudiante Registrado';
-                      const studentEmail = enr.profiles?.email || 'Sin correo disponible';
-                      const courseName =
-                        enr.course_mappings?.courses?.name ||
-                        enr.course_mappings?.portal_course_code ||
-                        'Materia Asignada';
+                    {filteredStudents.map(({ course, student }) => {
+                      const studentName = student.fullname;
+                      const studentEmail = student.email;
+                      const courseName = course.course_name;
 
                       return (
-                        <tr key={enr.id} className="hover:bg-surface-muted/30 transition-colors">
+                        <tr key={course.course_mapping_id + student.id} className="hover:bg-surface-muted/30 transition-colors">
                           <td className="px-5 py-3.5">
                             <span className="font-semibold text-foreground block">
                               {studentName}
@@ -671,38 +596,15 @@ export default function DocenteDashboardPage() {
                               {courseName}
                             </span>
                             <span className="font-mono text-[11px] text-muted">
-                              {enr.course_mappings?.code || enr.course_mappings?.portal_course_code}
+                              {course.portal_course_code}
                             </span>
                           </td>
                           <td className="px-5 py-3.5">
-                            <MoodleSyncBadge status={enr.moodle_sync_status} />
-                          </td>
-                          <td className="px-5 py-3.5 font-mono text-[11px] text-muted">
-                            {new Date(enr.created_at).toLocaleDateString('es-MX')}
+                            <MoodleSyncBadge status={"sincronizado"} />
                           </td>
                           <td className="px-5 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <a
-                                href={`mailto:${studentEmail}`}
-                                className="rounded-[4px] border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground hover:bg-surface-muted transition-all"
-                                title="Enviar correo institucional"
-                              >
-                                Contactar
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setUnenrollTarget({
-                                    id: enr.id,
-                                    studentName,
-                                    courseName,
-                                  })
-                                }
-                                className="rounded-[4px] border border-danger/30 bg-danger/10 px-2 py-1 text-[11px] font-medium text-danger hover:bg-danger/20 transition-all"
-                                title="Desasignar a este alumno de la materia"
-                              >
-                                Desasignar
-                              </button>
+                              {studentEmail && <a href={`mailto:${studentEmail}`} className="text-primary underline">Contactar</a>}
                             </div>
                           </td>
                         </tr>
@@ -741,7 +643,7 @@ export default function DocenteDashboardPage() {
                     <option value="">Todas mis asignaturas</option>
                     {courses.map((c) => (
                       <option key={c.course_mapping_id} value={c.course_mapping_id}>
-                        {c.course_code} - {c.course_name}
+                        {(c.course_code || c.portal_course_code)} - {c.course_name}
                       </option>
                     ))}
                   </select>
@@ -790,24 +692,20 @@ export default function DocenteDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredStudents.map((enr) => {
-                      const studentName =
-                        enr.profiles?.first_name || enr.profiles?.last_name
-                          ? `${enr.profiles?.first_name || ''} ${enr.profiles?.last_name || ''}`.trim()
-                          : 'Estudiante Registrado';
-                      const courseName =
-                        enr.course_mappings?.courses?.name || 'Materia';
-                      const moodleCourseId = enr.course_mappings?.moodle_course_id;
-                      const courseMappingId = enr.course_mapping_id;
+                    {filteredStudents.map(({ course, student }) => {
+                      const studentName = student.fullname;
+                      const courseName = course.course_name;
+                      const moodleCourseId = course.moodle_course_id;
+                      const courseMappingId = course.course_mapping_id;
 
                       return (
-                        <tr key={enr.id} className="hover:bg-surface-muted/30 transition-colors">
+                        <tr key={course.course_mapping_id + student.id} className="hover:bg-surface-muted/30 transition-colors">
                           <td className="px-5 py-3.5">
                             <span className="font-semibold text-foreground block">
                               {studentName}
                             </span>
                             <span className="font-mono text-[11px] text-muted">
-                              {enr.profiles?.email}
+                              {student.email}
                             </span>
                           </td>
                           <td className="px-5 py-3.5 font-medium text-foreground">
@@ -815,8 +713,8 @@ export default function DocenteDashboardPage() {
                           </td>
                           <td className="px-5 py-3.5">
                             <MoodleSyncBadge
-                              status={enr.moodle_sync_status}
-                              moodleId={enr.profiles?.moodle_user_id}
+                              status={"sincronizado"}
+                              moodleId={student.id}
                             />
                           </td>
                           <td className="px-5 py-3.5 font-mono text-xs">
@@ -950,56 +848,6 @@ export default function DocenteDashboardPage() {
         )}
 
         {/* MODAL: CONFIRMACIÓN PARA DESASIGNAR ESTUDIANTE DE LA MATERIA */}
-        {unenrollTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-md rounded-[14px] border border-border bg-surface p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95">
-              <div className="flex items-center gap-3 text-danger">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-danger/10 border border-danger/20">
-                  <IconAlertTriangle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-foreground">
-                    Desasignar estudiante
-                  </h3>
-                  <p className="text-xs text-muted">Confirmación de baja en la materia</p>
-                </div>
-              </div>
-
-              <div className="rounded-[8px] bg-surface-muted/50 border border-border p-3.5 text-xs text-muted space-y-1">
-                <p>
-                  ¿Estás seguro de que deseas desasignar a{' '}
-                  <strong className="text-foreground">{unenrollTarget.studentName}</strong> de la materia{' '}
-                  <strong className="text-foreground">{unenrollTarget.courseName}</strong>?
-                </p>
-                <p className="text-[11px] text-danger/90 pt-1">
-                  Esta acción revocará su acceso al aula virtual en Moodle LMS y desvinculará su matrícula.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setUnenrollTarget(null)}
-                  disabled={actionLoading === `unenroll-${unenrollTarget.id}`}
-                  className="rounded-[6px] border border-border bg-surface px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmUnenroll}
-                  disabled={actionLoading === `unenroll-${unenrollTarget.id}`}
-                  className="rounded-[6px] bg-danger px-4 py-2 text-xs font-semibold text-white shadow-minimal hover:bg-danger/90 transition-all disabled:opacity-50"
-                >
-                  {actionLoading === `unenroll-${unenrollTarget.id}`
-                    ? 'Desasignando...'
-                    : 'Sí, desasignar alumno'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* MODAL: EDITAR INFORMACIÓN DE PERFIL DOCENTE */}
         {editProfileOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
