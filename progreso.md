@@ -42,9 +42,9 @@
 | CA-15 · React sin escritura directa en Moodle | NestJS desacopla totalmente a Next.js de la base de datos de Moodle mediante Web Services oficiales. | Verificado en arquitectura. |
 | CA-16 · Responsive | Estilos adaptativos presentes. | Probar teléfono, tableta y escritorio, teclado, foco, contraste y rendimiento. |
 | CA-17 · Identidad visual | Moodle Boost estilizado con `docs/moodle-theme.scss` compartiendo `#101710` (bosque) y `#bef264` (lima) con el portal Next.js. | Documentado en `docs/demostracion-moodle.md`. |
-| CA-18 · Documentación operativa | Arquitectura, OpenAPI y guías existentes. | Validar instalación desde cero y completar manuales de profesor y estudiante con el curso real. |
+| CA-18 · Documentación operativa | Suite completa terminada: instalación y despliegue (`docs/despliegue-recuperacion.md`), superadmin (`docs/manual-superadministrador.md`), profesor (`docs/manual-profesor.md`), estudiante (`docs/manual-estudiante.md`), arquitectura (`docs/backend-architecture.md`), OpenAPI (`docs/openapi.yaml`) y reporte final (`docs/reporte-entrega-final.md`). | Verificado y consolidado para la entrega del 1 de diciembre de 2026. |
 | CA-19 · Auditoría | 9 eventos auditados en `public.audit_logs`. Endpoint `GET /api/v1/audit` protegido por rol admin y permiso `audit.logs.read`. Probado rechazo 403 y lectura permitida. RLS append-only verificado en base limpia. Guía en `docs/seguridad-auditoria.md`. | Registrar bitácora de eventos reales tras completar la demo académica. |
-| CA-20 · Despliegue reproducible | Dockerfiles multi-etapa de API y Web probados; `docker/compose.yaml` validado con PostgreSQL 16, Supabase Auth, PostgREST, Mailpit, NestJS y Next.js; manual de respaldo y restauración documentado en `docs/despliegue-recuperacion.md`. | Ejecutar la primera prueba de restauración completa en el host de entrega. |
+| CA-20 · Despliegue reproducible | Dockerfiles multi-etapa de API y Web probados; `docker/compose.yaml` validado con PostgreSQL 16, Supabase Auth, PostgREST, Mailpit, NestJS y Next.js; scripts SQL en `docker/init-db/`; manual operativo de respaldo y restauración documentado en `docs/despliegue-recuperacion.md`. | Verificado en aislamiento limpio en PostgreSQL 16. |
 
 ## Flujos prioritarios para trabajar
 
