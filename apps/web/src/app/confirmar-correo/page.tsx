@@ -1,3 +1,4 @@
+/** Interpreta el resultado del enlace de verificación de correo y orienta al usuario hacia el inicio de sesión. */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ type Confirmation = 'checking' | 'confirmed' | 'invalid';
 export default function ConfirmarCorreoPage() {
   const [confirmation, setConfirmation] = useState<Confirmation>('checking');
 
+  // Interpreta el retorno del flujo de correo una vez disponible la URL del navegador.
   useEffect(() => {
     // El enlace de Supabase confirma el correo antes de redirigir a esta página.
     // El portal retira el fragmento sin conservar la sesión del enlace.

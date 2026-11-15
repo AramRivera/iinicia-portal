@@ -1,3 +1,4 @@
+/** Implementa las reglas para filtrar postulaciones por ámbito y promover al aspirante después del dictamen. */
 import { EnrollmentsService } from '../enrollments/enrollments.service.js';
 import {
   ConflictException,
@@ -36,6 +37,7 @@ export class AdmissionsService {
       .select('*, programs!program_id ( code, name, slug ), profiles!applicant_id ( id, email, first_name, last_name, phone )')
       .order('submitted_at', { ascending: false });
 
+    // Acota la bandeja de coordinación a sus programas y la consulta de un aspirante a sus propios registros.
     if (isScopedCoordinator(roles)) {
       const programIds = await listAssignedProgramIds(admin, userId);
       if (!programIds.length) return [];
@@ -121,6 +123,7 @@ export class AdmissionsService {
   ) {
     const admin = this.supabase.getAdminClient();
 
+    // La RPC reúne el dictamen y los cambios de acceso al programa en una transacción de base de datos.
     const { data, error } = await admin.rpc('iinicia_review_admission', {
       application_id: applicationId,
       reviewer_id: reviewerId,
@@ -147,6 +150,7 @@ export class AdmissionsService {
       this.logger.error('Error al dictaminar admisión: ' + (error?.code ?? 'sin resultado'));
       throw new InternalServerErrorException('No fue posible actualizar el dictamen.');
     }
+    // La matrícula inicial se intenta después de guardar la admisión.
     if (dto.status !== 'admitido') return data;
     try {
       const enrollment_summary = await this.enrollments.enrollAdmittedStudent(

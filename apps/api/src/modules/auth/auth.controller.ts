@@ -1,3 +1,4 @@
+/** Expone por HTTP registro, inicio de sesión con TOTP, recuperación y consulta del perfil propio. */
 import {
   BadRequestException,
   Body,
@@ -29,6 +30,7 @@ export class AuthController {
     private readonly authService: AuthService,
   ) {}
 
+  // El inicio con contraseña devuelve el paso de MFA y las respuestas de autenticación se marcan como no almacenables.
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
@@ -51,6 +53,7 @@ export class AuthController {
     return this.supabase.verifyLoginMfa(mfaToken(request), dto.factor_id, dto.code);
   }
 
+  // Mantiene separado el desafío para recuperación del que completa una sesión de ingreso.
   @Post('mfa/recover')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')

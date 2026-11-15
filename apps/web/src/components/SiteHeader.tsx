@@ -1,3 +1,4 @@
+/** Coordina la navegación pública, la búsqueda, el tema y los accesos de sesión. */
 "use client";
 
 import Link from "next/link";

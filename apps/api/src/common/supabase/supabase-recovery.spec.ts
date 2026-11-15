@@ -1,3 +1,4 @@
+/** Cubre los enlaces de recuperación, el intercambio PKCE y la verificación de TOTP antes del cambio de contraseña. */
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service.js';

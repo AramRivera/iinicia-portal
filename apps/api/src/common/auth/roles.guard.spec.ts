@@ -1,3 +1,4 @@
+/** Comprueba acceso sin restricción, coincidencia de roles y denegación cuando no existe asignación. */
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { describe, expect, it, vi, beforeEach } from 'vitest';

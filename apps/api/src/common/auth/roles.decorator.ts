@@ -1,3 +1,4 @@
+/** Declara los roles aceptados por una ruta y normaliza alias para compararlos. */
 import { SetMetadata } from '@nestjs/common';
 
 export const ROLES_KEY = 'roles';

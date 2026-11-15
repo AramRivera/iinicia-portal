@@ -1,3 +1,4 @@
+/** Presenta las credenciales, el desafío CAPTCHA y el paso TOTP que completa la sesión. */
 'use client';
 
 import { AuthCaptcha, captchaEnabled } from '@/components/AuthCaptcha';
@@ -61,6 +62,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // El primer envío obtiene el paso de MFA. El segundo completa la sesión y elige el panel.
       if (mfa) {
         const user = await verifyLoginMfa(mfa.mfa_token, factorId, code);
         resetMfa();
@@ -78,6 +80,7 @@ export default function LoginPage() {
       setCode('');
       setError(err instanceof Error ? err.message : 'No fue posible iniciar sesión.');
     } finally {
+      // Solo el envío de credenciales consume el desafío CAPTCHA.
       if (!mfa) {
         setCaptchaToken(undefined);
         setCaptchaAttempt((attempt) => attempt + 1);

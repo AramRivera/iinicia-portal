@@ -1,3 +1,4 @@
+/** Expone por HTTP consulta, asignación y revocación de roles. */
 import {
   Body,
   Controller,

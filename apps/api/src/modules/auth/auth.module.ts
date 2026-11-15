@@ -1,3 +1,4 @@
+/** Registra el controlador y los proveedores de identidad, sesión y perfil del usuario en NestJS. */
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard.js';

@@ -1,3 +1,4 @@
+/** Centraliza las comprobaciones de ámbito académico para roles globales y coordinadores. */
 import { ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/database.types.js';
@@ -12,6 +13,7 @@ export function isScopedCoordinator(roles: string[]): boolean {
   return roles.includes('coordinador') && !hasGlobalAcademicAccess(roles);
 }
 
+// Las comprobaciones de ámbito se basan en los roles vigentes de la cuenta.
 export async function loadActiveRoleSlugs(client: DatabaseClient, userId: string): Promise<string[]> {
   const { data, error } = await client
     .from('user_roles')
@@ -44,6 +46,7 @@ export async function listAssignedProgramIds(client: DatabaseClient, userId: str
   return (data ?? []).map(({ program_id }) => program_id);
 }
 
+// Los roles globales no requieren una adscripción individual al programa.
 export async function hasProgramScope(
   client: DatabaseClient,
   userId: string,

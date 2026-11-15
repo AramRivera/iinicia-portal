@@ -1,3 +1,4 @@
+/** Traduce las operaciones de integración a Web Services de Moodle y procesa sus respuestas. */
 import {
   Injectable,
   InternalServerErrorException,
@@ -31,6 +32,7 @@ export class MoodleClient {
   /**
    * Resuelve la URL canónica de Moodle (siguiendo redirecciones si Moodle está configurado con IP específica).
    */
+  // Resuelve la URL efectiva de Moodle para usarla de forma coherente en los enlaces al campus.
   async getEffectiveBaseUrl(): Promise<string> {
     if (this.canonicalBaseUrl) {
       return this.canonicalBaseUrl;
@@ -414,6 +416,7 @@ export class MoodleClient {
   /**
    * Ejecuta una petición HTTP a `server.php` de Moodle Web Services.
    */
+  // Concentra el transporte y el tratamiento de errores de las llamadas a Web Services.
   private async callFunction<T>(
     wsfunction: string,
     params: Record<string, any> = {},

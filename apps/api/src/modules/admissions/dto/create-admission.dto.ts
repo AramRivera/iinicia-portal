@@ -1,3 +1,4 @@
+/** Valida el programa y los datos enviados por el aspirante al postularse. */
 import {
   IsNumber,
   IsOptional,

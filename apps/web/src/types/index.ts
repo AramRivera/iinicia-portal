@@ -1,3 +1,4 @@
+/** Representa los contratos de identidad, catálogo, admisión y Moodle que consume la web. */
 export type RoleSlug =
   | 'superadministrador'
   | 'administrador'
@@ -52,6 +53,7 @@ export interface AuthSession {
   expires_at?: number;
 }
 
+// Una respuesta de contraseña indica si hay que configurar un factor o verificar uno existente.
 export type LoginResponse =
   | { step: 'setup'; mfa_token: string; factor_id: string; secret: string; qr_code?: string }
   | { step: 'verify'; mfa_token: string; factors: { id: string; name?: string }[] };
@@ -134,6 +136,7 @@ export interface CreateCoursePayload {
   is_active?: boolean;
 }
 
+// Representa el curso al que la sesión ya tiene acceso mediante su matrícula.
 export interface AuthorizedCourse {
   course_mapping_id: string;
   course_code: string;
@@ -201,6 +204,7 @@ export interface MoodleLaunchResponse {
   access_url: string;
 }
 
+// Mantiene separados la nota, el porcentaje de avance y el resultado de finalización.
 export interface MoodleCourseProgress {
   course_id: number;
   moodle_user_id: number;

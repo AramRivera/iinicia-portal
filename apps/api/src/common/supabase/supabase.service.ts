@@ -1,3 +1,4 @@
+/** Separa las operaciones de identidad, las consultas bajo RLS y las acciones privilegiadas con Supabase. */
 import {
   BadRequestException,
   ForbiddenException,
@@ -155,6 +156,7 @@ export class SupabaseService {
     }
   }
 
+  // Los enlaces de correo solo pueden volver a un origen autorizado del portal.
   private getAuthRedirect(path: '/confirmar-correo' | '/restablecer-password', origin?: string): string {
     const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4000';
     const allowed = [frontendUrl, ...(this.config.get<string>('CORS_ORIGIN') ?? '').split(',')].map((value) => value.trim());
@@ -172,6 +174,7 @@ export class SupabaseService {
     }
   }
 
+  // El primer paso prepara el factor requerido para continuar la autenticación.
   async signInWithPassword(email: string, password: string, captchaToken?: string) {
     try {
       const { auth } = this.createClient();
@@ -285,6 +288,7 @@ export class SupabaseService {
     return this.updateRecoveredPassword(auth, password);
   }
 
+  // Comprueba el segundo factor dentro del flujo de autenticación o recuperación que lo inició.
   private async verifyMfa(accessToken: string, factorId: string, code: string, method: 'password' | 'recovery') {
     const user = await this.getAuthenticatedUser(accessToken);
     // Supabase etiqueta el enlace PKCE como recovery y el intercambio verifyOtp como otp.
@@ -407,6 +411,7 @@ export class SupabaseService {
     return { message: RECOVERY_MESSAGE };
   }
 
+  // Envía el hash del verificador para asociar el enlace de recuperación con el navegador que lo solicitó.
   async requestPkcePasswordRecovery(email: string, challenge: string, captchaToken?: string, origin?: string): Promise<{ message: string }> {
     const query = new URLSearchParams({ redirect_to: this.getAuthRedirect('/restablecer-password', origin) });
     const response = await this.postAuth(`/recover?${query}`, {
@@ -572,6 +577,7 @@ export class SupabaseService {
     return client;
   }
 
+  // Asocia el token del usuario al cliente que consulta datos sujetos a RLS.
   private createClient(accessToken?: string): SupabaseClient<Database> {
     const { url, publishableKey } = this.getConfiguration();
 
@@ -617,6 +623,7 @@ export class SupabaseService {
     return { url, publishableKey };
   }
 
+  // Reserva la configuración privilegiada para las operaciones del servidor.
   private getAdminConfiguration(): { url: string; secretKey: string } {
     const { url } = this.getConfiguration();
     const secretKey = this.config.get<string>('SUPABASE_SECRET_KEY');

@@ -1,3 +1,4 @@
+/** Implementa las reglas para entregar el catálogo con metadatos de paginación. */
 import { Injectable } from '@nestjs/common';
 import { PermissionRecord } from '../../common/supabase/database.types.js';
 import { PermissionsRepository } from './permissions.repository.js';

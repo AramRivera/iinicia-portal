@@ -1,3 +1,4 @@
+/** Registra el controlador y los proveedores de catálogo de permisos en NestJS. */
 // apps/api/src/modules/permissions/permissions.module.ts
 import { Module } from '@nestjs/common';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard.js';

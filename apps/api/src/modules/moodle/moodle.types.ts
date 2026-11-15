@@ -1,3 +1,4 @@
+/** Describe usuarios, cursos, estados de finalización y errores devueltos por Moodle. */
 import type { MoodleRoleType } from '../../common/supabase/database.types.js';
 
 export interface MoodleUserResponse {

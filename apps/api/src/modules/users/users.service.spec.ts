@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe coordinar los cambios de cuenta, perfil y vínculo con Moodle. */
 import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

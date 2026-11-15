@@ -1,3 +1,4 @@
+/** Implementa las reglas para distinguir el catálogo público de la gestión administrativa por ámbito. */
 import {
   ConflictException,
   ForbiddenException,
@@ -51,6 +52,7 @@ export class ProgramsService {
   /**
    * Consulta el detalle de un programa académico por UUID o slug.
    */
+  // Admite enlaces públicos por slug y consultas administrativas por identificador.
   async findByIdOrSlug(idOrSlug: string, accessToken?: string) {
     const client = accessToken
       ? this.supabase.getResilientClient(accessToken)
@@ -162,6 +164,7 @@ export class ProgramsService {
   /**
    * Vincula un usuario a un programa en `user_programs` y actualiza su estatus académico.
    */
+  // Comprueba el ámbito académico antes de modificar la adscripción.
   async assignUserToProgram(
     programId: string,
     dto: AssignUserProgramDto,

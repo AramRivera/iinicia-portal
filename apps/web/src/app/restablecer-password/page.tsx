@@ -1,3 +1,4 @@
+/** Completa la recuperación a partir del enlace por correo y solicita TOTP cuando la API lo exige. */
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
@@ -20,6 +21,7 @@ export default function RestablecerPasswordPage() {
   const [factorId, setFactorId] = useState('');
   const [code, setCode] = useState('');
 
+  // Lee la prueba de recuperación de la URL y la prepara antes de mostrar el formulario.
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const url = new URL(window.location.href);
@@ -40,6 +42,7 @@ export default function RestablecerPasswordPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // Envía la contraseña nueva dentro del flujo de recuperación, incluyendo el factor TOTP si quedó pendiente.
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!proof && !mfa) return;

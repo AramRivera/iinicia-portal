@@ -1,3 +1,4 @@
+/** Carga el programa identificado por su slug y distingue carga, error y programa inexistente. */
 'use client';
 
 import Link from 'next/link';
@@ -27,6 +28,7 @@ export default function ProgramDetail({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
+  // Descarta respuestas de una consulta anterior si se cambia de programa o se abandona la vista.
   useEffect(() => {
     let active = true;
     programsApi.getProgramBySlugOrId(slug)

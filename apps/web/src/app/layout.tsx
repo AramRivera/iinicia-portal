@@ -1,3 +1,4 @@
+/** Define el documento común y monta los proveedores, la cabecera y el pie del portal. */
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";

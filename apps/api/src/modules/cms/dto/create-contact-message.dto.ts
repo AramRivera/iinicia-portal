@@ -1,3 +1,4 @@
+/** Valida los datos de contacto y el contenido del mensaje institucional. */
 import { IsEmail, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateContactMessageDto {

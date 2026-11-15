@@ -1,3 +1,4 @@
+/** Valida las variantes de solicitud, intercambio y restablecimiento de contraseña. */
 import { IsEmail, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class RecoverPasswordDto {

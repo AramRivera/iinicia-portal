@@ -1,3 +1,4 @@
+/** Expone por HTTP contenido público, directorio, formulario de contacto y mapa de redirecciones. */
 import {
   Body,
   Controller,

@@ -1,3 +1,4 @@
+/** Define los filtros de búsqueda y el tamaño de página del listado de usuarios. */
 import { Type } from 'class-transformer';
 import {
   IsEnum,

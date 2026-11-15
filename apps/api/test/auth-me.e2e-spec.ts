@@ -1,3 +1,4 @@
+/** Comprueba que el perfil HTTP se derive de una identidad autenticada con MFA. */
 import { Test } from '@nestjs/testing';
 import {
   INestApplication,

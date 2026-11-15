@@ -1,3 +1,4 @@
+/** Expone por HTTP oferta, cursos autorizados y administración de equivalencias. */
 import {
   Body,
   Controller,

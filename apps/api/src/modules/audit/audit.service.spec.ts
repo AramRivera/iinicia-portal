@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe aplicar filtros por actor, acción y entidad sobre eventos visibles para la sesión. */
 import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

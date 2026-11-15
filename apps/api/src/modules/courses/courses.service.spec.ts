@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe distinguir la oferta de los cursos autorizados y mantener su vínculo con Moodle. */
 import { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';

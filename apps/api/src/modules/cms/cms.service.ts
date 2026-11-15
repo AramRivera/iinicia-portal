@@ -1,3 +1,4 @@
+/** Implementa las reglas para consultar contenido publicado y recibir mensajes desde el portal. */
 import {
   Injectable,
   InternalServerErrorException,
@@ -16,6 +17,7 @@ export class CmsService {
   /**
    * Consulta contenidos institucionales publicados (páginas, noticias, avisos).
    */
+  // El catálogo público excluye los contenidos que todavía no se han publicado.
   async findPublishedContents(type?: string) {
     const client = this.supabase.getClient('');
     let query = client
@@ -110,6 +112,7 @@ export class CmsService {
   /**
    * Mapa de redirecciones activas 301/302 de WordPress para el middleware de Next.js.
    */
+  // Devuelve el mapa de destinos de migración para que lo consuma la capa de enrutamiento.
   async getRedirectsMap() {
     const client = this.supabase.getClient('');
     const { data, error } = await client

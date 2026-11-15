@@ -1,3 +1,4 @@
+/** Centraliza el transporte HTTP y separa las operaciones del portal en clientes por recurso. */
 import type {
   AdmissionApplication,
   AuthorizedCourse,
@@ -43,6 +44,7 @@ export function removeToken(): void {
   localStorage.removeItem('iinicia_access_token');
 }
 
+// Unifica la URL base, el token de sesión y la traducción de errores para los clientes del portal.
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},

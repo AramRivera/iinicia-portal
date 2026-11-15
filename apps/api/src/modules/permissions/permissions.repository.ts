@@ -1,3 +1,4 @@
+/** Consulta y pagina los permisos con el cliente de datos asociado a la sesión. */
 import {
   Injectable,
   InternalServerErrorException,

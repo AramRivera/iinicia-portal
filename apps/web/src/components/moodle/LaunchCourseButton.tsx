@@ -1,3 +1,4 @@
+/** Solicita el enlace de sesión del curso y lo abre en una ventana del campus. */
 'use client';
 
 import React, { useState } from 'react';
@@ -25,6 +26,7 @@ export function LaunchCourseButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reserva la ventana antes de pedir el enlace y la cierra si la solicitud falla.
   const handleLaunch = async () => {
     if (!isAuthorized) {
       setError('Aún no tienes matrícula autorizada para este curso.');

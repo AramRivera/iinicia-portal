@@ -1,3 +1,4 @@
+/** Configura el servidor HTTP, el prefijo de la API, CORS y la validación de las solicitudes. */
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
@@ -17,6 +18,7 @@ async function bootstrap() {
     ],
   });
 
+  // La configuración del adaptador HTTP se aplica antes de registrar las rutas.
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.get('/api/v1/docs', (_req: any, res: any) => res.redirect('/docs'));
   expressApp.get('/api/v1/swagger', (_req: any, res: any) => res.redirect('/swagger'));
@@ -45,6 +47,7 @@ async function bootstrap() {
     }),
   );
 
+  // El entorno puede asignar el puerto sin recompilar la aplicación.
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 }

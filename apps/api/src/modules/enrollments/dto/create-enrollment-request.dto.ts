@@ -1,3 +1,4 @@
+/** Define los identificadores y el rol académico aceptados al solicitar una matrícula. */
 import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import type { MoodleRoleType } from '../../../common/supabase/database.types.js';
 

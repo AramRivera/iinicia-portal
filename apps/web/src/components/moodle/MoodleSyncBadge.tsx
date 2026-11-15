@@ -1,3 +1,4 @@
+/** Traduce el estado de sincronización de Moodle a una etiqueta visible. */
 'use client';
 
 import React from 'react';

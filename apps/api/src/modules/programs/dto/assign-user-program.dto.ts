@@ -1,3 +1,4 @@
+/** Valida el usuario y los datos académicos de la adscripción a un programa. */
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import type { AcademicStatus } from '../../../common/supabase/database.types.js';
 

@@ -1,3 +1,4 @@
+/** Comprueba los contratos HTTP de registro, sesión, TOTP y recuperación. */
 import { Test } from '@nestjs/testing';
 import {
   INestApplication,

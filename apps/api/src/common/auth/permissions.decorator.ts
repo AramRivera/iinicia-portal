@@ -1,3 +1,4 @@
+/** Adjunta a la ruta los permisos que interpreta PermissionsGuard. */
 import { SetMetadata } from '@nestjs/common';
 
 export const PERMISSIONS_KEY = 'permissions';

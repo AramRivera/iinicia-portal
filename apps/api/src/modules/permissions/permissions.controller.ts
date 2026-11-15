@@ -1,3 +1,4 @@
+/** Expone por HTTP el catálogo paginado de permisos. */
 // apps/api/src/modules/permissions/permissions.controller.ts
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard.js';

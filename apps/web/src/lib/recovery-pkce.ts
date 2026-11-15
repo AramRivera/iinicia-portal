@@ -1,3 +1,4 @@
+/** Genera la prueba PKCE y conserva temporalmente el verificador necesario para canjear el enlace de recuperación. */
 const STORAGE_KEY = 'iinicia_recovery_verifier';
 const LIFETIME_MS = 30 * 60 * 1000;
 
@@ -5,6 +6,7 @@ function base64Url(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+// Comparte el reto derivado con la API y conserva el verificador para el intercambio posterior.
 export async function startRecoveryProof() {
   const verifier = base64Url(crypto.getRandomValues(new Uint8Array(32)));
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
@@ -27,6 +29,7 @@ export function readRecoveryVerifier(): string | null {
   return null;
 }
 
+// Evita eliminar el verificador de una solicitud más reciente.
 export function clearRecoveryVerifier(verifier: string): void {
   if (readRecoveryVerifier() === verifier) localStorage.removeItem(STORAGE_KEY);
 }

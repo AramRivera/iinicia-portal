@@ -1,3 +1,4 @@
+/** Valida los cambios parciales en la información de un programa. */
 import {
   IsBoolean,
   IsEnum,

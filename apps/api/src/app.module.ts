@@ -1,3 +1,4 @@
+/** Ensambla los módulos de identidad, gestión académica, Moodle y contenido institucional. */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';

@@ -1,3 +1,4 @@
+/** Ejercita el inicio de sesión con contraseña, el desafío TOTP y el uso del token de usuario. */
 import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
 import { createClient } from '@supabase/supabase-js';

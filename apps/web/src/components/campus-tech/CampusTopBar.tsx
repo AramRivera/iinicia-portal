@@ -1,3 +1,4 @@
+/** Muestra el encabezado de la sesión, los controles de tema y el acceso a la búsqueda. */
 'use client';
 
 import React from 'react';

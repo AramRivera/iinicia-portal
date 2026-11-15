@@ -1,3 +1,4 @@
+/** Implementa las reglas para coordinar el registro y construir el perfil de sesión con roles y permisos. */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthRepository, UserRoleEmbed } from './auth.repository.js';
 import { MeResponse } from './dto/me-response.dto.js';
@@ -29,6 +30,7 @@ export class AuthService {
    * Devuelve la identidad efectiva del usuario autenticado:
    * perfil, roles activos y permisos asignados.
    */
+  // Carga el perfil a partir de la identidad autenticada y agrega sus roles y permisos.
   async getMe(
     accessToken: string,
     userId: string,

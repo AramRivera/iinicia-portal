@@ -1,3 +1,4 @@
+/** Solicita un enlace de recuperación vinculado al navegador mediante PKCE. */
 'use client';
 
 import { AuthCaptcha, captchaEnabled } from '@/components/AuthCaptcha';
@@ -19,6 +20,7 @@ export default function RecuperarPasswordPage() {
   const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // Vincula la solicitud de correo con la prueba PKCE generada en este navegador.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || (captchaEnabled && !captchaToken)) return;

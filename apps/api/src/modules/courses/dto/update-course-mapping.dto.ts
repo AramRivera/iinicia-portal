@@ -1,3 +1,4 @@
+/** Valida los campos editables de una equivalencia con Moodle. */
 import {
   IsBoolean,
   IsInt,

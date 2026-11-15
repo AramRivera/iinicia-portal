@@ -1,3 +1,4 @@
+/** Organiza los paneles del campus alrededor de una barra superior y un menú adaptable. */
 'use client';
 
 import React, { useState, useEffect } from 'react';

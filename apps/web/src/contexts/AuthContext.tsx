@@ -1,3 +1,4 @@
+/** Mantiene el perfil autenticado y las acciones de sesión que comparten las pantallas. */
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Recupera el perfil desde la API y descarta el token cuando la sesión es rechazada.
   const fetchProfile = useCallback(async () => {
     const token = getToken();
     if (!token) {
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Reconsulta el perfil al volver a la pestaña para recoger cambios de acceso.
   useEffect(() => {
     fetchProfile();
     const refreshOnFocus = () => { if (getToken()) void fetchProfile(); };
@@ -64,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return authApi.login({ email, password, captcha_token: captchaToken });
   };
 
+  // La sesión se guarda tras verificar TOTP y confirmar que la API acepta el token para consultar el perfil.
   const verifyLoginMfa = async (mfaToken: string, factorId: string, code: string): Promise<UserProfile> => {
     setLoading(true);
     try {
@@ -114,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return Boolean(user.permissions && user.permissions.includes(permission));
   };
 
+  // Resuelve el panel de entrada cuando una cuenta tiene varios roles.
   const getDefaultDashboardPath = (customRoles?: RoleSlug[]): string => {
     const r = customRoles || user?.roles || [];
     if (r.includes('superadministrador') || r.includes('administrador')) {

@@ -1,3 +1,4 @@
+/** Implementa las reglas para enlazar identidades, sincronizar matrículas y controlar el acceso académico. */
 import {
   BadRequestException,
   ForbiddenException,
@@ -52,6 +53,7 @@ export class MoodleService {
    * 3. Si no existe en Moodle, crea el usuario con datos institucionales.
    * 4. Actualiza moodle_user_id, moodle_username y moodle_sync_status en public.profiles.
    */
+  // Busca coincidencias de identidad antes de crear otra cuenta del campus.
   async syncUser(userId: string) {
     const admin = this.supabase.getAdminClient();
 
@@ -227,6 +229,7 @@ export class MoodleService {
    * 3. Llama a enrol_manual_enrol_users en Moodle con el rol correspondiente.
    * 4. Actualiza enrollment_requests a 'sincronizada' y registra fecha e intentos.
    */
+  // Confirma la operación de Moodle antes de marcar la matrícula como sincronizada.
   async syncEnrollment(enrollmentId: string, scopedCoordinatorId?: string) {
     const admin = this.supabase.getAdminClient();
 
@@ -545,6 +548,7 @@ export class MoodleService {
    * - Docentes tienen acceso a participantes, contenidos y analíticas de sus cursos asignados.
    * - Estudiantes solo tienen acceso a contenidos y a su propio progreso en cursos matriculados.
    */
+  // Comprueba las asignaciones antes de consultar datos académicos del curso.
   async validateCourseAccess(
     userId: string,
     moodleCourseId: number,
@@ -659,6 +663,7 @@ export class MoodleService {
       });
     }
 
+    // La nota total proviene del elemento de tipo curso en el calificador.
     const courseGrade = gradesData?.gradeitems?.find((g: any) => g.itemtype === 'course');
     const rawGrade = courseGrade?.graderaw != null ? Number(courseGrade.graderaw) : null;
     const formattedGrade = courseGrade?.gradeformatted ?? '-';
@@ -675,6 +680,7 @@ export class MoodleService {
 
     const moodleCourse = userCourses.find((course) => Number(course.id) === courseId);
     const rawProgress = moodleCourse?.progress;
+    // El avance alternativo usa solo actividades visibles cuyo seguimiento aplica a este usuario.
     const trackedActivities = (activityCompletionData?.statuses ?? []).filter((status) =>
       status.tracking !== 0 &&
       status.hascompletion !== false &&
@@ -687,6 +693,7 @@ export class MoodleService {
     const activityProgress = trackedActivities.length > 0
       ? (completedActivities / trackedActivities.length) * 100
       : null;
+    // Prioriza el avance del curso informado por Moodle y usa la finalización de actividades como alternativa.
     const resolvedProgress = typeof rawProgress === 'number' && Number.isFinite(rawProgress)
       ? rawProgress
       : activityProgress ?? (completionData?.completed === true ? 100 : null);

@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe entregar el catálogo con metadatos de paginación. */
 import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionRecord } from '../../common/supabase/database.types.js';
 import { PermissionsRepository } from './permissions.repository.js';

@@ -1,3 +1,4 @@
+/** Recoge los datos del aspirante y muestra el resultado del registro y la confirmación por correo. */
 'use client';
 
 import { AuthCaptcha, captchaEnabled } from '@/components/AuthCaptcha';
@@ -21,6 +22,7 @@ export default function RegistroPage() {
   const [captchaAttempt, setCaptchaAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // Envía los datos del aspirante y muestra el resultado antes de que se inicie la sesión.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || (captchaEnabled && !captchaToken)) return;

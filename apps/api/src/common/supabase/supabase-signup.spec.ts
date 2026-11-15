@@ -1,3 +1,4 @@
+/** Cubre el registro sin sesión inmediata y la selección segura del destino de confirmación. */
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service.js';

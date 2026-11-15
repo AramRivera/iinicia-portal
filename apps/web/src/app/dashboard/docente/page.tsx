@@ -1,3 +1,4 @@
+/** Muestra las asignaciones docentes y abre el curso o el calificador en Moodle. */
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -64,6 +65,7 @@ export default function DocenteDashboardPage() {
 
   const [moodleCourseOverviews, setMoodleCourseOverviews] = useState<Record<number, TeacherOverview>>({});
 
+  // Carga los cursos asignados y la información académica necesaria para la vista docente.
   const loadTeacherData = async () => {
     try {
       setLoading(true);
@@ -124,6 +126,7 @@ export default function DocenteDashboardPage() {
     }
   };
 
+  // Usa el destino solicitado para abrir el aula o el calificador con un enlace de sesión.
   const handleLaunchCourseSSO = async (courseMappingId: string, destination: 'launch' | 'launch-gradebook' = 'launch') => {
     const launchWindow = openMoodleLaunchWindow();
     if (!launchWindow) {

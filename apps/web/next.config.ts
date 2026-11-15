@@ -1,3 +1,4 @@
+/** Configura la compilación de Next.js y las reglas de Turbopack para los estilos. */
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

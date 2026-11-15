@@ -1,3 +1,4 @@
+/** Comprueba por HTTP la raíz de la API y la protección de rutas autenticadas. */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';

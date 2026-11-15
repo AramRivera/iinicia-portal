@@ -1,3 +1,4 @@
+/** Monta Turnstile en el navegador y entrega al formulario un token vigente para cada intento. */
 'use client';
 
 import Script from 'next/script';
@@ -26,6 +27,7 @@ export function AuthCaptcha({ attempt, onToken }: {
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
 
+  // Monta un desafío para el intento vigente y retira el widget anterior al desmontar el efecto.
   useEffect(() => {
     const provider = (window as Window & { turnstile?: Turnstile }).turnstile;
     if (!sitekey || !ready || !provider || !container.current) return;

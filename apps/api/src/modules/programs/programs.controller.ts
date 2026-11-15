@@ -1,3 +1,4 @@
+/** Expone por HTTP catálogo, edición y asignación de usuarios a programas. */
 import {
   Body,
   Controller,

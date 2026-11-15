@@ -1,3 +1,4 @@
+/** Filtra las acciones del panel suministradas por la vista y permite saltar a la pestaña elegida. */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ export function CampusSearch({ open, onClose, items, onSelectTab }: {
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const { hasPermission } = useAuth();
+  // La consulta de usuarios solo se habilita en la interfaz para sesiones con el permiso correspondiente.
   const canReadUsers = hasPermission('users.read');
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<CampusSearchItem[]>([]);
@@ -45,6 +47,7 @@ export function CampusSearch({ open, onClose, items, onSelectTab }: {
     }, 300);
     return () => { current = false; clearTimeout(timer); };
   }, [query, open, canReadUsers]);
+  // Compara términos sin distinguir mayúsculas ni acentos.
   const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const words = normalize(query).trim().split(/\s+/);
   const matches = query.trim() ? items.filter((item) => words.every((word) =>

@@ -1,3 +1,4 @@
+/** Implementa las reglas para controlar las transiciones locales y coordinar las operaciones remotas en Moodle. */
 import {
   ConflictException,
   ForbiddenException,
@@ -30,6 +31,7 @@ export class EnrollmentsService {
   ) {}
 
   // Se invoca tras el dictamen transaccional que autoriza al revisor y al programa.
+  // Selecciona los cursos obligatorios del primer módulo para iniciar la matrícula del estudiante.
   async enrollAdmittedStudent(userId: string, programId: string, reviewerId: string) {
     const admin = this.supabase.getAdminClient();
     const { data: courses, error } = await admin.from('course_mappings')
@@ -224,6 +226,7 @@ export class EnrollmentsService {
    * Autoriza o rechaza administrativamente una inscripción.
    * Si se autoriza y `sync_to_moodle` es true, ejecuta la sincronización oficial con Moodle.
    */
+  // Separa la decisión sobre la solicitud de su ejecución en el LMS.
   async updateEnrollmentStatus(
     enrollmentId: string,
     dto: UpdateEnrollmentStatusDto,
@@ -301,6 +304,7 @@ export class EnrollmentsService {
     };
   }
 
+  // Reutiliza la solicitud persistida para reintentar la sincronización de una matrícula.
   async syncToMoodle(enrollmentId: string, actorId: string, actorRoles: string[] = []) {
     const admin = this.supabase.getAdminClient();
     const { data: enrollment, error } = await admin
@@ -355,6 +359,7 @@ export class EnrollmentsService {
    * - Llama a Moodle unenrolStudent para desmatricular en el aula virtual.
    * - Elimina el registro de enrollment_requests y registra la acción en audit_logs.
    */
+  // Cuando existe matrícula remota, la baja local depende del resultado de Moodle.
   async deleteEnrollment(enrollmentId: string, actorId: string) {
     const admin = this.supabase.getAdminClient();
 

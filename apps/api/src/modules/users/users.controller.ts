@@ -1,3 +1,4 @@
+/** Expone por HTTP listado, alta administrativa, cambios de estado y edición del perfil propio. */
 import {
   Body,
   Controller,

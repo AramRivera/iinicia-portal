@@ -1,3 +1,4 @@
+/** Valida el estado solicitado para la cuenta gestionada desde administración. */
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateUserStatusDto {

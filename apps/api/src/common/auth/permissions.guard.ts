@@ -1,3 +1,4 @@
+/** Resuelve los permisos requeridos por la ruta y los compara con los permisos de la sesión. */
 import {
   CanActivate,
   ExecutionContext,

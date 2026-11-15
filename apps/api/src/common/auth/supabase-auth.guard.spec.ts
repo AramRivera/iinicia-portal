@@ -1,3 +1,4 @@
+/** Comprueba el rechazo de tokens inválidos, de sesiones sin MFA y de peticiones sin Bearer. */
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { Request } from 'express';

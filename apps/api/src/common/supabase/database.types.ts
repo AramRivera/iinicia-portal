@@ -1,3 +1,4 @@
+/** Describe las tablas, vistas, funciones y estados que usa el cliente tipado de Supabase. */
 export type Json =
   | string
   | number

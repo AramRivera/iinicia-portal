@@ -1,3 +1,4 @@
+/** Implementa las reglas para distinguir la oferta de los cursos autorizados y mantener su vínculo con Moodle. */
 import {
   ConflictException,
   Injectable,
@@ -39,6 +40,7 @@ export class CoursesService {
    * - Si es estudiante o profesor: consulta exclusivamente los cursos autorizados en `v_user_authorized_courses`.
    * - Si es staff: sincroniza automáticamente nuevos cursos desde Moodle y consulta el catálogo completo en `course_mappings`.
    */
+  // Separa las vistas de catálogo administrativo de las matrículas autorizadas para una cuenta.
   async findCourses(userId: string, isStaff: boolean, accessToken: string) {
     const client = this.supabase.getResilientClient(accessToken);
 
@@ -95,6 +97,7 @@ export class CoursesService {
    *    - Busca si existe un programa con nombre/código similar o crea uno nuevo en `programs`.
    *    - Inserta el registro correspondiente en `course_mappings`.
    */
+  // Importa el catálogo mediante el identificador de Moodle, que vincula ambos sistemas.
   async syncCoursesFromMoodle() {
     const admin = this.supabase.getAdminClient();
     const moodleCourses = await this.moodleClient.getAllCourses();

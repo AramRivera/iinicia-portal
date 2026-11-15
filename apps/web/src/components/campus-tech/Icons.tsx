@@ -1,3 +1,4 @@
+/** Define los SVG reutilizados por la navegación y los estados de los paneles. */
 import React from 'react';
 
 interface IconProps {

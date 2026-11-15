@@ -1,3 +1,4 @@
+/** Expone por HTTP la lectura paginada de eventos administrativos. */
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard.js';
 import type { AuthenticatedRequest } from '../../common/auth/supabase-auth.guard.js';

@@ -1,6 +1,8 @@
+/** Resuelve el identificador de la URL y delega la consulta del programa al componente de detalle. */
 import { Suspense } from 'react';
 import ProgramDetail from '@/components/programs/ProgramDetail';
 
+// Resuelve los parámetros asíncronos dentro del límite de Suspense.
 async function ProgramContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   return <ProgramDetail slug={slug} />;

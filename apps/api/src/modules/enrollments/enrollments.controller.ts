@@ -1,3 +1,4 @@
+/** Expone por HTTP solicitud, autorización, sincronización y baja de matrículas. */
 import {
   Body,
   Controller,

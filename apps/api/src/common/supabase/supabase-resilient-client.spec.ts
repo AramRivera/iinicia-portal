@@ -1,3 +1,4 @@
+/** Comprueba que el cliente REST preserve el token del usuario y los errores de PostgREST. */
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from './supabase.service.js';
 

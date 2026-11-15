@@ -1,3 +1,4 @@
+/** Valida la identidad con Supabase y exige el segundo factor antes de entregar la petición al controlador. */
 import {
   CanActivate,
   ExecutionContext,

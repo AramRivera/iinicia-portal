@@ -1,3 +1,4 @@
+/** Presenta los accesos disponibles para la sesión y redirige cuando corresponde a un panel específico. */
 'use client';
 
 import React, { useEffect } from 'react';

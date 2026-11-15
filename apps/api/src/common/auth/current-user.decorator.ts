@@ -1,3 +1,4 @@
+/** Obtiene del contexto HTTP la identidad que ya colocó el guard de autenticación. */
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { AuthenticatedRequest } from './supabase-auth.guard.js';
 

@@ -1,3 +1,4 @@
+/** Implementa las reglas para aplicar la jerarquía administrativa y registrar los cambios de roles. */
 import {
   BadRequestException,
   Injectable,
@@ -36,6 +37,7 @@ export class RolesService {
    * Asigna un rol a un usuario en `user_roles`.
    * Registra la acción en `audit_logs`.
    */
+  // Aplica los límites de la jerarquía antes de otorgar el rol solicitado.
   async assignRole(
     targetUserId: string,
     dto: AssignRoleDto,
@@ -150,6 +152,7 @@ export class RolesService {
   /**
    * Revoca un rol a un usuario (desactiva en `user_roles`).
    */
+  // Registra la revocación de la asignación para conservar su historial.
   async revokeRole(
     targetUserId: string,
     roleId: number,

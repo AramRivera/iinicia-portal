@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe filtrar postulaciones por ámbito y promover al aspirante después del dictamen. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { AdmissionsService } from './admissions.service.js';

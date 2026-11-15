@@ -1,3 +1,4 @@
+/** Reúne el portal público, carga la oferta desde la API y conecta el catálogo con admisiones y contacto. */
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -105,6 +106,7 @@ export default function HomePage() {
     return myCourses.some((c) => c.course_mapping_id === courseMappingId);
   };
 
+  // Conecta la acción del catálogo con la solicitud de matrícula de la sesión.
   const handleEnroll = async (courseMappingId: string, courseName: string) => {
     if (!user) {
       router.push('/login');
@@ -133,6 +135,7 @@ export default function HomePage() {
     }
   };
 
+  // Envía el formulario al servicio institucional y presenta el resultado del envío.
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactError(null);

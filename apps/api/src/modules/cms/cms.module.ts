@@ -1,3 +1,4 @@
+/** Registra el controlador y los proveedores de contenido institucional y migración de WordPress en NestJS. */
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';
 import { CmsService } from './cms.service.js';

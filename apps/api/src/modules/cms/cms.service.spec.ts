@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe consultar contenido publicado y recibir mensajes desde el portal. */
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

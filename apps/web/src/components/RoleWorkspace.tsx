@@ -1,3 +1,4 @@
+/** Comparte el espacio de coordinación y soporte, con datos y opciones ajustados al rol. */
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -82,6 +83,7 @@ export function RoleWorkspace({ role }: Props) {
       .catch(() => setUsersError('No fue posible consultar el directorio autorizado para tu cuenta.'));
   }, [loading, user, canReadUsers, search, roleFilter, statusFilter]);
 
+  // Prepara los cursos de la vista de coordinación a partir de las adscripciones del perfil.
   const scopedCourses = useMemo(() => {
     if (!isCoordinator || userPrograms.length === 0) return [];
     const programIds = new Set(userPrograms.map((program) => program.program_id));

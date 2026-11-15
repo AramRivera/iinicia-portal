@@ -1,3 +1,4 @@
+/** Expone por HTTP sincronización, acceso al campus y consultas académicas. */
 import {
   BadRequestException,
   Controller,
@@ -81,6 +82,7 @@ export class MoodleController {
    * autenticado tiene una matrícula activa autorizada.
    * Registra cada salto en `campus_access_logs`.
    */
+  // El portal identifica el curso por la equivalencia guardada localmente.
   @Post('courses/:courseMappingId/launch')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard)
@@ -157,6 +159,7 @@ export class MoodleController {
       Number(courseId),
     );
 
+    // Usa la identidad de Moodle de la sesión como destino predeterminado de la consulta.
     let targetMoodleUserId = queryMoodleUserId
       ? Number(queryMoodleUserId)
       : access.moodleUserId;

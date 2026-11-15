@@ -1,3 +1,4 @@
+/** Implementa las reglas para coordinar los cambios de cuenta, perfil y vínculo con Moodle. */
 import {
   BadRequestException,
   ConflictException,
@@ -180,6 +181,7 @@ export class UsersService {
   /**
    * Actualiza los datos editables del propio usuario autenticado bajo RLS.
    */
+  // Usa la identidad de la sesión para decidir qué perfil admite la edición.
   async updateOwnProfile(
     userId: string,
     dto: UpdateOwnProfileDto,
@@ -215,6 +217,7 @@ export class UsersService {
    * Crea un usuario administrativamente en Supabase Auth y le asigna
    * directamente su rol definitivo sin interferir con la sesión del administrador.
    */
+  // Coordina la creación de identidad y las operaciones posteriores sobre el perfil.
   async createUserByAdmin(dto: CreateUserAdminDto, actorId: string) {
     const admin = this.supabase.getAdminClient();
 

@@ -1,3 +1,4 @@
+/** Registra el controlador y los proveedores de solicitudes y matrículas académicas en NestJS. */
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';
 import { MoodleModule } from '../moodle/moodle.module.js';

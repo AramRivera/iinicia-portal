@@ -1,3 +1,4 @@
+/** Implementa las reglas para aplicar filtros por actor, acción y entidad sobre eventos visibles para la sesión. */
 import {
   Injectable,
   InternalServerErrorException,
@@ -12,6 +13,7 @@ export class AuditService {
 
   constructor(private readonly supabase: SupabaseService) {}
 
+  // Compone filtros y paginación usando los eventos visibles con el token de la sesión.
   async findAll(query: QueryAuditDto, accessToken: string) {
     const client = this.supabase.getResilientClient(accessToken);
     let q = client

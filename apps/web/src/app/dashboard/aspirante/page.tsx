@@ -1,3 +1,4 @@
+/** Muestra el avance de las postulaciones y las opciones académicas que puede solicitar el aspirante. */
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -69,6 +70,7 @@ export default function AspiranteDashboardPage() {
     loadData();
   }, [user, authLoading, router]);
 
+  // Inicia la solicitud desde una opción del catálogo de cursos.
   const handleApply = async (courseMappingId: string, courseName: string) => {
     setActionLoading(courseMappingId);
     setError(null);
@@ -92,6 +94,7 @@ export default function AspiranteDashboardPage() {
     return enrollments.some((e) => e.course_mapping_id === courseMappingId && e.status !== 'rechazada');
   };
 
+  // Tramita una postulación al programa desde el formulario de admisión.
   const handleApplication = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedProgram) return;

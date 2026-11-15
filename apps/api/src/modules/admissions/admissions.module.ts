@@ -1,3 +1,4 @@
+/** Registra el controlador y los proveedores de postulaciones y dictámenes de admisión en NestJS. */
 import { EnrollmentsModule } from '../enrollments/enrollments.module.js';
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';

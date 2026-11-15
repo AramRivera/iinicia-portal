@@ -1,3 +1,4 @@
+/** Aplica una transición de lectura al entrar en la zona visible de la página. */
 "use client";
 
 import { useEffect, useRef, type ElementType, type ReactNode } from "react";

@@ -1,3 +1,4 @@
+/** Renderiza secciones y opciones del menú lateral según la configuración del panel. */
 'use client';
 
 import React from 'react';

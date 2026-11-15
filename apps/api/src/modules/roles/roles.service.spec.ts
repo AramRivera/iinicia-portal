@@ -1,3 +1,4 @@
+/** Aísla las dependencias del servicio para comprobar cómo debe aplicar la jerarquía administrativa y registrar los cambios de roles. */
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

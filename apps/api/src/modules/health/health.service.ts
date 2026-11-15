@@ -1,3 +1,4 @@
+/** Implementa las reglas para comprobar las dependencias y resumir su disponibilidad. */
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { MoodleClient } from '../moodle/moodle.client.js';

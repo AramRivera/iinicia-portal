@@ -1,3 +1,4 @@
+/** Define la configuración de Vitest para las pruebas unitarias de la API. */
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

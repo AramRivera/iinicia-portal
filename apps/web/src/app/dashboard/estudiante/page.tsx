@@ -1,3 +1,4 @@
+/** Muestra cursos autorizados, avance y perfil del estudiante, y permite iniciar el acceso al campus. */
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -80,6 +81,7 @@ export default function EstudianteDashboardPage() {
     return () => { current = false; };
   }, [userId]);
 
+  // Reúne información de la matrícula, el programa y los cursos que consume el panel.
   const loadData = async () => {
     try {
       setLoading(true);
@@ -140,6 +142,7 @@ export default function EstudianteDashboardPage() {
     return () => { current = false; };
   }, [courses]);
 
+  // Obtiene el contenido académico del curso seleccionado antes de mostrar el temario.
   const handleOpenSyllabus = async (course: AuthorizedCourse) => {
     setSyllabusTarget(course);
     setMoodleContents([]);
@@ -176,6 +179,7 @@ export default function EstudianteDashboardPage() {
     }
   };
 
+  // Solicita una sesión para el curso elegido y navega la ventana del aula.
   const handleLaunchCourseSSO = async (courseMappingId: string) => {
     const launchWindow = openMoodleLaunchWindow();
     if (!launchWindow) {
@@ -217,6 +221,7 @@ export default function EstudianteDashboardPage() {
   };
 
   // Dar de baja materia / desasignar curso
+  // Confirma la baja del curso seleccionado antes de actualizar la vista.
   const handleConfirmDropCourse = async () => {
     if (!dropTarget) return;
 

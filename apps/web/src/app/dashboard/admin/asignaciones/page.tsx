@@ -1,3 +1,4 @@
+/** Reúne las operaciones de asignación académica y revocación de matrículas desde administración. */
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -136,6 +137,7 @@ export default function AsignacionesPage() {
   }, [users, searchQuery, roleFilter, statusFilter]);
 
   // Asignar curso
+  // Usa el rol académico seleccionado para crear la asignación en el curso.
   const handleAssignCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignCourseUser || !selectedCourseId) {
@@ -170,6 +172,7 @@ export default function AsignacionesPage() {
   };
 
   // Desasignar curso
+  // Ejecuta la baja después de la confirmación y vuelve a consultar las asignaciones.
   const handleConfirmUnenroll = async () => {
     if (!unenrollTarget) return;
 

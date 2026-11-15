@@ -1,3 +1,4 @@
+/** Ejercita el recorrido HTTP de identidad, admisión y acceso académico con integraciones simuladas. */
 import { Test } from '@nestjs/testing';
 import {
   INestApplication,

@@ -1,3 +1,4 @@
+/** Presenta un estado temporal para secciones que todavía no ofrecen una acción. */
 import Link from "next/link";
 
 type ComingSoonProps = {

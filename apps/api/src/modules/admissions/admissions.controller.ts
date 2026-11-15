@@ -1,3 +1,4 @@
+/** Expone por HTTP la bandeja por rol, la creación de postulaciones y el dictamen con matrícula inicial. */
 import {
   Body,
   Controller,

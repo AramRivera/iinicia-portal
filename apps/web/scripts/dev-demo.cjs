@@ -1,3 +1,4 @@
+/** Arranca la demo local o compartida con su configuración de red y un directorio de compilación propio. */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { spawn } = require('node:child_process');
 const { isIPv4 } = require('node:net');
@@ -46,6 +47,7 @@ try {
 } catch (error) {
   if (error.code !== 'ENOENT') throw error;
 }
+// Las variables de la demo prevalecen sobre el entorno local. El argumento --api-url puede reemplazar la URL resultante.
 const env = { ...process.env, ...localEnv, ...demoEnv };
 if (apiUrl) env.NEXT_PUBLIC_API_URL = apiUrl;
 if ((shared || lab) && !env.NEXT_PUBLIC_API_URL) {
@@ -56,6 +58,7 @@ if (shared && !apiUrl && !demoEnv.NEXT_PUBLIC_API_URL) {
   console.error('Para ZeroTier indica --api-url con la dirección accesible de la API.');
   process.exit(1);
 }
+// Aísla la compilación de la demo por perfil y puerto para que no comparta su caché con el arranque habitual.
 env.NEXT_DIST_DIR = `.next-demo-${lab ? 'lab' : 'remote'}-${port}`;
 console.log(`Demo ${lab ? 'laboratorio' : 'Supabase configurado en la API'} · API: ${env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}`);
 

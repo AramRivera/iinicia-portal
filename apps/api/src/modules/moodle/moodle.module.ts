@@ -1,3 +1,4 @@
+/** Registra el controlador y los proveedores de integración con el aula virtual en NestJS. */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';

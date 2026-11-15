@@ -1,3 +1,4 @@
+/** Sirve el punto de entrada y las versiones del contrato OpenAPI que consume Swagger. */
 import { Controller, Get, Header, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { existsSync, readFileSync } from 'node:fs';

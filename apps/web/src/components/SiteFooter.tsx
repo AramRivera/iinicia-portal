@@ -1,3 +1,4 @@
+/** Agrupa la navegación secundaria del portal y los enlaces institucionales. */
 "use client";
 
 import Link from "next/link";

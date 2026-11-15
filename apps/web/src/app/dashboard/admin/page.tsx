@@ -1,3 +1,4 @@
+/** Centraliza los flujos administrativos de usuarios, admisiones, programas, matrículas y auditoría. */
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -150,6 +151,7 @@ export default function AdminDashboardPage() {
   const isAdminOrCoordinator =
     hasRole('superadministrador') || hasRole('administrador');
 
+  // Carga los datos del panel administrativo según los accesos de la sesión.
   const loadData = async () => {
     try {
       setLoading(true);
@@ -240,6 +242,7 @@ export default function AdminDashboardPage() {
     });
   }, [enrollments, enrollmentStatusFilter]);
 
+  // Envía el dictamen de la postulación y actualiza los datos que dependen de él.
   const handleReviewApplication = async (applicationId: string, status: 'en_revision' | 'admitido' | 'rechazado') => {
     setActionLoading(`admission-${applicationId}`);
     setError(null);
@@ -352,6 +355,7 @@ export default function AdminDashboardPage() {
   };
 
   // Acciones: Matrículas
+  // Envía la decisión sobre la matrícula y mantiene visible el resultado de la sincronización.
   const handleAuthorizeEnrollment = async (
     enrollmentId: string,
     status: 'autorizada' | 'rechazada',
@@ -380,6 +384,7 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Reintenta la matrícula con el identificador de la solicitud existente.
   const handleRetryMoodleSync = async (enrollmentId: string) => {
     setActionLoading(`sync-enr-${enrollmentId}`);
     setNotice(null);
@@ -401,6 +406,7 @@ export default function AdminDashboardPage() {
   };
 
   // Acciones: Asignar curso directo
+  // Registra la asignación académica a partir del usuario y el curso elegidos.
   const handleDirectCourseAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignTargetUserId || !assignCourseId) {
@@ -456,6 +462,7 @@ export default function AdminDashboardPage() {
   };
 
   // Acciones: Crear nuevo mapeo de curso
+  // Asocia un curso ya identificado en Moodle con su equivalente en el catálogo del portal.
   const handleCreateCourseMapping = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCourseName || !newCourseCode || !newMoodleCourseId || !newMoodleShortname) {
@@ -593,6 +600,7 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Envía la solicitud administrativa para sincronizar cuentas por lote.
   const handleBulkMoodleSync = async () => {
     setActionLoading('bulk-sync');
     setNotice(null);

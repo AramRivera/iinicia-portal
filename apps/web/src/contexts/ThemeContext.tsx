@@ -1,3 +1,4 @@
+/** Aplica el tema elegido al documento y conserva la preferencia en el navegador. */
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
+  // Recupera la preferencia guardada después de montar y usa la del sistema cuando falta.
   useEffect(() => {
     // 1. Check local storage preference
     const saved = localStorage.getItem('campus-tech-theme') as Theme | null;

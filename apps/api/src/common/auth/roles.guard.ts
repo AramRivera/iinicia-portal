@@ -1,3 +1,4 @@
+/** Exige los roles de la ruta y resuelve sus asignaciones vigentes para el usuario autenticado. */
 import {
   CanActivate,
   ExecutionContext,

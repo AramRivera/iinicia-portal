@@ -1,3 +1,4 @@
+/** Carga el perfil propio y sus roles y permisos respetando el alcance de la sesión. */
 import {
   Injectable,
   InternalServerErrorException,
