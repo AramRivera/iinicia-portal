@@ -6,9 +6,9 @@
 
 | Orden | Trabajo | Evidencia para cerrarlo |
 | --- | --- | --- |
-| 1 | Completar la demo de Moodle con HTML Básico Desde Cero, un profesor y dos estudiantes (CA-07 a CA-13). | Grabar acceso por rol, entrega, calificación, avance, finalización y denegación fuera del curso. Revisar la baja y reconciliar Moodle si falla la sincronización. |
-| 2 | Cerrar identidad y permisos (CA-03 a CA-06, CA-10 y CA-19). | Probar registro, confirmación, recuperación, CAPTCHA y TOTP en un navegador con SMTP operativo. Ejecutar la matriz de permisos de todos los roles y revisar la auditoría. |
-| 3 | Reproducir el entorno de entrega (CA-04, CA-07, CA-14, CA-15, CA-18 y CA-20). | Aplicar el esquema completo en una base vacía, desplegar con HTTPS, documentar integración y comprobar respaldo y restauración. |
+| 1 | Completar la demo de Moodle con HTML Básico Desde Cero, un profesor y dos estudiantes (CA-07 a CA-13). | Entrega, nota y finalización de una actividad confirmadas por el usuario. Falta guardar evidencia con un profesor y dos estudiantes y comprobar el reintento si Moodle falla. El usuario confirmó que la baja bloqueó el acceso al portal y al curso mediante el enlace directo de Moodle. |
+| 2 | Cerrar identidad y permisos (CA-03 a CA-06, CA-10 y CA-19). | Registro, confirmación y recuperación reportados por el usuario como funcionales por ZeroTier. Repetir con SMTP operativo y guardar evidencia de CAPTCHA y TOTP. Ejecutar la matriz de permisos de todos los roles y revisar la auditoría. |
+| 3 | Reproducir el entorno de entrega (CA-04, CA-07, CA-14, CA-15, CA-18 y CA-20). | Línea base unificada `20261115000000_baseline_schema.sql` y `seed.sql` probadas con éxito en PostgreSQL 16 aislado (`test_clean_baseline`). Desplegar con HTTPS y comprobar respaldo y restauración. [Auditoría de Supabase](docs/supabase-auditoria-esquema.md) |
 | 4 | Cerrar migración y experiencia del portal (CA-01, CA-02, CA-16 y CA-17). | Completar inventario de WordPress, redirecciones y comprobación del sitio migrado. Revisar móvil, teclado, contraste y coherencia visual con Moodle. |
 | 5 | Empaquetar la entrega (CA-18 y CA-20). | Completar manuales de instalación, administración, profesor y estudiante. Adjuntar reporte de pruebas, evidencias y video o presentación. |
 
@@ -28,9 +28,9 @@
 | CA-01 · Sustituir WordPress | Portal nuevo en código; inventario preliminar de portada. | Inventario completo, respaldo, migración, redirecciones 301, corte y verificación en producción. |
 | CA-02 · React/Next.js | Implementado; evidencia previa de compilación y tipos. | Recorrer las páginas públicas y privadas en el despliegue de entrega. |
 | CA-03 · Supabase Auth | Registro, login, confirmación, recuperación, TOTP y CAPTCHA en código. | Validar en pruebas con CAPTCHA habilitado, correo operativo y cuentas reales de prueba. |
-| CA-04 · Perfiles, roles y relaciones | API y SQL presentes; esquema inicial incompatible con consultas actuales. | Versionar una línea base reproducible y verificar alta, roles múltiples, estados y relaciones en una base vacía. |
-| CA-05 · Roles y permisos | Paneles y guards para los roles previstos. | Probar cada rol, incluido soporte, coordinación y aspirante, con casos permitidos y denegados. |
-| CA-06 · RLS y backend | Hay políticas, guard AAL2 y comprobaciones de ámbito parciales. | Corregir asignación de programas, verificar RLS y grants reales y comprobar la migración AAL2 de Data API. |
+| CA-04 · Perfiles, roles y relaciones | Línea base unificada `20261115000000_baseline_schema.sql` y `seed.sql` verificadas en base limpia. | Desplegar en el entorno final de entrega y registrar evidencia integral. |
+| CA-05 · Roles y permisos | Paneles y guards para los roles previstos. Catálogo completo y matriz de 30 permisos consolidada en semillas. | Probar cada rol en la API con casos permitidos y denegados. |
+| CA-06 · RLS y backend | AAL1 rechazado, AAL2 permitido, dictámenes atómicos, RLS y ámbito de coordinación validados en base limpia. | Validar contra la API en el entorno reproducible de entrega. |
 | CA-07 · Moodle configurado | Instalación local y Web Service registrados; SCSS disponible. | Reproducir la configuración objetivo, revisar plugin, roles, permisos del servicio y tema aplicado. |
 | CA-08 · Un curso completo | Material didáctico candidato. | Confirmar curso e ID y configurar recurso, foro, tarea, evaluación, calificación y finalización. |
 | CA-09 · Profesor y dos estudiantes | Hay flujos de alta y matrícula. | Demostrar las tres asignaciones en el curso elegido y verificar los roles efectivos en Moodle. |

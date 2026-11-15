@@ -19,12 +19,18 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 | Componente | Evidencia | Validación pendiente |
 | --- | --- | --- |
 | Frontend | Paneles por rol y búsqueda desde la cabecera. Demo con la misma API para localhost y ZeroTier. | Revisar accesibilidad, móvil y lint del portal. |
-| Identidad | CAPTCHA integrado, TOTP obligatorio y origen permitido en enlaces de confirmación y recuperación. | Configurar SMTP y destinos en Supabase. Validar entrega, confirmación y recuperación con CAPTCHA real por ZeroTier. |
-| Supabase y API | El responsable aplicó las migraciones de MFA, admisiones y catálogo en Supabase remoto de pruebas. Se verificaron AAL2 y la denegación de AAL1 y de dictámenes fuera de ámbito. | Reproducir el esquema completo desde cero y ampliar la matriz con todos los roles. |
-| Moodle | Curso ID 4. Admisión con matrícula automática en cursos obligatorios activos del primer módulo, SSO estudiantil y acceso docente al calificador. | Completar evaluación, nota y finalización. Verificar tema y permisos en el despliegue de entrega. |
+| Identidad | CAPTCHA integrado, TOTP obligatorio y origen permitido en enlaces de confirmación y recuperación. | El usuario reportó que registro, confirmación y recuperación funcionaron por ZeroTier. Repetir la prueba con SMTP operativo y guardar evidencia de CAPTCHA y TOTP. |
+| Supabase y API | Línea base unificada `20261115000000_baseline_schema.sql` y `supabase/seed.sql` probadas con éxito en PostgreSQL 16 limpio. Se verificaron AAL2, rechazo AAL1, ámbito de coordinación, admisión atómica, RLS y alta con `auth.users`. | Desplegar en el entorno reproducible de entrega y ampliar la matriz de pruebas con todos los roles. |
+| Moodle | Curso ID 4. Admisión con matrícula automática en cursos obligatorios activos del primer módulo, SSO estudiantil y acceso docente al calificador. | El usuario confirmó entrega, calificación y finalización de una actividad. Falta guardar evidencia y verificar tema y permisos en el despliegue de entrega. |
 | Operación | Compilaciones y pruebas ejecutadas en desarrollo. | Cerrar despliegue con HTTPS, respaldo, restauración y evidencia de corte. |
 
 ## Validación registrada
+
+- 15 de noviembre: Se consolidó la línea base `supabase/migrations/20261115000000_baseline_schema.sql` y las semillas `supabase/seed.sql` (7 roles, 12 permisos, 30 asignaciones, 3 programas, 3 mapeos con curso HTML Básico ID 4). Probada en aislamiento en PostgreSQL 16 (`test_clean_baseline`) con `ON_ERROR_STOP=1`: disparador de alta de usuario, bloqueo de escrituras directas por cliente, AAL1 rechazado (42501) y AAL2 permitido, dictamen de admisión (`iinicia_review_admission`), restricción de ámbito de coordinación y activación de cuentas. [Auditoría de Supabase](supabase-auditoria-esquema.md).
+
+- Baja de estudiante: el usuario confirmó que la cuenta perdió el acceso tanto a la plataforma como al curso mediante el enlace directo de Moodle tras la baja. Queda por probar el reintento ante un fallo de sincronización.
+
+- El usuario reportó que registro, confirmación y recuperación funcionaron en su prueba manual por ZeroTier el día anterior. La cuota de correo de Supabase impidió repetirla. Queda pendiente guardar evidencia y comprobar CAPTCHA y TOTP en el recorrido completo.
 
 - 14 de noviembre: Supabase remoto de pruebas y Moodle validaron postulación, duplicados, admisión, matrícula automática y reintento, acceso estudiantil y SSO al calificador docente. Firefox verificó el flujo de matrícula en ambos orígenes y la búsqueda docente. Para los flujos remotos se aprovisionaron cuentas de prueba y se usaron sesiones AAL2. Correo y CAPTCHA siguen pendientes de una prueba completa. [Evidencia académica](flujo-admisiones.md) · [Guía del portal](frontend.md).
 - La lista priorizada para la entrega y su relación con los criterios están en [progreso.md](../progreso.md).
@@ -42,7 +48,7 @@ Para la demostración, el curso único debe permitir validar profesor, estudiant
 1. Confirmar el curso y su mapeo existente. Si el equipo elige HTML básico, cargar el recurso y usar sus consignas como base para las actividades nativas.
 2. Configurar una lectura o recurso, un foro, una tarea y una evaluación. Definir la calificación y activar el seguimiento de finalización de actividades.
 3. Asignar un docente y matricular a dos estudiantes de prueba mediante el flujo autorizado. Confirmar la matrícula en Moodle y comprobar que otra cuenta no pueda entrar al aula.
-4. Verificar acceso SSO y calificador docente. Completar una actividad con un estudiante y comprobar que el avance y la calificación se reflejen por separado.
+4. Prueba manual confirmada por el usuario: el estudiante entregó una actividad, el profesor la calificó y el estudiante pudo ver la nota y la actividad marcada como completada.
 5. Registrar fecha, ambiente, resultados y evidencia sin secretos. Probar el correo de recuperación y TOTP con cuentas de prueba después de configurar el envío de correo del ambiente.
 
 ## Inventario inicial de WordPress
