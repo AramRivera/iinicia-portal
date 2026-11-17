@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, moodleApi, usersApi } from '@/lib/api';
 import type { CourseOffering, RoleSlug, UserProfile, UserStatus } from '@/types';
+import { CoordinatorRequests } from './CoordinatorRequests';
 import { CampusShell } from '@/components/campus-tech/CampusShell';
 import type { SidebarSection } from '@/components/campus-tech/CampusSidebar';
 import { IconDashboard, IconGroups, IconSettings } from '@/components/campus-tech/Icons';
@@ -32,7 +33,7 @@ const statusLabels: Record<UserStatus, string> = {
 
 export function RoleWorkspace({ role }: Props) {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, hasPermission } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [courses, setCourses] = useState<CourseOffering[]>([]);
   const [coursesError, setCoursesError] = useState<string | null>(null);
@@ -45,7 +46,9 @@ export function RoleWorkspace({ role }: Props) {
   const [statusFilter, setStatusFilter] = useState('');
   const isCoordinator = role === 'coordinador';
   const title = isCoordinator ? 'Coordinación académica' : 'Soporte';
-  const canReadUsers = Boolean(user?.permissions?.includes('users.read'));
+  const canReadUsers = hasPermission('users.read');
+  const canReview = isCoordinator && hasPermission('admissions.review');
+  const canAuthorize = isCoordinator && hasPermission('enrollments.authorize');
   const userPrograms = profile?.programs ?? [];
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export function RoleWorkspace({ role }: Props) {
     usersApi.getUserById(user.id).then(setProfile).catch(() => setProfile(null));
 
     if (isCoordinator) {
-      coursesApi.getOfferings()
+      coursesApi.getCatalog()
         .then(setCourses)
         .catch(() => setCoursesError('No fue posible cargar el catálogo de cursos.'));
     } else {
@@ -68,20 +71,25 @@ export function RoleWorkspace({ role }: Props) {
   }, [loading, user, role, isCoordinator, router]);
 
   useEffect(() => {
-    if (loading || !user || !canReadUsers) return;
-    usersApi.getUsers({
+    if (loading || !user || !canReadUsers || (!user.roles.includes(role) && !user.roles.includes('superadministrador'))) return;
+    let current = true;
+    const timer = setTimeout(() => void usersApi.getUsers({
       search: search.trim() || undefined,
       role: roleFilter || undefined,
       status: statusFilter || undefined,
       limit: 50,
     })
       .then((result) => {
+        if (!current) return;
         setUsers(result.data);
         setHasMoreUsers(Boolean(result.meta?.hasMore));
         setUsersError(null);
       })
-      .catch(() => setUsersError('No fue posible consultar el directorio autorizado para tu cuenta.'));
-  }, [loading, user, canReadUsers, search, roleFilter, statusFilter]);
+      .catch(() => {
+        if (current) setUsersError('No fue posible consultar el directorio autorizado para tu cuenta.');
+      }), 250);
+    return () => { current = false; clearTimeout(timer); };
+  }, [loading, user, role, canReadUsers, search, roleFilter, statusFilter]);
 
   // Prepara los cursos de la vista de coordinación a partir de las adscripciones del perfil.
   const scopedCourses = useMemo(() => {
@@ -102,6 +110,7 @@ export function RoleWorkspace({ role }: Props) {
       ...(isCoordinator ? [
         { id: 'programas', label: 'Mis programas', icon: <IconGroups className="h-4 w-4" /> },
         { id: 'cursos', label: 'Cursos asignados', icon: <IconGroups className="h-4 w-4" /> },
+        ...(canReview || canAuthorize ? [{ id: 'solicitudes', label: 'Solicitudes académicas', icon: <IconGroups className="h-4 w-4" /> }] : []),
       ] : [
         { id: 'moodle', label: 'Estado de Moodle', icon: <IconDashboard className="h-4 w-4" /> },
       ]),
@@ -195,6 +204,7 @@ export function RoleWorkspace({ role }: Props) {
           </section>
         )}
 
+        {(canReview || canAuthorize) && <CoordinatorRequests key={user.id} canReview={canReview} canAuthorize={canAuthorize} />}
         {canReadUsers ? directorySection : <section className="rounded-xl border border-border bg-surface p-5"><h2 className="font-semibold text-foreground">Directorio no habilitado</h2><p className="mt-2 text-sm text-muted">Tu cuenta no tiene el permiso `users.read`; el portal no consultará ni mostrará datos de otros usuarios.</p></section>}
 
         <section id="perfil" className="scroll-mt-20 rounded-xl border border-border bg-surface p-5 shadow-minimal sm:p-6">

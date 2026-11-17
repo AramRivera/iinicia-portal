@@ -239,11 +239,11 @@ export function CampusSidebar({
               icon: <IconAudit className="w-4 h-4 shrink-0" />,
               badge: counts.audit,
             },
-            {
+            ...(userRoles.includes('superadministrador') ? [{
               id: 'configuracion',
               label: 'Configuración OS',
               icon: <IconSettings className="w-4 h-4 shrink-0" />,
-            },
+            }] : []),
           ],
         },
       ];

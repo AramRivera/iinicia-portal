@@ -64,7 +64,9 @@ export class MoodleController {
    */
   @Post('launch')
   @HttpCode(200)
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('superadministrador', 'administrador', 'coordinador', 'profesor', 'estudiante')
+  @RequirePermissions('campus.access')
   launchCampus(
     @Req() req: AuthenticatedRequest,
     @Ip() ipAddress: string,

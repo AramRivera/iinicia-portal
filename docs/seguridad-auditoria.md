@@ -47,7 +47,7 @@ La plataforma cuenta con 12 permisos atómicos distribuidos en la tabla `public.
 | **Total Permisos** | | **12** | **11** | **4** | **1** | **1** | **1** | **0** |
 
 - *\* Nota:* El estudiante tiene acceso de consulta a los cursos en los que está matriculado.
-- *\*\* Nota:* El coordinador solo puede dictaminar admisiones y autorizar matrículas de los programas asignados formalmente en `public.program_coordinators`. Intentos fuera de ámbito son rechazados con código `42501` (`Dictamen fuera de ámbito`).
+- *\*\* Nota:* El coordinador solo puede dictaminar admisiones y autorizar matrículas de los programas asignados formalmente en `public.user_programs` con estado admitido, inscrito o cursando. Intentos fuera de ámbito son rechazados con código `42501` (`Dictamen fuera de ámbito`).
 
 ---
 
@@ -105,3 +105,14 @@ De conformidad con el criterio `CA-19`, toda mutación administrativa sobre usua
 2. **MFA Obligatorio (AAL2):**
    - El inicio de sesión completa el primer factor (AAL1) y requiere inmediatamente la verificación de un código TOTP de 6 dígitos con el factor registrado `IINICIA`.
    - Las consultas a la Data API de Supabase y las rutas administrativas de NestJS son filtradas por el pre-request hook `iinicia_require_mfa` de PostgREST, rechazando cualquier solicitud con nivel `aal1` con código HTTP `42501` (`Se requiere autenticación multifactor AAL2`).
+
+
+## Verificación de administración, coordinación y soporte
+
+- **Administración:** puede gestionar cuentas y roles operativos, programas, admisiones y matrículas. Las cuentas y los roles de administración quedan reservados a superadministración. La baja de una cuenta vinculada solicita también su suspensión en Moodle.
+- **Coordinación:** consulta sus programas, cursos y directorio. Con los permisos correspondientes, **Solicitudes académicas** permite dictaminar postulaciones y autorizar matrículas del ámbito asignado. El servidor y RLS comprueban el alcance.
+- **Soporte:** consulta el directorio, el estado de las cuentas, el vínculo y la disponibilidad de Moodle. El permiso de directorio no concede acceso académico ni permite cambiar roles o estados. El lanzamiento general de Moodle exige `campus.access`.
+
+La migración `20261116120000_staff_scope.sql` limita la lectura del directorio, las afiliaciones y las matrículas según el rol y el ámbito. Reserva a la API privilegiada las escrituras directas de roles, estados y matrículas. La edición del perfil propio conserva sus columnas de contacto y presentación. Validar con `supabase/tests/staff_scope.sql` en un entorno local con la línea base y semillas, usando `psql -X -v ON_ERROR_STOP=1`. El archivo de prueba hace rollback de sus datos.
+
+Aplicar la migración primero en un entorno de ensayo existente y luego repetir el recorrido con cuentas de cada rol. Docker Compose la aplica al inicializar un volumen nuevo. Un entorno con datos requiere ejecutar la migración correspondiente.

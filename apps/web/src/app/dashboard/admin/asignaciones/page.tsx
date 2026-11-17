@@ -90,7 +90,7 @@ export default function AsignacionesPage() {
       return;
     }
     const hasAdminAccess = user.roles.some((r) =>
-      ['superadministrador', 'administrador', 'coordinador'].includes(r),
+      ['superadministrador', 'administrador'].includes(r),
     );
     if (!hasAdminAccess) {
       router.push('/dashboard');
@@ -504,7 +504,7 @@ export default function AsignacionesPage() {
                               type="button"
                               onClick={() => {
                                 setRoleTargetUser(u);
-                                setSelectedRoleId(String(roles[0]?.id || '5'));
+                                setSelectedRoleId('');
                               }}
                               className="rounded-[4px] border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-surface-muted transition-all"
                             >
@@ -715,7 +715,7 @@ export default function AsignacionesPage() {
                     onChange={(e) => setSelectedRoleId(e.target.value)}
                     className="w-full rounded-[6px] border border-border bg-surface-muted/40 px-3 py-2 text-xs text-foreground focus:border-primary focus:bg-surface focus:outline-none transition-all"
                   >
-                    {roles.map((r) => (
+                    {roles.filter((role) => user?.roles.includes('superadministrador') || !['administrador', 'superadministrador'].includes(role.slug)).map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.name} ({r.slug})
                       </option>

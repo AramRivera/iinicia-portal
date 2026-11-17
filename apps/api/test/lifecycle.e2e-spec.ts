@@ -96,6 +96,35 @@ describe('Portal Lifecycle E2E Test Suite', () => {
     await app.close();
   });
 
+  describe('Límites HTTP de los roles operativos', () => {
+    it.each(['soporte', 'coordinador'])('impide que %s gestione cuentas o roles', async (role) => {
+      currentRoles = [role];
+      mockSupabase.getAuthenticatedUser.mockResolvedValue({ id: adminUserId, email: 'staff@example.test' });
+      const server = app.getHttpServer();
+      await request(server)
+        .patch(`/api/v1/users/${studentUserId}/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'baja' })
+        .expect(403);
+      await request(server)
+        .post(`/api/v1/roles/users/${studentUserId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ role_id: 5 })
+        .expect(403);
+      expect(mockAdminClient.from).not.toHaveBeenCalled();
+    });
+
+    it('impide emitir un enlace general de Moodle a soporte', async () => {
+      currentRoles = ['soporte'];
+      mockSupabase.getAuthenticatedUser.mockResolvedValue({ id: adminUserId, email: 'support@example.test' });
+      await request(app.getHttpServer())
+        .post('/api/v1/moodle/launch')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+      expect(mockMoodleClient.getEffectiveBaseUrl).not.toHaveBeenCalled();
+    });
+  });
+
   describe('1. Health Checks (CA-16)', () => {
     it('GET /api/v1/health returns ok status', async () => {
       mockSupabase.assertConfiguration.mockReturnValue(undefined);

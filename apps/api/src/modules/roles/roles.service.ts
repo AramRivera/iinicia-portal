@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { requireManageableAccount, requireManageableRole } from '../../common/auth/staff-hierarchy.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import { AssignRoleDto } from './dto/assign-role.dto.js';
 
@@ -42,6 +43,7 @@ export class RolesService {
     targetUserId: string,
     dto: AssignRoleDto,
     actorId: string,
+    actorRoles: string[],
   ) {
     const admin = this.supabase.getAdminClient();
 
@@ -55,6 +57,9 @@ export class RolesService {
     if (roleError || !role) {
       throw new NotFoundException('El rol especificado no existe.');
     }
+
+    requireManageableRole(actorRoles, role.slug);
+    await requireManageableAccount(admin, actorRoles, targetUserId);
 
     const { data: profile, error: profileError } = await admin
       .from('profiles')
@@ -157,6 +162,7 @@ export class RolesService {
     targetUserId: string,
     roleId: number,
     actorId: string,
+    actorRoles: string[],
   ) {
     const admin = this.supabase.getAdminClient();
 
@@ -172,6 +178,10 @@ export class RolesService {
       throw new NotFoundException('El usuario no tiene asignado este rol activo.');
     }
 
+    const assignedRole = assignment.roles as unknown as { slug: string } | null;
+    requireManageableRole(actorRoles, assignedRole?.slug ?? 'superadministrador');
+    await requireManageableAccount(admin, actorRoles, targetUserId);
+
     const { error: deleteError } = await admin
       .from('user_roles')
       .update({ is_active: false })
@@ -181,8 +191,7 @@ export class RolesService {
       throw new InternalServerErrorException('Error al revocar el rol.');
     }
 
-    const roleInfo = (assignment as any).roles;
-    const roleSlug = Array.isArray(roleInfo) ? roleInfo[0]?.slug : roleInfo?.slug;
+    const roleSlug = assignedRole?.slug;
 
     // Registrar en audit_logs
     await admin.from('audit_logs').insert({

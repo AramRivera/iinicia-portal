@@ -8,6 +8,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { requireManageableAccount, requireManageableRole } from '../../common/auth/staff-hierarchy.js';
 import { SupabaseService } from '../../common/supabase/supabase.service.js';
 import type { Database } from '../../common/supabase/database.types.js';
 import { MoodleClient } from '../moodle/moodle.client.js';
@@ -95,6 +96,15 @@ export class UsersService {
     }
 
     const client = this.supabase.getResilientClient(accessToken);
+    if (targetUserId !== requestingUserId) {
+      const { data: canRead, error: permissionError } = await client.rpc('has_permission', {
+        required_permission_code: 'users.read',
+      });
+      if (permissionError || !canRead) {
+        throw new ForbiddenException('No tienes permiso para consultar el directorio de usuarios.');
+      }
+    }
+
     const { data, error } = await client
       .from('v_user_complete_profile')
       .select('*')
@@ -116,6 +126,7 @@ export class UsersService {
     targetUserId: string,
     dto: UpdateUserStatusDto,
     actorId: string,
+    actorRoles: string[],
   ) {
     const admin = this.supabase.getAdminClient();
 
@@ -129,6 +140,7 @@ export class UsersService {
       throw new NotFoundException('Usuario no encontrado.');
     }
 
+    await requireManageableAccount(admin, actorRoles, targetUserId);
     const oldStatus = currentProfile.status;
 
     const { error: updateError } = await admin
@@ -148,7 +160,7 @@ export class UsersService {
     // Si el usuario tiene cuenta en Moodle y fue suspendido/reactivado, sincronizar estado en Moodle
     if (currentProfile.moodle_user_id) {
       try {
-        const isSuspended = dto.status === 'suspendido' || dto.status === 'inactivo' ? 1 : 0;
+        const isSuspended = ['suspendido', 'inactivo', 'baja'].includes(dto.status) ? 1 : 0;
         await this.moodleClient.updateUser(Number(currentProfile.moodle_user_id), {
           suspended: isSuspended,
         });
@@ -218,7 +230,7 @@ export class UsersService {
    * directamente su rol definitivo sin interferir con la sesión del administrador.
    */
   // Coordina la creación de identidad y las operaciones posteriores sobre el perfil.
-  async createUserByAdmin(dto: CreateUserAdminDto, actorId: string) {
+  async createUserByAdmin(dto: CreateUserAdminDto, actorId: string, actorRoles: string[]) {
     const admin = this.supabase.getAdminClient();
 
     // 1. Validar existencia del rol
@@ -231,6 +243,8 @@ export class UsersService {
     if (roleError || !role) {
       throw new NotFoundException('El rol inicial especificado no existe.');
     }
+
+    requireManageableRole(actorRoles, role.slug);
 
     // 2. Crear identidad en Supabase Auth
     const { data: authData, error: authError } = await admin.auth.admin.createUser({

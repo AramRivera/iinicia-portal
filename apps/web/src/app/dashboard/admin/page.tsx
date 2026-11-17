@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPhone, setNewPhone] = useState('');
-  const [newInitialRole, setNewInitialRole] = useState<number>(5); // Estudiante
+  const [newInitialRole, setNewInitialRole] = useState('');
 
   const [showCreateProgramModal, setShowCreateProgramModal] = useState(false);
   const [newProgName, setNewProgName] = useState('');
@@ -504,7 +504,7 @@ export default function AdminDashboardPage() {
   // Acciones: Crear Usuario Administrativo
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmail || !newPassword || !newFirstName || !newLastName) {
+    if (!newEmail || !newPassword || !newFirstName || !newLastName || !newInitialRole) {
       setError('Completa todos los campos obligatorios del nuevo usuario.');
       return;
     }
@@ -530,6 +530,7 @@ export default function AdminDashboardPage() {
       setNewEmail('');
       setNewPassword('');
       setNewPhone('');
+      setNewInitialRole('');
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error al crear el nuevo usuario.');
@@ -1397,6 +1398,7 @@ export default function AdminDashboardPage() {
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
+                                disabled={!hasRole('superadministrador') && (u.active_roles ?? u.roles).some((role) => role === 'administrador' || role === 'superadministrador')}
                                 onClick={() => setSelectedUserForRole(u)}
                                 className="rounded-xl border border-border/80 bg-surface hover:bg-foreground/[0.04] text-foreground/80 px-2.5 py-1 text-xs font-medium transition-all"
                                 title="Gestionar roles"
@@ -1411,6 +1413,7 @@ export default function AdminDashboardPage() {
                                   setNewStatus(u.status || 'activo');
                                 }}
                                 className="rounded-xl border border-border/80 bg-surface hover:bg-foreground/[0.04] text-foreground/80 px-2.5 py-1 text-xs font-medium transition-all"
+                                disabled={!hasRole('superadministrador') && (u.active_roles ?? u.roles).some((role) => role === 'administrador' || role === 'superadministrador')}
                                 title="Modificar estado de cuenta"
                               >
                                 Estado
@@ -2151,7 +2154,7 @@ export default function AdminDashboardPage() {
       {/* ========================================================================= */}
       {/* PESTAÑA: CONFIGURACIÓN OS                                                 */}
       {/* ========================================================================= */}
-      {activeTab === 'configuracion' && (
+      {activeTab === 'configuracion' && hasRole('superadministrador') && (
         <div className="space-y-4">
           <div className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal">
             <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
@@ -2282,7 +2285,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setRoleToAssign(Number(e.target.value))}
                   className="w-full rounded-xl border border-border/70 bg-surface focus:border-accent px-3.5 py-2.5 text-xs text-foreground transition-all outline-none"
                 >
-                  {roles.map((r) => (
+                  {roles.filter((role) => hasRole('superadministrador') || !['administrador', 'superadministrador'].includes(role.slug)).map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.name} ({r.slug})
                     </option>
@@ -2469,14 +2472,14 @@ export default function AdminDashboardPage() {
                 <label className="block text-xs font-medium text-foreground mb-1.5">Rol Inicial Asignado:</label>
                 <select
                   value={newInitialRole}
-                  onChange={(e) => setNewInitialRole(Number(e.target.value))}
+                  onChange={(e) => setNewInitialRole(e.target.value)}
+                  required
                   className="w-full rounded-xl border border-border/70 bg-surface focus:border-accent px-3.5 py-2.5 text-xs text-foreground transition-all outline-none"
                 >
-                  <option value={5}>Estudiante (student)</option>
-                  <option value={4}>Profesor (editingteacher)</option>
-                  <option value={3}>Coordinador Académico</option>
-                  <option value={2}>Administrador</option>
-                  <option value={7}>Aspirante</option>
+                  <option value="" disabled>Selecciona un rol</option>
+                  {roles.filter((role) => hasRole('superadministrador') || !['administrador', 'superadministrador'].includes(role.slug)).map((role) => (
+                    <option key={role.id} value={role.id}>{role.name}</option>
+                  ))}
                 </select>
               </div>
 

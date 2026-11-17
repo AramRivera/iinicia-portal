@@ -71,7 +71,7 @@ describe('RolesService', () => {
       });
 
       await expect(
-        service.assignRole('u1', { role_id: 99 }, 'admin-id'),
+        service.assignRole('u1', { role_id: 99 }, 'admin-id', ['superadministrador']),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -124,7 +124,7 @@ describe('RolesService', () => {
         return {};
       });
 
-      const result = await service.assignRole('u1', { role_id: 5 }, 'admin-id');
+      const result = await service.assignRole('u1', { role_id: 5 }, 'admin-id', ['superadministrador']);
 
       expect(result.success).toBe(true);
       expect(result.role_slug).toBe('estudiante');
@@ -168,7 +168,7 @@ describe('RolesService', () => {
         return {};
       });
 
-      const result = await service.revokeRole('u1', 5, 'admin-id');
+      const result = await service.revokeRole('u1', 5, 'admin-id', ['superadministrador']);
       expect(result.success).toBe(true);
       expect(result.revoked_role_id).toBe(5);
       expect(updateMock).toHaveBeenCalledWith({ is_active: false });

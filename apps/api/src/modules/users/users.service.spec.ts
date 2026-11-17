@@ -122,6 +122,7 @@ describe('UsersService', () => {
     });
 
     it('allows staff to see another user profile', async () => {
+      clientMock.rpc = vi.fn().mockResolvedValue({ data: true, error: null });
       const userProfile = { id: 'other-id', email: 'other@test.com' };
       clientMock.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -171,6 +172,7 @@ describe('UsersService', () => {
         'u1',
         { status: 'suspendido', reason: 'Falta de pago' },
         'admin-id',
+        ['superadministrador'],
       );
 
       expect(result.previous_status).toBe('activo');

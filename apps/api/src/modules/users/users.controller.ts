@@ -55,7 +55,7 @@ export class UsersController {
     @Body() dto: CreateUserAdminDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.usersService.createUserByAdmin(dto, req.user.id);
+    return this.usersService.createUserByAdmin(dto, req.user.id, req.userRoles ?? []);
   }
 
   /**
@@ -76,12 +76,12 @@ export class UsersController {
    * Un estudiante/profesor solo puede consultar su propio ID; administradores pueden consultar cualquiera.
    */
   @Get(':id')
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   async findUserById(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const userRoles = (req as any).userRoles || [];
+    const userRoles = req.userRoles ?? [];
     const isStaff =
       userRoles.includes('superadministrador') ||
       userRoles.includes('administrador') ||
@@ -110,6 +110,6 @@ export class UsersController {
     @Body() dto: UpdateUserStatusDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.usersService.updateUserStatus(id, dto, req.user.id);
+    return this.usersService.updateUserStatus(id, dto, req.user.id, req.userRoles ?? []);
   }
 }

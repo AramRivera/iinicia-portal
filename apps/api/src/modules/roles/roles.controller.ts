@@ -40,7 +40,7 @@ export class RolesController {
     @Body() dto: AssignRoleDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.rolesService.assignRole(userId, dto, req.user.id);
+    return this.rolesService.assignRole(userId, dto, req.user.id, req.userRoles ?? []);
   }
 
   @Delete('users/:userId/:roleId')
@@ -53,6 +53,6 @@ export class RolesController {
     @Param('roleId', ParseIntPipe) roleId: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.rolesService.revokeRole(userId, roleId, req.user.id);
+    return this.rolesService.revokeRole(userId, roleId, req.user.id, req.userRoles ?? []);
   }
 }
