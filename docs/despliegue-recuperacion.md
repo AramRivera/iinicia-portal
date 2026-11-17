@@ -211,3 +211,37 @@ Para verificar la integridad de un respaldo sin afectar el entorno productivo:
    ```bash
    curl -f http://localhost:3000/api/v1/health
    ```
+
+## Arranque estándar en producción
+
+Usar Node.js 22 y ejecutar `npm ci` y `npm run build` en cada aplicación al instalar una revisión nueva. Después, `npm start` arranca lo compilado. Reiniciar con el mismo comando reutiliza la compilación. El script `dev:demo` se reserva para desarrollo local, y los accesos rápidos de prueba solo aparecen en desarrollo.
+
+### Portal en Vercel y API en Ubuntu
+
+- Importar el repositorio en Vercel, seleccionar Next.js, configurar `apps/web` como directorio raíz y `main` como rama de producción. Usar el comando de compilación detectado (`npm run build`) y dejar que Vercel administre la ejecución.
+- Definir `NEXT_PUBLIC_API_URL=https://api.example.org/api/v1` con el dominio real de la API, además de las variables públicas del portal que requiera el ambiente. Las variables `NEXT_PUBLIC_*` se incorporan durante la compilación. Cambiarlas requiere una compilación y despliegue nuevos.
+- Ejecutar NestJS en Ubuntu con su configuración de servidor. Exponer API y Moodle mediante HTTPS con direcciones accesibles por los usuarios. Configurar `FRONTEND_URL` y `CORS_ORIGIN` con el dominio del portal y autorizar sus URLs de confirmación y recuperación en Supabase. Las credenciales de servicio pertenecen al backend.
+
+### Portal y API en Ubuntu
+
+En terminales separadas, con las variables del ambiente ya configuradas:
+
+```bash
+# API
+cd apps/api
+npm ci
+npm run build
+npm start
+```
+
+```bash
+# Portal, desde la raíz del repositorio
+cd apps/web
+npm ci
+npm run build
+npm start
+```
+
+La API escucha por defecto en el puerto 3000 y el portal en el 4000. `PORT` permite cambiar el puerto de cada proceso. Para mantenerlos activos en el VPS, usar Docker Compose o un supervisor como systemd y publicar sus dominios a través del proxy HTTPS. En producción, configurar la URL pública HTTPS de la API antes de compilar el portal.
+
+Antes del corte, verificar la salud de la API, la carga del portal desde su dominio público, el inicio de sesión y la entrada a Moodle. Probar primero en un entorno de ensayo con la misma configuración de red y HTTPS.
