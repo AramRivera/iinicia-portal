@@ -245,14 +245,14 @@ export default function AsignacionesPage() {
     >
       <div className="space-y-6">
         {/* Header Asignaciones */}
-        <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal">
+        <div className="campus-heading">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
                   Gestión Curricular Centralizada
                 </span>
-                <span className="rounded-[4px] bg-accent-lime/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-lime/40">
+                <span className="rounded-[4px] bg-accent-sky/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-sky/40">
                   Control de Matrícula y Roles
                 </span>
               </div>
@@ -298,7 +298,7 @@ export default function AsignacionesPage() {
             </div>
             <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3">
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Sincronizadas Moodle</span>
-              <p className="mt-1 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
+              <p className="mt-1 font-mono text-base font-bold text-success">
                 {enrollments.filter((e) => e.status === 'sincronizada').length}
               </p>
             </div>
@@ -307,9 +307,9 @@ export default function AsignacionesPage() {
 
         {/* Notificaciones */}
         {notice && (
-          <div className="rounded-[8px] border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center justify-between shadow-minimal">
+          <div className="rounded-[8px] border border-success/25 bg-success/10 p-3.5 text-xs font-medium text-success flex items-center justify-between shadow-minimal">
             <div className="flex items-center gap-2">
-              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <IconCheck className="w-4 h-4 text-success shrink-0" />
               <span>{notice}</span>
             </div>
             <button
@@ -427,7 +427,7 @@ export default function AsignacionesPage() {
                                   r === 'profesor'
                                     ? 'bg-primary/10 text-primary border-primary/20 font-bold'
                                     : r === 'estudiante'
-                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                    ? 'bg-success/10 text-success border-success/20'
                                     : r === 'aspirante'
                                     ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                                     : 'bg-surface-muted text-foreground border-border'

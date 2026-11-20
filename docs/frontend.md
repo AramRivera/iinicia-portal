@@ -65,6 +65,10 @@ El iniciador carga `.env.demo.local` con `process.loadEnvFile()` para evitar el 
 
 ## Mapa de páginas
 
+**Chat de ayuda.** El botón **Ayuda IINICIA** envía cada consulta actual a `POST /api/v1/help-chat`. NestJS busca las entradas pertinentes en `apps/api/src/modules/help-chat/help-knowledge.ts`. Cuando hay coincidencias, envía solo esa consulta y las entradas recuperadas a DeepSeek. El modelo redacta una respuesta breve y devuelve los identificadores de los fragmentos que usó. La API valida esos identificadores y construye los enlaces desde la guía. Las referencias ayudan a comprobar el texto generado, que puede contener errores. El chat no consulta el estado de la cuenta ni envía el historial. Si la guía no aporta material pertinente, ofrece el enlace de Contacto sin llamar al proveedor.
+
+Para activarlo, agrega `DEEPSEEK_API_KEY` al `.env` local de `apps/api` o a las variables privadas del servicio NestJS y reinicia la API. `DEEPSEEK_MODEL` es opcional y usa `deepseek-flash` por defecto. El endpoint limita la frecuencia de consultas y devuelve `503` si falta la clave o falla la conexión con el proveedor.
+
 | Ruta | Uso |
 | --- | --- |
 | `/` | Portada con universidad, oferta, admisiones y contacto. |
@@ -136,6 +140,8 @@ npm run dev:demo -- --hostname 192.168.191.171 --port 4007 --api-url http://192.
 ```
 
 La primera instancia sirve localhost:4000 y la segunda ZeroTier:4007. Ambas consultan la misma API. No usar `--lab` para estas pruebas. Al cambiar de ambiente, cerrar sesión y entrar con una cuenta de ese ambiente. Los directorios `.next-demo-remote-*` separan los artefactos de los del laboratorio; Next.js añade sus tipos a `tsconfig.json`.
+
+La API también permite el origen `http://192.168.191.171:4000` cuando el portal se sirve por ZeroTier en el puerto 4000. Para que funcione desde otro equipo, configura `NEXT_PUBLIC_API_URL=http://192.168.191.171:3000/api/v1` antes de compilar el portal con `npm run build`.
 
 La asignación de programa no matricula automáticamente todos sus cursos. En Postulaciones, admitir y después usar **Asignar curso**; en Matrículas se revisan las solicitudes y se reintentan sincronizaciones fallidas. El estudiante puede actualizar su panel y entrar cuando Moodle confirma la matrícula.
 

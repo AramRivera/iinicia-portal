@@ -10,7 +10,6 @@ const linkGroups = [
     title: "Programas",
     links: [
       { label: "Cursos", href: "/#cursos", id: "cursos" },
-      { label: "Diplomados", href: "/#diplomados", id: "diplomados" },
       { label: "Certificaciones", href: "/#certificaciones", id: "certificaciones" },
     ],
   },
@@ -18,7 +17,6 @@ const linkGroups = [
     title: "Admisiones",
     links: [
       { label: "Proceso de admisión", href: "/#admisiones", id: "admisiones" },
-      { label: "Requisitos de expediente", href: "/#admisiones", id: "admisiones" },
       { label: "Registro de aspirante", href: "/registro" },
     ],
   },
@@ -68,7 +66,7 @@ export function SiteFooter() {
               Instituto de Innovación y Ciencias Aplicadas. Formación universitaria y continua en línea con integración transparente al Campus Virtual Moodle LMS.
             </p>
             <div className="mt-4 flex items-center gap-2 text-xs font-mono text-muted">
-              <span className="h-2 w-2 rounded-full bg-accent-lime" />
+              <span className="h-2 w-2 rounded-full bg-accent-sky" />
               <span>Campus Virtual Activo • Ciclo 2026</span>
             </div>
           </div>

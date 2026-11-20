@@ -759,20 +759,20 @@ export default function AdminDashboardPage() {
     >
       <div className="space-y-6">
         {/* Header Principal de Control Maestro */}
-        <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 transition-all shadow-minimal">
+        <div className="campus-heading">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-[4px] bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-[4px] bg-success/10 px-2.5 py-0.5 text-[11px] font-mono font-medium text-success border border-success/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                   Moodle LMS 5.3+ Activo (auth_userkey SSO)
                 </span>
                 <span className="rounded-[4px] bg-primary/10 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
-                  Superadministrador
+                  {hasRole('superadministrador') ? 'Superadministrador' : 'Administrador'}
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Panel de Control Maestro
+                {hasRole('superadministrador') ? 'Panel de control maestro' : 'Panel de administración'}
               </h1>
               <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
                 Gestión unificada de estudiantes, docentes, materias, roles y salto automático sin contraseñas a Moodle LMS.
@@ -795,7 +795,7 @@ export default function AdminDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
+                    <IconExternalLink className="w-3.5 h-3.5 text-accent-sky" />
                     <span>Entrar al Campus (SSO)</span>
                   </>
                 )}
@@ -815,7 +815,7 @@ export default function AdminDashboardPage() {
                 onClick={() => setShowAssignCourseModal(true)}
                 className="inline-flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white hover:bg-primary-action/90 px-3 py-2 text-xs font-semibold transition-all shadow-minimal"
               >
-                <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
+                <IconPlus className="w-3.5 h-3.5 text-accent-sky" />
                 <span>Asignar Curso</span>
               </button>
 
@@ -846,7 +846,7 @@ export default function AdminDashboardPage() {
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Usuarios Registrados</span>
               <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{users.length}</p>
               <span className="text-[11px] text-muted flex items-center gap-1 mt-1 font-normal">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-success" />
                 {users.filter((u) => u.moodle_sync_status === 'sincronizado').length} en Moodle LMS
               </span>
             </div>
@@ -871,8 +871,8 @@ export default function AdminDashboardPage() {
 
             <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5 hover:bg-surface-muted/60 transition-colors">
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Campus Virtual</span>
-              <p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <p className="mt-1 text-sm font-semibold text-success flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-success" />
                 Conectado
               </p>
               <button
@@ -888,9 +888,9 @@ export default function AdminDashboardPage() {
 
         {/* Alertas Operativas */}
         {notice && (
-          <div className="rounded-[8px] border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center justify-between shadow-minimal">
+          <div className="rounded-[8px] border border-success/25 bg-success/10 p-3.5 text-xs font-medium text-success flex items-center justify-between shadow-minimal">
             <div className="flex items-center gap-2">
-              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <IconCheck className="w-4 h-4 text-success shrink-0" />
               <span>{notice}</span>
             </div>
             <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100"><IconClose className="w-3.5 h-3.5" /></button>
@@ -1070,7 +1070,7 @@ export default function AdminDashboardPage() {
                                       : role === 'coordinador'
                                       ? 'bg-primary/10 text-primary border-primary/20'
                                       : role === 'profesor'
-                                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                      ? 'bg-success/10 text-success border-success/20'
                                       : role === 'estudiante'
                                       ? 'bg-accent/10 text-accent border-accent/20'
                                       : 'bg-foreground/[0.04] text-muted border-border/80'
@@ -1132,7 +1132,7 @@ export default function AdminDashboardPage() {
                                       <span
                                         className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                                           enr.status === 'sincronizada' || enr.status === 'autorizada'
-                                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                            ? 'bg-success/10 text-success border border-success/20'
                                             : enr.status === 'pendiente'
                                             ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                                             : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
@@ -1340,7 +1340,7 @@ export default function AdminDashboardPage() {
                                         : r === 'coordinador'
                                         ? 'bg-primary/10 text-primary border-primary/20'
                                         : r === 'profesor'
-                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                        ? 'bg-success/10 text-success border-success/20'
                                         : r === 'estudiante'
                                         ? 'bg-accent/10 text-accent border-accent/20'
                                         : 'bg-foreground/[0.04] text-muted border-border/80'
@@ -1359,7 +1359,7 @@ export default function AdminDashboardPage() {
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize border ${
                                 u.status === 'activo'
-                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                  ? 'bg-success/10 text-success border-success/20'
                                   : u.status === 'pendiente'
                                   ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                                   : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
@@ -1507,7 +1507,7 @@ export default function AdminDashboardPage() {
                       <span className="rounded-full bg-accent/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-accent border border-accent/20">
                         {course.portal_course_code || course.code || 'CUR-00'}
                       </span>
-                      <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-[10px] font-medium text-success border border-success/20">
                         Moodle #{course.moodle_course_id}
                       </span>
                     </div>
@@ -1654,7 +1654,7 @@ export default function AdminDashboardPage() {
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize border ${
                                 enr.status === 'sincronizada' || enr.status === 'autorizada'
-                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                  ? 'bg-success/10 text-success border-success/20'
                                   : enr.status === 'pendiente'
                                   ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                                   : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
@@ -1672,7 +1672,7 @@ export default function AdminDashboardPage() {
                                     type="button"
                                     disabled={actionLoading === `enr-${enr.id}`}
                                     onClick={() => handleAuthorizeEnrollment(enr.id, 'autorizada')}
-                                    className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-all shadow-xs disabled:opacity-50 active:scale-[0.98]"
+                                    className="rounded-xl bg-primary-action px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-strong transition-all shadow-xs disabled:opacity-50 active:scale-[0.98]"
                                   >
                                     {actionLoading === `enr-${enr.id}` ? '...' : 'Aprobar & Matricular'}
                                   </button>
@@ -1869,8 +1869,8 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-0.5 text-[11px] font-medium text-success border border-success/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                     Enlace Bidireccional Activo
                   </span>
                 </div>
@@ -1895,7 +1895,7 @@ export default function AdminDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <IconExternalLink className="w-4 h-4 text-accent-lime" />
+                    <IconExternalLink className="w-4 h-4 text-accent-sky" />
                     <span>Abrir Campus con SSO Admin</span>
                   </>
                 )}
@@ -1911,16 +1911,16 @@ export default function AdminDashboardPage() {
               </div>
               <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-5">
                 <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Versión del Core</span>
-                <p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <p className="mt-1 text-sm font-semibold text-success flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
                   Moodle 5.3+ (Build 20261021)
                 </p>
                 <span className="text-[11px] text-muted mt-1 block">Compatibilidad REST total</span>
               </div>
               <div className="rounded-2xl border border-border/50 bg-foreground/[0.015] p-5">
                 <span className="text-[11px] font-medium tracking-wide uppercase text-muted">Mecanismo SSO</span>
-                <p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <p className="mt-1 text-sm font-semibold text-success flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
                   auth_userkey (One-Time Key)
                 </p>
                 <span className="text-[11px] text-muted mt-1 block">Cero contraseñas compartidas</span>
@@ -1948,7 +1948,7 @@ export default function AdminDashboardPage() {
                     key={fn}
                     className="rounded-xl bg-foreground/[0.025] border border-border/60 px-3 py-1.5 font-mono text-[11px] text-foreground/80 flex items-center gap-1.5"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-success" />
                     <span>{fn}</span>
                   </span>
                 ))}
@@ -2112,11 +2112,11 @@ export default function AdminDashboardPage() {
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-[4px] px-2 py-0.5 text-[11px] font-medium border ${
                               prof.status === 'activo'
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                ? 'bg-success/10 text-success border-success/20'
                                 : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                             }`}
                           >
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" />
                             {prof.status}
                           </span>
                         </td>
@@ -2188,7 +2188,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-muted">SSO Provider</span>
-                  <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400">auth_userkey (Sin contraseñas)</span>
+                  <span className="font-mono font-medium text-success">auth_userkey (Sin contraseñas)</span>
                 </div>
               </div>
             </div>
@@ -2202,11 +2202,11 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Color Primario</span>
-                  <span className="font-mono text-primary font-bold">#087654 (Esmeralda principal)</span>
+                  <span className="font-mono text-primary font-bold">Azul institucional</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Acento de Marca</span>
-                  <span className="font-mono text-foreground font-bold bg-accent-lime px-1.5 py-0.5 rounded-[3px]">#065C42 (Hover esmeralda)</span>
+                  <span className="font-mono text-foreground font-bold bg-accent-soft px-1.5 py-0.5 rounded-[3px]">Celeste</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-border/50">
                   <span className="text-muted">Radios de Componente</span>
@@ -2525,9 +2525,9 @@ export default function AdminDashboardPage() {
                   Alumno o Docente a Matricular:
                 </label>
                 {assignTargetUserId ? (
-                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 flex items-center justify-between">
+                  <div className="rounded-2xl border border-success/30 bg-success/10 p-3.5 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-success">
                         Usuario Seleccionado
                       </span>
                       <p className="font-semibold text-foreground text-xs mt-0.5">

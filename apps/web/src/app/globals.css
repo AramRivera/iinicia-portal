@@ -1,31 +1,32 @@
 /** Define las variables de color y las utilidades de movimiento y presentación compartidas por el portal. */
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* -------------------------------------------------------------------------- */
-/* CAMPUS TECH OS — DESIGN SYSTEM TOKENS                                      */
-/* Identity: Tech Estudiantil + SaaS Productivo + Minimalismo Editorial       */
-/* -------------------------------------------------------------------------- */
-
+/* Paleta institucional para la portada, la autenticación y el campus. */
 :root {
-  /* Brand Shared */
-  --primary: #087654;
-  --primary-action: #087654;
-  --accent-lime: #A9E3CF;
-  --accent: #087654;
-  --accent-strong: #065C42;
-  --accent-soft: #E5F2ED;
-  --welcome-panel: #064D3B;
+  --brand-navy: #102a42;
+  --brand-blue: #125a99;
+  --brand-blue-hover: #0b467b;
+  --brand-sky: #b8e8fb;
+  --brand-wash: #e6f4fa;
 
-  /* Light Theme */
-  --background: #FFFFFF;
-  --surface: #FFFFFF;
-  --surface-muted: #F5F8EF;
-  --surface-elevated: #FFFFFF;
-  --foreground: #1F2C21;
-  --text-secondary: #536050;
-  --muted: #536050;
-  --border: #DCE5D2;
-  --border-subtle: #E8EEDF;
+  --primary: var(--brand-blue);
+  --primary-action: var(--brand-blue);
+  --accent-sky: var(--brand-sky);
+  --accent: var(--primary);
+  --accent-strong: var(--brand-blue-hover);
+  --accent-soft: var(--brand-wash);
+  --welcome-panel: var(--brand-navy);
+
+  --background: #f7fbfe;
+  --surface: #ffffff;
+  --surface-muted: #eef5fb;
+  --surface-elevated: #ffffff;
+  --foreground: #142838;
+  --text-secondary: #415b6d;
+  --muted: var(--text-secondary);
+  --border: #cedeea;
+  --border-subtle: #e0ebf3;
 
   /* Semantics Light */
   --success: #18794E;
@@ -44,28 +45,22 @@
   /* Elevation */
   --shadow-minimal: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
   --shadow-panel: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-  --shadow-soft: 0 8px 24px -4px rgba(31, 44, 33, 0.06);
+  --shadow-soft: 0 8px 24px -4px rgba(16, 42, 66, 0.10);
 }
 
 .dark {
   /* Dark Theme */
-  --primary: #52D6AA;
-  --primary-action: #087654;
-  --accent-lime: #52D6AA;
-  --accent: #52D6AA;
-  --accent-strong: #065C42;
-  --accent-soft: #17392F;
-  --welcome-panel: #064D3B;
+  --brand-wash: #142e42;
+  --primary: #8ed8f5;
 
-  --background: #101710;
-  --surface: #192219;
-  --surface-muted: #141E15;
-  --surface-elevated: #192219;
-  --foreground: #EDF5E7;
-  --text-secondary: #BAC8B1;
-  --muted: #BAC8B1;
-  --border: #354632;
-  --border-subtle: #2B3A29;
+  --background: #0b1724;
+  --surface: #142536;
+  --surface-muted: #102030;
+  --surface-elevated: #142536;
+  --foreground: #ecf6fc;
+  --text-secondary: #b1c7d7;
+  --border: #304a60;
+  --border-subtle: #263e53;
 
   /* Semantics Dark */
   --success: #63D9A0;
@@ -83,23 +78,17 @@
 /* Aplica la preferencia del sistema cuando el documento todavía no tiene un tema elegido. */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --primary: #52D6AA;
-    --primary-action: #087654;
-    --accent-lime: #52D6AA;
-    --accent: #52D6AA;
-    --accent-strong: #065C42;
-    --accent-soft: #17392F;
-    --welcome-panel: #064D3B;
+    --brand-wash: #142e42;
+    --primary: #8ed8f5;
 
-    --background: #101710;
-    --surface: #192219;
-    --surface-muted: #141E15;
-    --surface-elevated: #192219;
-    --foreground: #EDF5E7;
-    --text-secondary: #BAC8B1;
-    --muted: #BAC8B1;
-    --border: #354632;
-    --border-subtle: #2B3A29;
+    --background: #0b1724;
+    --surface: #142536;
+    --surface-muted: #102030;
+    --surface-elevated: #142536;
+    --foreground: #ecf6fc;
+    --text-secondary: #b1c7d7;
+    --border: #304a60;
+    --border-subtle: #263e53;
 
     --success: #63D9A0;
     --success-bg: rgba(99, 217, 160, 0.12);
@@ -118,7 +107,7 @@
 @theme inline {
   --color-primary: var(--primary);
   --color-primary-action: var(--primary-action);
-  --color-accent-lime: var(--accent-lime);
+  --color-accent-sky: var(--accent-sky);
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
@@ -163,6 +152,27 @@ body {
   letter-spacing: -0.01em;
 }
 
+.campus-backdrop {
+  background: linear-gradient(180deg, var(--brand-wash), var(--background) 27rem);
+}
+
+.campus-heading {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  border-start-start-radius: 0.5rem;
+  border-block-start: 3px solid var(--primary);
+  background: linear-gradient(115deg, var(--brand-wash), var(--surface) 70%);
+  padding: clamp(1rem, 3vw, 2rem);
+  box-shadow: var(--shadow-panel);
+}
+
+.campus-heading h1 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
 /* Frosted glass surface (Apple-style translucency) */
 .glass {
   background: var(--surface-elevated);
@@ -179,7 +189,7 @@ body {
 .bg-aurora {
   background:
     radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--primary-action) 16%, transparent) 0%, transparent 70%),
-    radial-gradient(50% 40% at 85% 20%, color-mix(in srgb, var(--accent-lime) 20%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 40% at 85% 20%, color-mix(in srgb, var(--accent-sky) 20%, transparent) 0%, transparent 70%),
     radial-gradient(50% 40% at 15% 30%, color-mix(in srgb, var(--accent-strong) 12%, transparent) 0%, transparent 70%);
 }
 

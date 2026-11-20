@@ -255,14 +255,14 @@ export default function DocenteDashboardPage() {
     >
       <div className="space-y-6">
         {/* Header Docente */}
-        <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal transition-all">
+        <div className="campus-heading">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
                   Cuerpo Docente
                 </span>
-                <span className="rounded-[4px] bg-accent-lime/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-lime/40">
+                <span className="rounded-[4px] bg-accent-sky/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-sky/40">
                   Profesor Titular
                 </span>
                 <MoodleSyncBadge
@@ -293,7 +293,7 @@ export default function DocenteDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
+                    <IconExternalLink className="w-3.5 h-3.5 text-accent-sky" />
                     <span>Abrir Campus Virtual (SSO)</span>
                   </>
                 )}
@@ -340,9 +340,9 @@ export default function DocenteDashboardPage() {
 
         {/* Notificaciones y Avisos */}
         {notice && (
-          <div className="rounded-[8px] border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center justify-between shadow-minimal">
+          <div className="rounded-[8px] border border-success/25 bg-success/10 p-3.5 text-xs font-medium text-success flex items-center justify-between shadow-minimal">
             <div className="flex items-center gap-2">
-              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <IconCheck className="w-4 h-4 text-success shrink-0" />
               <span>{notice}</span>
             </div>
             <button
@@ -664,7 +664,7 @@ export default function DocenteDashboardPage() {
                       }}
                       className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary-action px-3 py-1.5 text-xs font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
                     >
-                      <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
+                      <IconExternalLink className="w-3.5 h-3.5 text-accent-sky" />
                       <span>Abrir Calificador en Moodle ↗</span>
                     </button>
                   )}
@@ -807,7 +807,7 @@ export default function DocenteDashboardPage() {
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Estado en Portal</span>
-                    <span className="capitalize text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="capitalize text-success font-medium">
                       {user?.status || 'activo'}
                     </span>
                   </div>
@@ -840,7 +840,7 @@ export default function DocenteDashboardPage() {
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Mecanismo de Salto SSO</span>
-                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="font-mono text-success font-medium">
                       auth_userkey (SSO Directo)
                     </span>
                   </div>

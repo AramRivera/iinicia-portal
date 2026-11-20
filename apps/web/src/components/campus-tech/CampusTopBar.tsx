@@ -8,33 +8,43 @@ import {
   IconSearch,
   IconSun,
   IconMoon,
-  IconAnnouncements,
-  IconHelp,
+  IconMenu,
   IconMoodle,
 } from './Icons';
 
 interface CampusTopBarProps {
   breadcrumbs?: string[];
   onOpenSearch?: () => void;
+  onOpenNavigation: () => void;
+  navigationOpen: boolean;
   onLaunchMoodleSSO?: () => void;
-  moodleActive?: boolean;
 }
 
 export function CampusTopBar({
   breadcrumbs = ['INICIA', 'Panel de Control'],
   onOpenSearch,
+  onOpenNavigation,
+  navigationOpen,
   onLaunchMoodleSSO,
-  moodleActive = true,
 }: CampusTopBarProps) {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 h-14 w-full border-b border-border bg-surface/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 transition-colors">
+    <header className="sticky top-[4.375rem] z-40 flex h-14 w-full items-center justify-between gap-2 border-b border-border bg-surface/95 px-3 backdrop-blur-md transition-colors sm:gap-4 sm:px-6">
       {/* Context Breadcrumbs */}
-      <div className="flex items-center gap-2 text-xs font-medium min-w-0">
+      <div className="flex min-w-0 items-center gap-2 text-xs font-medium">
+        <button
+          type="button"
+          onClick={onOpenNavigation}
+          aria-label="Abrir menú del campus"
+          aria-expanded={navigationOpen}
+          className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-surface-muted text-primary lg:hidden"
+        >
+          <IconMenu className="size-4" />
+        </button>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="h-2 w-2 rounded-sm bg-accent-lime ring-2 ring-primary/20" />
+          <span className="h-2 w-2 rounded-sm bg-accent-sky ring-2 ring-primary/20" />
           <span className="font-semibold tracking-tight text-foreground">
             {breadcrumbs[0]}
           </span>
@@ -50,16 +60,17 @@ export function CampusTopBar({
       </div>
 
       {/* Global Actions */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         {/* Search Input Bar Shortcut */}
         <button
           type="button"
           onClick={onOpenSearch}
-          className="flex items-center gap-2.5 rounded-[6px] border border-border bg-surface-muted/60 px-3 py-1.5 text-xs text-muted hover:border-primary/50 hover:text-foreground transition-all"
+          aria-label="Buscar en mi panel"
+          className="flex h-10 min-w-10 items-center justify-center gap-2.5 rounded-full border border-border bg-surface-muted/60 text-xs text-primary transition-colors hover:border-primary/50 sm:px-3"
         >
           <IconSearch className="w-3.5 h-3.5 text-muted" />
-          <span>Buscar en mi panel</span>
-          <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted">
+          <span className="hidden sm:inline">Buscar en mi panel</span>
+          <kbd className="hidden rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted lg:inline">
             Ctrl/⌘ K
           </kbd>
         </button>
@@ -69,10 +80,11 @@ export function CampusTopBar({
           <button
             type="button"
             onClick={onLaunchMoodleSSO}
-            className="flex items-center gap-1.5 rounded-[6px] bg-primary-action text-white hover:bg-primary-action/90 px-2.5 py-1.5 text-xs font-medium transition-all shadow-minimal"
+            aria-label="Abrir aula Moodle"
+            className="flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full bg-primary-action text-xs font-semibold text-white shadow-minimal transition-colors hover:bg-accent-strong sm:px-3"
             title="Abrir Moodle LMS con sesión iniciada (auth_userkey)"
           >
-            <IconMoodle className="w-3.5 h-3.5 text-accent-lime" />
+            <IconMoodle className="w-3.5 h-3.5 text-accent-sky" />
             <span className="hidden sm:inline">Aula Moodle</span>
           </button>
         )}
@@ -81,7 +93,7 @@ export function CampusTopBar({
         <button
           type="button"
           onClick={toggleTheme}
-          className="h-8 w-8 rounded-[6px] border border-border bg-surface hover:bg-surface-muted text-foreground flex items-center justify-center transition-all"
+          className="grid size-10 place-items-center rounded-full border border-border bg-surface text-foreground transition-colors hover:bg-surface-muted"
           title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
           aria-label="Alternar tema"
         >
@@ -94,7 +106,7 @@ export function CampusTopBar({
 
         {/* User Avatar Chip */}
         {user && (
-          <div className="flex items-center gap-2 pl-1 border-l border-border">
+          <div className="hidden items-center gap-2 border-l border-border pl-2 sm:flex">
             <div className="h-7 w-7 rounded-[6px] bg-primary/10 border border-primary/20 flex items-center justify-center font-semibold text-primary text-xs">
               {(user.first_name || 'U')[0]}
             </div>

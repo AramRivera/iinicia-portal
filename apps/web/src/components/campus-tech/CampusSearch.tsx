@@ -55,15 +55,15 @@ export function CampusSearch({ open, onClose, items, onSelectTab }: {
   const results = [...matches, ...(query.trim() ? users : [])];
   return (
     <dialog ref={dialog} onCancel={onClose} onClose={onClose} aria-labelledby="campus-search-title"
-      className="m-auto w-[min(95vw,42rem)] rounded-xl border border-border bg-surface p-5 text-foreground shadow-xl backdrop:bg-black/50">
+      className="m-auto w-[min(95vw,42rem)] rounded-3xl border border-border bg-surface p-5 text-foreground shadow-xl backdrop:bg-black/50">
       <div className="flex items-center justify-between gap-4">
         <h2 id="campus-search-title" className="font-semibold">Buscar en mi panel</h2>
-        <button type="button" onClick={onClose} className="rounded border border-border px-3 py-1">Cerrar</button>
+        <button type="button" onClick={onClose} className="min-h-10 rounded-full border border-border px-4 text-sm text-primary hover:bg-accent-soft">Cerrar</button>
       </div>
       <label className="mt-4 block text-sm">Nombre, correo, programa o código
         <input autoFocus type="search" value={query} onChange={(event) => {
           setQuery(event.target.value); setUsers([]); setStatus('');
-        }} className="mt-2 w-full rounded border border-border bg-background p-3" />
+        }} className="mt-2 w-full rounded-xl border border-border bg-surface-muted p-3" />
       </label>
       <p className="mt-2 text-xs text-muted">Cursos y solicitudes cargados en tu panel{canReadUsers ? ', y usuarios consultados en el directorio autorizado' : ''}.</p>
       <div aria-live="polite" className="mt-3 text-sm">{status}</div>

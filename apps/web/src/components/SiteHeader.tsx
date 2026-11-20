@@ -11,10 +11,8 @@ import { IconSun, IconMoon } from "@/components/campus-tech/Icons";
 
 const navItems = [
   { label: "Inicio", href: "/#inicio", id: "inicio" },
-  { label: "Universidad", href: "/#universidad", id: "universidad" },
-  { label: "Licenciaturas", href: "/#licenciaturas", id: "licenciaturas" },
   { label: "Cursos", href: "/#cursos", id: "cursos" },
-  { label: "Diplomados", href: "/#diplomados", id: "diplomados" },
+  { label: "Universidad", href: "/#universidad", id: "universidad" },
   { label: "Certificaciones", href: "/#certificaciones", id: "certificaciones" },
   { label: "Admisiones", href: "/#admisiones", id: "admisiones" },
   { label: "Contacto", href: "/#contacto", id: "contacto" },
@@ -53,8 +51,7 @@ export function SiteHeader() {
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const section = document.getElementById(sectionIds[i]);
         if (section) {
-          const top = section.offsetTop;
-          if (scrollY >= top - offset) {
+          if (section.getBoundingClientRect().top <= offset) {
             setActiveSection(sectionIds[i]);
             break;
           }
@@ -112,7 +109,9 @@ export function SiteHeader() {
           className={`mx-auto flex h-14 max-w-6xl items-center justify-between gap-2.5 sm:gap-3 px-3.5 sm:px-5 pointer-events-auto rounded-2xl transition-all duration-300 ${
             isScrolled
               ? "bg-surface/85 backdrop-blur-xl border border-border/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.35)]"
-              : "bg-surface/50 backdrop-blur-md border border-border/40 shadow-none"
+              : isHome
+                ? "bg-surface/95 backdrop-blur-md border border-border/60 shadow-sm"
+                : "bg-surface/50 backdrop-blur-md border border-border/40 shadow-none"
           }`}
         >
           {/* Brand / Logo */}
@@ -175,7 +174,7 @@ export function SiteHeader() {
               title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
             >
               {theme === "dark" ? (
-                <IconSun className="w-4 h-4 text-accent-lime" />
+                <IconSun className="w-4 h-4 text-accent-sky" />
               ) : (
                 <IconMoon className="w-4 h-4 text-primary" />
               )}
@@ -187,7 +186,7 @@ export function SiteHeader() {
                   href={dashboardPath}
                   className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 hover:bg-primary/20 px-3.5 py-1.5 text-xs font-semibold text-primary transition-all duration-200 shadow-sm active:scale-95"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-lime animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent-sky animate-pulse" />
                   <span className="capitalize">{primaryRole}</span>
                 </Link>
                 <button
@@ -225,7 +224,7 @@ export function SiteHeader() {
               title="Cambiar tema"
             >
               {theme === "dark" ? (
-                <IconSun className="w-4 h-4 text-accent-lime" />
+                <IconSun className="w-4 h-4 text-accent-sky" />
               ) : (
                 <IconMoon className="w-4 h-4 text-primary" />
               )}
@@ -256,9 +255,9 @@ export function SiteHeader() {
           </div>
         </nav>
 
-        {/* Mobile drawer (Liquid Glass sheet) */}
+        {/* El menú se abre sobre la página para que no cambie la posición de las secciones. */}
         {open && (
-          <div className="relative z-50 mx-auto mt-2 max-w-6xl max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl border border-border/80 bg-surface/95 backdrop-blur-2xl p-4 lg:hidden shadow-xl animate-in slide-in-from-top-2 duration-200 pointer-events-auto">
+          <div className="absolute inset-x-3 top-full z-50 mt-2 max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-2xl border border-border/80 bg-surface/95 backdrop-blur-2xl p-4 shadow-xl pointer-events-auto sm:inset-x-6 lg:hidden">
             <ul className="flex flex-col gap-1">
               {navItems.map((item) => {
                 const isActive = isHome && activeSection === item.id;

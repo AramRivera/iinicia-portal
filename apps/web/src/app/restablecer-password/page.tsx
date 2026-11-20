@@ -79,8 +79,8 @@ export default function RestablecerPasswordPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12 text-foreground">
-      <div className="rounded-xl border border-border bg-surface p-7 shadow-minimal">
+    <div className="grid min-h-[70vh] place-items-center bg-aurora px-4 py-12 text-foreground">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-7 shadow-panel">
         <h1 className="text-2xl font-bold">Restablecer contraseña</h1>
         {done ? (
           <div className="mt-5 space-y-4 text-sm"><p>Tu contraseña se actualizó. Ya puedes iniciar sesión.</p><Link className="font-semibold text-primary underline" href="/login">Ir al inicio de sesión</Link></div>
@@ -114,6 +114,6 @@ export default function RestablecerPasswordPage() {
           <p className="mt-5 text-sm text-muted">{missingVerifier ? 'Abre el enlace en el navegador donde pediste la recuperación.' : 'El enlace es inválido o ya caducó.'} <Link className="font-semibold text-primary underline" href="/recuperar-password">Solicita uno nuevo</Link>.</p>
         )}
       </div>
-    </main>
+    </div>
   );
 }
