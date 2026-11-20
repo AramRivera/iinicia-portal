@@ -35,6 +35,16 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 300
+                  },
+                  "previous_questions": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "description": "Preguntas previas para interpretar seguimientos y aclaraciones.",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
                   }
                 }
               }

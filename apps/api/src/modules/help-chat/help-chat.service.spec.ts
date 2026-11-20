@@ -1,6 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HelpChatService } from './help-chat.service.js';
+import { retrieveHelpEntries } from './help-knowledge.js';
+import { validate } from 'class-validator';
+import { HelpQuestionDto } from './help-chat.controller.js';
 
 describe('HelpChatService', () => {
   const service = new HelpChatService(new ConfigService({ DEEPSEEK_API_KEY: 'unit-test-key' }));
@@ -41,15 +44,52 @@ describe('HelpChatService', () => {
     expect(request).toContain('cursos obligatorios activos del primer módulo');
   });
 
-  it('no consulta al proveedor si la búsqueda no recupera entradas', async () => {
-    const provider = mockSelection('{}');
-    expect((await service.reply('¿Me ayudas a saber qué clima hará mañana?')).action.href).toBe('/#contacto');
-    expect(provider).not.toHaveBeenCalled();
+  it('deja interpretar paráfrasis sin coincidencias literales', async () => {
+    const provider = mockSelection('{"answer":"Puedes crear tu cuenta de aspirante.","source_ids":["register"]}');
+    const answer = await service.reply('kiero empezar desde cero aki');
+    expect(answer.text).toContain('crear tu cuenta');
+    expect(provider).toHaveBeenCalledOnce();
+    expect(answer.action.href).toBe('/registro');
+  });
+
+  it('permite saludar y pedir aclaraciones sin citar una entrada', async () => {
+    mockSelection('{"answer":"Hola. ¿Te ayudo con tu cuenta o con el aula?","source_ids":[]}');
+    expect((await service.reply('Hola')).text).toBe('Hola. ¿Te ayudo con tu cuenta o con el aula?');
+  });
+
+  it('conserva el tema de una pregunta anterior sin enviar datos sensibles', async () => {
+    const provider = mockSelection('{"answer":"Revisa el correo no deseado.","source_ids":["password"]}');
+    await service.reply('¿Y si no me llega?', ['Olvidé mi contraseña, soy persona@example.test']);
+    const request = provider.mock.calls[0]?.[1]?.body;
+    if (typeof request !== 'string') throw new Error('Se esperaba un cuerpo JSON');
+    expect(request).toContain('previous_questions');
+    expect(request).toContain('Olvidé mi contraseña');
+    expect(request).not.toContain('persona@example.test');
+  });
+
+  it('admite una explicación útil de más de 700 caracteres', async () => {
+    const text = 'Consulta tu panel de estudiante. '.repeat(26).trim();
+    mockSelection(JSON.stringify({ answer: text, source_ids: ['enrollment'] }));
+    expect((await service.reply('Mi matrícula')).text).toBe(text);
+  });
+
+  it('recupera orientación de profesores y calificaciones', () => {
+    expect(retrieveHelpEntries('Soy profe, ¿dónde califico las tareas?').some((entry) => entry.id === 'teacher')).toBe(true);
   });
 
   it.each([
-    '{"answer":"Prueba","source_ids":["moodle"]}',
-    '{"answer":"Prueba","source_ids":["password","moodle"]}',
+    { previous: ['a', 'b', 'c', 'd'] },
+    { previous: ['a'.repeat(301)] },
+    { previous: [42] },
+    { previous: 'historial no válido' },
+  ])('valida el tamaño y los tipos del contexto: $previous', async ({ previous }) => {
+    const dto = Object.assign(new HelpQuestionDto(), { question: 'Hola', previous_questions: previous });
+    expect((await validate(dto)).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    '{"answer":"Prueba","source_ids":["fuente-inventada"]}',
+    '{"answer":"Prueba","source_ids":["password","fuente-inventada"]}',
     '{"answer":"Entra en https://example.test","source_ids":["password"]}',
     '{"answer":null,"source_ids":[]}',
     'Texto libre que no pertenece a IINICIA',

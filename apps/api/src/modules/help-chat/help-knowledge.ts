@@ -5,6 +5,22 @@ type HelpAnswer = {
 };
 
 const answers = {
+  platform: {
+    text: 'IINICIA es el Instituto de Innovación y Ciencias Aplicadas. El portal reúne información institucional, cursos, certificaciones, registro, admisiones y contacto. Tras iniciar sesión se abre un panel según los roles de la cuenta. Moodle es el aula virtual para los cursos, actividades, evaluaciones y calificaciones. El chatbot orienta sobre el uso del portal y del campus.',
+    action: { href: '/#universidad', label: 'Conocer IINICIA' },
+  },
+  teacher: {
+    text: 'El panel de profesor muestra sus materias asignadas, sus estudiantes y el acceso a las calificaciones. El profesor abre el aula desde la materia y evalúa las entregas en el calificador de Moodle. Solo puede consultar estudiantes y cursos que tenga asignados. Si falta una materia, debe pedir que administración revise la asignación.',
+    action: { href: '/dashboard/docente', label: 'Panel de profesor' },
+  },
+  student: {
+    text: 'El estudiante consulta en su panel sus cursos, calificaciones, avance y perfil. Las actividades, recursos y entregas se realizan en el curso de Moodle, al que entra desde el portal con una matrícula confirmada. Las notas y el progreso dependen de las evaluaciones y criterios de finalización configurados en Moodle.',
+    action: { href: '/dashboard/estudiante', label: 'Panel de estudiante' },
+  },
+  roles: {
+    text: 'El portal admite roles de superadministrador, administrador, coordinador, profesor, estudiante, aspirante y soporte. Una cuenta puede tener varios roles. Coordinación trabaja dentro de sus programas asignados. Administración gestiona cuentas, postulaciones y matrículas según sus permisos. Soporte consulta diagnósticos y cuentas con acceso limitado. Un cambio de rol o de permisos debe tramitarse con administración.',
+    action: { href: '/dashboard', label: 'Abrir mi panel' },
+  },
   register: {
     text: 'Crea tu cuenta de aspirante y confirma el enlace que recibas por correo. Después inicia sesión para consultar la oferta y enviar tu postulación.',
     action: { href: '/registro', label: 'Crear cuenta' },
@@ -54,7 +70,7 @@ const answers = {
 type Topic = keyof typeof answers;
 
 const rules: [Topic, RegExp][] = [
-  ['password', /\b(contrasena|password|restablecer clave|recuperar clave)\b/],
+  ['password', /\b(contrasena|password|clave|olvide|olvidado)\b/],
   ['verification', /\b(2fa|mfa|totp|autenticador[ae]?|dos pasos|codigo qr|codigo de (seis|6) digitos)\b/],
   ['email', /\b(correo|email|enlace|link)\b.*\b(confirm\w*|verific\w*|activ\w*|llega\w*|recibi\w*|vencid\w*|caduc\w*)\b|\b(confirm\w*|verific\w*|activ\w*|llega\w*|recibi\w*)\b.*\b(correo|email|cuenta|enlace)\b/],
   ['register', /\b(registro|registrarme|registrarte|me registro|crea\w* (una |mi |tu )?cuenta|abrir (una )?cuenta)\b/],
@@ -66,6 +82,10 @@ const rules: [Topic, RegExp][] = [
   ['courses', /\b(cursos?|catalogo|oferta academica)\b/],
   ['login', /\b(login|inici\w* (de )?sesion|entrar al portal|acceso al portal)\b/],
   ['support', /\b(soporte|mesa de ayuda)\b/],
+  ['platform', /\b(iinicia|inicia|instituto|universidad|plataforma|portal)\b/],
+  ['teacher', /\b(profe\w*|docente\w*|calificar|calificador|evaluar|asignatura\w*)\b/],
+  ['student', /\b(estudi\w*|alumn\w*|notas?|calificacion\w*|progreso|avance|tareas?|entregas?|actividad\w*)\b/],
+  ['roles', /\b(roles?|permisos?|admin\w*|superadmin\w*|coordina\w*)\b/],
 ];
 
 export function retrieveHelpEntries(question: string) {
@@ -76,9 +96,17 @@ export function retrieveHelpEntries(question: string) {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-  // Las coincidencias siguen el orden de especificidad. El modelo solo recibe este subconjunto.
-  const topics = new Set(rules.filter(([, pattern]) => pattern.test(normalized)).map(([topic]) => topic));
-  return [...topics].slice(0, 4).map((topic) => ({ id: topic, ...answers[topic] }));
+  const matched = new Set(rules.filter(([, pattern]) => pattern.test(normalized)).map(([topic]) => topic));
+  const words = normalized.split(' ').filter((word) => word.length > 3);
+  const ranked = (Object.keys(answers) as Topic[]).map((id) => {
+    const text = answers[id].text.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+    const score = (matched.has(id) ? 10 : 0) + words.filter((word) => text.includes(word)).length;
+    return { id, score, ...answers[id] };
+  }).sort((a, b) => b.score - a.score);
+
+  // Si el vocabulario no coincide, el modelo interpreta la consulta usando esta guía pequeña.
+  // Evita rechazar saludos, faltas de ortografía y paráfrasis antes de consultar a la IA.
+  return ranked[0].score >= 10 ? ranked.slice(0, 6) : ranked;
 }
 
 export const helpOutsideScope: HelpAnswer = {
