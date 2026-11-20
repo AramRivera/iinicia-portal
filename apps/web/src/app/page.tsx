@@ -12,15 +12,27 @@ import styles from './landing.module.css';
 import {
   IconCheck,
   IconSearch,
-  IconBookOpen,
   IconRefresh,
   IconAlertTriangle,
 } from '@/components/campus-tech/Icons';
 
-function CourseCover() {
+const courseCovers = [
+  '/course-covers/notebook.webp',
+  '/course-covers/laptop.webp',
+  '/course-covers/books.webp',
+  '/course-covers/tablet.webp',
+];
+
+function CourseCover({ index }: { index: number }) {
   return (
     <div className={styles.courseCover} aria-hidden="true">
-      <IconBookOpen className="size-9" />
+      <Image
+        src={courseCovers[index % courseCovers.length]}
+        alt=""
+        fill
+        sizes="(min-width: 72rem) 22rem, (min-width: 64rem) 33vw, (min-width: 40rem) 50vw, 100vw"
+        className={styles.courseCoverImage}
+      />
     </div>
   );
 }
@@ -102,7 +114,8 @@ export default function HomePage() {
       const timer = setTimeout(() => {
         const el = document.getElementById(id);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
+          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          el.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth' });
         }
       }, 200);
       return () => clearTimeout(timer);
@@ -321,12 +334,12 @@ export default function HomePage() {
               </div>
             ) : !user && filteredPublicCourses.length > 0 ? (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredPublicCourses.map((course) => (
+                {filteredPublicCourses.map((course, index) => (
                   <div
                     key={course.id}
                     className={styles.courseCard}
                   >
-                    <CourseCover />
+                    <CourseCover index={index} />
                     <div className="flex-1 space-y-3 px-5 pt-5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
@@ -357,7 +370,7 @@ export default function HomePage() {
                       </Link>
                       <Link
                         href="/login"
-                        className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:opacity-95 active:scale-95 transition-all"
+                        className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:opacity-95 motion-safe:active:scale-95 motion-safe:transition"
                       >
                         Iniciar sesión
                       </Link>
@@ -395,7 +408,7 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredCourses.map((course) => {
+                {filteredCourses.map((course, index) => {
                   const enrolled = isEnrolled(course.course_mapping_id);
                   const pending = myEnrollments.some(
                     (request) =>
@@ -408,7 +421,7 @@ export default function HomePage() {
                       key={course.id}
                       className={styles.courseCard}
                     >
-                      <CourseCover />
+                      <CourseCover index={index} />
                       <div className="flex-1 space-y-3 px-5 pt-5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
@@ -469,7 +482,7 @@ export default function HomePage() {
                               enrollingId ===
                               (course.course_mapping_id || course.id)
                             }
-                            className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-95 transition-all shadow-xs disabled:opacity-50 active:scale-95"
+                            className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-95 motion-safe:transition shadow-xs disabled:opacity-50 motion-safe:active:scale-95"
                           >
                             {enrollingId === (course.course_mapping_id || course.id)
                               ? 'Solicitando...'
@@ -563,7 +576,7 @@ export default function HomePage() {
             <Link href="/registro" className={styles.primaryAction}>Crear cuenta de aspirante</Link>
           </div>
 
-          <ol className="grid gap-y-5 sm:grid-cols-2 lg:grid-cols-4" role="list">
+          <ol className={`${styles.admissionSteps} grid gap-y-5 sm:grid-cols-2 lg:grid-cols-4`} role="list">
             {pasosAdmision.map((paso, indice) => (
               <li key={paso.titulo} className={styles.stepCard}>
                 <span className={styles.stepNumber} aria-hidden="true">{indice + 1}</span>

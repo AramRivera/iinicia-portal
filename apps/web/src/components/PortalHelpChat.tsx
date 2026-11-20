@@ -30,7 +30,7 @@ export function PortalHelpChat() {
     setPendingQuestion(cleaned);
     let answer: HelpAnswer;
     try {
-      answer = await askPortalHelp(cleaned);
+      answer = await askPortalHelp(cleaned, turns.slice(-3).map((turn) => turn.question));
     } catch (error) {
       answer = {
         text: error instanceof Error && !(error instanceof TypeError)
@@ -164,7 +164,7 @@ export function PortalHelpChat() {
                 Enviar
               </button>
             </div>
-            <p id="iinicia-help-input-hint" className="text-xs text-muted">Las consultas pertinentes se envían a DeepSeek. Evita incluir datos personales, contraseñas o códigos.</p>
+            <p id="iinicia-help-input-hint" className="text-xs text-muted">Tus preguntas se envían a DeepSeek. Evita incluir datos personales, contraseñas o códigos.</p>
           </form>
         </div>
       </dialog>

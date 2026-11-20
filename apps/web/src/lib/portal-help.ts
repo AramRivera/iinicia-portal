@@ -13,12 +13,12 @@ export const helpTopics = [
   'Ya me admitieron, ¿por qué no veo mi curso en Moodle?',
 ];
 
-export async function askPortalHelp(question: string): Promise<HelpAnswer> {
+export async function askPortalHelp(question: string, previousQuestions: string[] = []): Promise<HelpAnswer> {
   const response = await fetch(`${API_URL}/help-chat`, {
     method: 'POST',
     credentials: 'omit',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, previous_questions: previousQuestions.slice(-3) }),
   });
 
   if (!response.ok) {

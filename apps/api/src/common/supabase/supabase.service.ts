@@ -400,6 +400,19 @@ export class SupabaseService {
     return this.createClient(accessToken);
   }
 
+  async assertPortalAccount(accessToken: string, userId: string): Promise<void> {
+    const { data, error } = await this.getResilientClient(accessToken)
+      .from('profiles')
+      .select('status')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) throw new ServiceUnavailableException('No fue posible verificar el estado de la cuenta.');
+    if (data?.status !== 'activo' && data?.status !== 'pendiente') {
+      throw new ForbiddenException('La cuenta no está activa. Contacta al administrador.');
+    }
+  }
+
   async requestPasswordRecovery(email: string, captchaToken?: string, origin?: string): Promise<{ message: string }> {
     const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
       redirectTo: this.getAuthRedirect('/restablecer-password', origin),

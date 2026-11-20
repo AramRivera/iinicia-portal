@@ -4,6 +4,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Header,
   Headers,
   HttpCode,
   Ip,
@@ -64,6 +65,7 @@ export class MoodleController {
    */
   @Post('launch')
   @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('superadministrador', 'administrador', 'coordinador', 'profesor', 'estudiante')
   @RequirePermissions('campus.access')
@@ -87,6 +89,7 @@ export class MoodleController {
   // El portal identifica el curso por la equivalencia guardada localmente.
   @Post('courses/:courseMappingId/launch')
   @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(SupabaseAuthGuard)
   launchCourse(
     @Param('courseMappingId') courseMappingId: string,
@@ -104,6 +107,7 @@ export class MoodleController {
 
   @Post('courses/:courseMappingId/launch-gradebook')
   @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(SupabaseAuthGuard)
   launchGradebook(
     @Param('courseMappingId') courseMappingId: string,

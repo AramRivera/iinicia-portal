@@ -1,5 +1,5 @@
 /** Comprueba el rechazo de tokens inválidos, de sesiones sin MFA y de peticiones sin Bearer. */
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { Request } from 'express';
 import { SupabaseService } from '../supabase/supabase.service.js';
@@ -7,10 +7,16 @@ import { SupabaseAuthGuard } from './supabase-auth.guard.js';
 
 describe('SupabaseAuthGuard', () => {
   let guard: SupabaseAuthGuard;
-  let supabase: { getAuthenticatedUser: ReturnType<typeof vi.fn> };
+  let supabase: {
+    getAuthenticatedUser: ReturnType<typeof vi.fn>;
+    assertPortalAccount: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
-    supabase = { getAuthenticatedUser: vi.fn() };
+    supabase = {
+      getAuthenticatedUser: vi.fn(),
+      assertPortalAccount: vi.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -31,6 +37,7 @@ describe('SupabaseAuthGuard', () => {
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(supabase.getAuthenticatedUser).toHaveBeenCalledWith(token);
+    expect(supabase.assertPortalAccount).toHaveBeenCalledWith(token, user.id);
     expect(request).toMatchObject({
       accessToken: token,
       user,
@@ -48,6 +55,14 @@ describe('SupabaseAuthGuard', () => {
     supabase.getAuthenticatedUser.mockRejectedValue(new UnauthorizedException());
     const request = { headers: { authorization: `Bearer ${tokenWithLevel('aal2')}` } } as Request;
     await expect(guard.canActivate(createExecutionContext(request))).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('denies a suspended account even while its token is valid', async () => {
+    supabase.getAuthenticatedUser.mockResolvedValue({ id: 'user-1' });
+    supabase.assertPortalAccount.mockRejectedValue(new ForbiddenException());
+    const request = { headers: { authorization: `Bearer ${tokenWithLevel('aal2')}` } } as Request;
+    await expect(guard.canActivate(createExecutionContext(request))).rejects.toMatchObject({ status: 403 });
+    expect(request).not.toHaveProperty('user');
   });
 
   it('rejects requests without a bearer token', async () => {

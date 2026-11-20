@@ -39,6 +39,7 @@ describe('Portal Lifecycle E2E Test Suite', () => {
   const mockSupabase = {
     assertConfiguration: vi.fn(),
     getAuthenticatedUser: vi.fn(),
+    assertPortalAccount: vi.fn().mockResolvedValue(undefined),
     getUserRoleSlugs: vi.fn(),
     getUserPermissions: vi.fn(),
     getProfile: vi.fn(),
@@ -187,7 +188,7 @@ describe('Portal Lifecycle E2E Test Suite', () => {
     });
 
     it('POST /api/v1/contact validates input and records message', async () => {
-      mockClient.from.mockReturnValue({
+      mockAdminClient.from.mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
