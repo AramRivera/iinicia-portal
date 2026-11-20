@@ -168,7 +168,7 @@ export default function AspiranteDashboardPage() {
     >
       <div className="space-y-6">
         {/* Header Aspirante */}
-        <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal transition-all">
+        <div className="campus-heading">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -203,9 +203,9 @@ export default function AspiranteDashboardPage() {
         </div>
 
         {message && (
-          <div className="rounded-[8px] border border-emerald-500/25 bg-emerald-500/10 p-4 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-minimal">
+          <div className="rounded-[8px] border border-success/25 bg-success/10 p-4 text-xs font-medium text-success flex flex-col sm:flex-row items-center justify-between gap-3 shadow-minimal">
             <div className="flex items-center gap-2">
-              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <IconCheck className="w-4 h-4 text-success shrink-0" />
               <span>{message}</span>
             </div>
             <a
@@ -288,7 +288,7 @@ export default function AspiranteDashboardPage() {
                     <span
                       className={`rounded-[4px] px-2 py-0.5 text-[11px] font-medium capitalize border ${
                         enr.status === 'autorizada' || enr.status === 'sincronizada'
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                          ? 'bg-success/10 text-success border-success/20'
                           : enr.status === 'rechazada'
                           ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                           : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
@@ -370,7 +370,7 @@ export default function AspiranteDashboardPage() {
                         disabled
                         className="w-full rounded-[6px] border border-border bg-surface-muted py-2 text-xs font-medium text-muted cursor-not-allowed flex items-center justify-center gap-1.5"
                       >
-                        <IconCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <IconCheck className="w-3.5 h-3.5 text-success" />
                         <span>Solicitud registrada previamente</span>
                       </button>
                     ) : (
@@ -387,7 +387,7 @@ export default function AspiranteDashboardPage() {
                           </>
                         ) : (
                           <>
-                            <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
+                            <IconPlus className="w-3.5 h-3.5 text-accent-sky" />
                             <span>Solicitar acceso</span>
                           </>
                         )}

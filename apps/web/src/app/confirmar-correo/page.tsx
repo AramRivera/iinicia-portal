@@ -23,8 +23,8 @@ export default function ConfirmarCorreoPage() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12">
-      <div className="rounded-xl border border-border bg-surface p-7 shadow-minimal">
+    <div className="grid min-h-[70vh] place-items-center bg-aurora px-4 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-7 shadow-panel">
         <h1 className="text-2xl font-bold">Confirmación de correo</h1>
         <div className="mt-4 space-y-3 text-sm" role="status">
           {confirmation === 'checking' && <p>Verificando el enlace…</p>}
@@ -46,6 +46,6 @@ export default function ConfirmarCorreoPage() {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

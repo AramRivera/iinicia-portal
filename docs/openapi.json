@@ -16,6 +16,98 @@
     }
   ],
   "paths": {
+    "/help-chat": {
+      "post": {
+        "summary": "Consultar al asistente de ayuda de IINICIA",
+        "description": "Recupera entradas de la guía pública y pide a DeepSeek redactar una respuesta breve con referencias.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "question"
+                ],
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta redactada con referencias del portal o derivación a Contacto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "text",
+                    "action",
+                    "sources"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "action": {
+                      "type": "object",
+                      "required": [
+                        "href",
+                        "label"
+                      ],
+                      "properties": {
+                        "href": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "sources": {
+                      "type": "array",
+                      "maxItems": 3,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "href",
+                          "label"
+                        ],
+                        "properties": {
+                          "href": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Consulta inválida."
+          },
+          "429": {
+            "description": "Límite temporal de consultas alcanzado."
+          },
+          "503": {
+            "description": "El proveedor de IA no está configurado o no está disponible."
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Verificaci\u00f3n de salud y estado de integraciones",

@@ -17,7 +17,7 @@ export function MoodleSyncBadge({ status, moodleId, className = '' }: MoodleSync
   switch (status) {
     case 'sincronizado':
       label = moodleId ? `Moodle ID #${moodleId}` : 'Sincronizado';
-      badgeStyle = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+      badgeStyle = 'bg-success/10 text-success border-success/20';
       break;
     case 'pendiente':
       label = 'Sincronización pendiente';
@@ -44,7 +44,7 @@ export function MoodleSyncBadge({ status, moodleId, className = '' }: MoodleSync
       <span
         className={`h-1.5 w-1.5 rounded-full ${
           status === 'sincronizado'
-            ? 'bg-emerald-500'
+            ? 'bg-success'
             : status === 'pendiente'
             ? 'bg-amber-500 animate-pulse'
             : status === 'error' || status === 'suspendido_en_moodle'

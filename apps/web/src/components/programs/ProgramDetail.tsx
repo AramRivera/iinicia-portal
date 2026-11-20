@@ -62,7 +62,7 @@ export default function ProgramDetail({ slug }: { slug: string }) {
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">Oferta académica INICIA</p>
           <h1 className="mt-3 text-3xl font-bold text-foreground">No encontramos este programa</h1>
           <p className="mt-3 text-sm text-muted">Puede que ya no esté publicado o que el enlace haya cambiado.</p>
-          <Link href="/#licenciaturas" className="mt-6 inline-flex rounded-lg bg-primary-action px-4 py-2 text-sm font-semibold text-white hover:bg-accent-strong">Volver a la oferta académica</Link>
+          <Link href="/#cursos" className="mt-6 inline-flex rounded-lg bg-primary-action px-4 py-2 text-sm font-semibold text-white hover:bg-accent-strong">Volver a la oferta académica</Link>
         </div>
       </section>
     );
@@ -70,12 +70,13 @@ export default function ProgramDetail({ slug }: { slug: string }) {
 
   const nextStepHref = user ? '/dashboard' : '/registro';
   const nextStepLabel = user ? 'Ir a Mi IINICIA' : 'Crear cuenta para solicitar admisión';
+  const catalogHref = program.type === 'certificacion' ? '/#certificaciones' : '/#cursos';
 
   return (
     <article className="flex-1 bg-background text-foreground">
       <section className="border-b border-border bg-surface px-4 py-14 sm:py-20">
         <div className="mx-auto max-w-5xl">
-          <Link href="/#licenciaturas" className="text-sm font-medium text-primary hover:underline">← Oferta académica</Link>
+          <Link href={catalogHref} className="text-sm font-medium text-primary hover:underline">← Oferta académica</Link>
           <div className="mt-8 rounded-2xl border border-white/15 bg-welcome-panel p-6 text-white shadow-soft sm:p-10">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">{programTypeLabels[program.type]}</span>

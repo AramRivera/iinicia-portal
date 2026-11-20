@@ -174,7 +174,7 @@ export function RoleWorkspace({ role }: Props) {
     <CampusShell
       searchItems={scopedCourses.map((course) => ({ id: course.id, title: course.name || course.course_name || '', detail: course.code, section: 'Cursos' }))} currentTab="resumen" onSelectTab={(tab) => document.getElementById(tab)?.scrollIntoView({ behavior: 'smooth' })} breadcrumbs={['INICIA', title]} customSections={sections}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <header id="resumen" className="scroll-mt-20 rounded-xl border border-border bg-surface p-6 shadow-minimal">
+        <header id="resumen" className="campus-heading scroll-mt-20">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">Panel de {title.toLowerCase()}</p>
           <h1 className="mt-2 text-2xl font-bold text-foreground">Hola, {user.first_name}</h1>
           <p className="mt-2 max-w-3xl text-sm text-muted">{isCoordinator ? 'Consulta los programas, cursos y usuarios que la API habilita para tu cuenta.' : 'Revisa la vinculación de cuentas y el estado del campus con las herramientas de consulta disponibles para soporte.'}</p>

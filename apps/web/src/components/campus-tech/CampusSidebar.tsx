@@ -271,16 +271,16 @@ export function CampusSidebar({
                   else onSelectTab(item.id);
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-[6px] transition-all text-left group relative ${
+                className={`relative flex min-h-10 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-primary-action text-white shadow-minimal font-semibold'
+                    ? 'bg-accent-soft text-primary font-semibold ring-1 ring-primary/20'
                     : 'text-foreground/80 hover:bg-surface-muted hover:text-foreground'
                 } ${collapsed ? 'justify-center px-0' : ''}`}
                 title={item.label}
               >
                 {/* Active Indicator Accent Line */}
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-1 rounded-r bg-accent-lime" />
+                  <span className="absolute start-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-e bg-primary" />
                 )}
                 <span>{item.icon}</span>
                 {!collapsed && (
@@ -290,7 +290,7 @@ export function CampusSidebar({
                       <span
                         className={`rounded-[4px] px-1.5 py-0.5 text-[10px] font-mono font-semibold ${
                           isActive
-                            ? 'bg-white/20 text-white'
+                            ? 'bg-surface text-primary'
                             : 'bg-surface-muted text-muted'
                         }`}
                       >
@@ -311,12 +311,12 @@ export function CampusSidebar({
     <>
       {/* DESKTOP SIDEBAR */}
       <aside
-        className={`hidden lg:flex flex-col shrink-0 border-r border-border bg-surface transition-all duration-200 sticky top-14 h-[calc(100vh-3.5rem)] z-30 ${
+        className={`sticky top-[8.625rem] z-30 hidden h-[calc(100dvh-9.375rem)] shrink-0 flex-col rounded-2xl border border-border bg-surface shadow-panel transition-[width] duration-200 lg:flex ${
           collapsed ? 'w-16' : 'w-64'
         }`}
       >
         {/* Sidebar Header Brand */}
-        <div className="h-13 border-b border-border flex items-center justify-between px-3.5 shrink-0">
+        <div className={`flex h-14 shrink-0 items-center justify-between gap-1 border-b border-border ${collapsed ? 'px-1.5' : 'px-2.5'}`}>
           {!collapsed ? (
             <div className="flex items-center gap-2 min-w-0">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[7px] bg-welcome-panel p-1 shadow-minimal ring-1 ring-primary/20">
@@ -329,13 +329,13 @@ export function CampusSidebar({
                 />
               </span>
               <div className="min-w-0 leading-none">
-                <span className="text-[10px] text-muted">
+                <span className="text-xs font-semibold text-foreground">
                   Portal Académico
                 </span>
               </div>
             </div>
           ) : (
-            <div className="mx-auto h-7 w-7 rounded-[6px] bg-primary-action flex items-center justify-center text-accent-lime">
+            <div className="grid size-6 shrink-0 place-items-center rounded-lg bg-primary-action text-accent-sky">
               <span className="relative pt-1 text-[16px] font-black leading-none">I<sup className="absolute -top-1 left-0 text-[8px]">2</sup></span>
             </div>
           )}
@@ -343,7 +343,7 @@ export function CampusSidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="h-6 w-6 rounded-[4px] border border-border/80 bg-surface-muted hover:bg-border text-muted hover:text-foreground flex items-center justify-center transition-colors"
+            className="grid size-5 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-primary transition-colors hover:bg-accent-soft"
             title={collapsed ? 'Expandir menú lateral' : 'Colapsar menú lateral'}
           >
             {collapsed ? (
@@ -415,12 +415,12 @@ export function CampusSidebar({
 
       {/* MOBILE DRAWER */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[60] lg:hidden">
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
             onClick={onCloseMobile}
           />
-          <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-surface border-r border-border p-4 shadow-2xl flex flex-col justify-between animate-in slide-in-from-left duration-200">
+          <aside aria-label="Navegación del campus" className="fixed inset-y-2 left-2 z-50 flex w-[min(18rem,calc(100vw-1rem))] flex-col justify-between overflow-y-auto rounded-2xl border border-border bg-surface p-4 shadow-2xl">
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
@@ -438,7 +438,8 @@ export function CampusSidebar({
                 <button
                   type="button"
                   onClick={onCloseMobile}
-                  className="h-7 w-7 rounded-[6px] border border-border text-muted hover:text-foreground flex items-center justify-center"
+                  aria-label="Cerrar menú del campus"
+                  className="grid size-10 place-items-center rounded-full border border-border text-primary hover:bg-accent-soft"
                 >
                   <IconClose className="w-3.5 h-3.5" />
                 </button>
@@ -459,7 +460,7 @@ export function CampusSidebar({
                   }}
                   className="w-full flex items-center justify-center gap-1.5 rounded-[6px] bg-primary-action text-white px-3 py-2 text-xs font-semibold mb-2"
                 >
-                  <IconMoodle className="w-4 h-4 text-accent-lime" />
+                  <IconMoodle className="w-4 h-4 text-accent-sky" />
                   <span>Entrar al Aula Moodle SSO</span>
                 </button>
               )}

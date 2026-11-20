@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { PortalHelpChat } from "@/components/PortalHelpChat";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Suspense fallback={null}>
               <SiteFooter />
             </Suspense>
+            <PortalHelpChat />
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -393,14 +393,14 @@ export default function EstudianteDashboardPage() {
     >
       <div className="space-y-6">
         {/* Header Estudiante */}
-        <div className="rounded-[10px] border border-border bg-surface p-5 sm:p-6 shadow-minimal transition-all">
+        <div className="campus-heading">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 text-[11px] font-mono font-semibold text-primary border border-primary/20">
                   Estudiante Regular
                 </span>
-                <span className="rounded-[4px] bg-accent-lime/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-lime/40">
+                <span className="rounded-[4px] bg-accent-sky/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-foreground border border-accent-sky/40">
                   Campus Virtual Activo
                 </span>
                 <MoodleSyncBadge
@@ -442,7 +442,7 @@ export default function EstudianteDashboardPage() {
                   </>
                 ) : (
                   <>
-                    <IconExternalLink className="w-3.5 h-3.5 text-accent-lime" />
+                    <IconExternalLink className="w-3.5 h-3.5 text-accent-sky" />
                     <span>Campus Virtual Moodle</span>
                   </>
                 )}
@@ -487,7 +487,7 @@ export default function EstudianteDashboardPage() {
 
             <div className="rounded-[8px] border border-border bg-surface-muted/30 p-3.5">
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Estado Escolar</span>
-              <p className="mt-1 text-sm font-semibold capitalize text-emerald-600 dark:text-emerald-400">
+              <p className="mt-1 text-sm font-semibold capitalize text-success">
                 {user?.status || 'activo'}
               </p>
               <span className="text-[11px] text-muted mt-0.5 block">Inscripción regular vigente</span>
@@ -497,9 +497,9 @@ export default function EstudianteDashboardPage() {
 
         {/* Notificaciones y Avisos */}
         {notice && (
-          <div className="rounded-[8px] border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center justify-between shadow-minimal">
+          <div className="rounded-[8px] border border-success/25 bg-success/10 p-3.5 text-xs font-medium text-success flex items-center justify-between shadow-minimal">
             <div className="flex items-center gap-2">
-              <IconCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <IconCheck className="w-4 h-4 text-success shrink-0" />
               <span>{notice}</span>
             </div>
             <button
@@ -616,7 +616,7 @@ export default function EstudianteDashboardPage() {
                           <span className="rounded-[4px] bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary">
                             {course.course_code || course.portal_course_code}
                           </span>
-                          <span className="rounded-[4px] bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <span className="rounded-[4px] bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success border border-success/20">
                             {course.enrollment_status === 'sincronizada' ? 'Matrícula confirmada' : 'Pendiente de sincronización'}
                           </span>
                         </div>
@@ -755,7 +755,7 @@ export default function EstudianteDashboardPage() {
 
             {availableOfferings.length === 0 ? (
               <div className="rounded-[10px] border border-dashed border-border bg-surface p-10 text-center">
-                <IconCheck className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                <IconCheck className="w-8 h-8 text-success mx-auto mb-2 opacity-80" />
                 <p className="text-xs font-semibold text-foreground">
                   {searchQuery
                     ? 'No se encontraron materias que coincidan con la búsqueda.'
@@ -821,7 +821,7 @@ export default function EstudianteDashboardPage() {
                             </>
                           ) : (
                             <>
-                              <IconPlus className="w-3.5 h-3.5 text-accent-lime" />
+                              <IconPlus className="w-3.5 h-3.5 text-accent-sky" />
                               <span>Solicitar inscripción</span>
                             </>
                           )}
@@ -861,7 +861,7 @@ export default function EstudianteDashboardPage() {
               </div>
               <div className="rounded-[10px] border border-border bg-surface p-4 shadow-minimal">
                 <span className="text-[11px] font-medium text-muted block">Acreditadas</span>
-                <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1 block">
+                <span className="text-lg font-bold font-mono text-success mt-1 block">
                   {kardexSummary.accreditedCount}
                 </span>
                 <span className="text-[10px] text-muted">Evaluaciones aprobadas</span>
@@ -933,7 +933,7 @@ export default function EstudianteDashboardPage() {
                           </td>
                           <td className="px-5 py-3.5">
                             {isPassing === true ? (
-                              <span className="rounded-[4px] bg-emerald-500/10 px-2 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                              <span className="rounded-[4px] bg-success/10 px-2 py-0.5 text-[10px] font-mono text-success font-semibold border border-success/20">
                                 Acreditada
                               </span>
                             ) : isPassing === false ? (
@@ -1023,7 +1023,7 @@ export default function EstudianteDashboardPage() {
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Estatus Académico</span>
-                    <span className="capitalize text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="capitalize text-success font-medium">
                       {user?.status || 'activo'}
                     </span>
                   </div>
@@ -1056,7 +1056,7 @@ export default function EstudianteDashboardPage() {
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-muted">Acceso SSO Transparente</span>
-                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="font-mono text-success font-medium">
                       Activo (auth_userkey)
                     </span>
                   </div>

@@ -50,11 +50,11 @@ export default function RecuperarPasswordPage() {
   };
 
   return (
-    <div className="relative flex min-h-[calc(100vh-140px)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-6 rounded-[14px] border border-border bg-surface p-7 sm:p-9 shadow-minimal">
+    <div className="relative flex min-h-[calc(100vh-140px)] bg-aurora items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-6 rounded-3xl border border-border bg-surface p-7 shadow-panel sm:p-9">
         <div className="text-center">
           <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-[11px] font-mono font-semibold text-primary border border-primary/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-sky" />
             <span>Seguridad Institucional</span>
           </div>
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">

@@ -8,17 +8,63 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { contactApi, coursesApi, enrollmentsApi, programsApi } from '@/lib/api';
 import type { CourseOffering, AuthorizedCourse, EnrollmentRequest, Program } from '@/types';
+import styles from './landing.module.css';
 import {
-  IconGroups,
-  IconAudit,
-  IconGrades,
   IconCheck,
   IconSearch,
-  IconShield,
   IconBookOpen,
   IconRefresh,
   IconAlertTriangle,
 } from '@/components/campus-tech/Icons';
+
+function CourseCover() {
+  return (
+    <div className={styles.courseCover} aria-hidden="true">
+      <IconBookOpen className="size-9" />
+    </div>
+  );
+}
+
+function CertificationSection({ programs, loading, loadError }: {
+  programs: Program[];
+  loading: boolean;
+  loadError: boolean;
+}) {
+  const status = loadError ? 'No pudimos cargar la oferta. Recarga la página para reintentar.' : 'Aún no hay certificaciones publicadas.';
+  return (
+    <section id="certificaciones" aria-labelledby="certificaciones-titulo" className={`${styles.section} ${styles.sectionTint} px-4 sm:px-6 lg:px-8`}>
+      <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
+        <h2 id="certificaciones-titulo" className={styles.sectionTitle}>Certificaciones</h2>
+        {programs.length > 0 ? (
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            {programs.map((program) => {
+              const description = program.short_description || program.description;
+              const programTitleId = `certificacion-${program.id}-nombre`;
+              const programActionId = `certificacion-${program.id}-accion`;
+              const duration = program.duration_text || (program.duration_hours > 0 ? `${program.duration_hours} horas` : '');
+              return (
+                <li key={program.id}>
+                  <Link href={`/programas/${program.slug}`} aria-labelledby={`${programActionId} ${programTitleId}`} className={`${styles.detailCard} ${styles.programCard}`}>
+                    <h3 id={programTitleId} className={styles.programTitle}>{program.name}</h3>
+                    {description && <p className="line-clamp-3 text-sm leading-relaxed text-muted">{description}</p>}
+                    <div className="mt-auto pt-2">
+                      {duration && <p className="text-sm font-medium text-muted">{duration}</p>}
+                      <span id={programActionId} className={styles.programLink}>
+                        Ver programa <span aria-hidden="true">→</span>
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p role="status" className={styles.emptyState}>{loading ? 'Cargando la oferta académica…' : status}</p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -29,16 +75,14 @@ export default function HomePage() {
   const [myCourses, setMyCourses] = useState<AuthorizedCourse[]>([]);
   const [myEnrollments, setMyEnrollments] = useState<EnrollmentRequest[]>([]);
   const [publicCourses, setPublicCourses] = useState<Program[]>([]);
-  const [licenciaturas, setLicenciaturas] = useState<Program[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [courseLoadError, setCourseLoadError] = useState(false);
+  const [programLoadError, setProgramLoadError] = useState(false);
   const [courseSearch, setCourseSearch] = useState('');
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollMessage, setEnrollMessage] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
 
-  // Diplomados and Certificaciones state
-  const [diplomados, setDiplomados] = useState<Program[]>([]);
   const [certificaciones, setCertificaciones] = useState<Program[]>([]);
 
   // Contact form state
@@ -71,11 +115,16 @@ export default function HomePage() {
       try {
         setCoursesLoading(true);
         setCourseLoadError(false);
+        setProgramLoadError(false);
         const [offeringsData, authorized, enrollments, programs] = await Promise.all([
           user ? coursesApi.getOfferings().catch(() => { setCourseLoadError(true); return []; }) : Promise.resolve([]),
           user ? coursesApi.getAuthorizedCourses().catch(() => []) : Promise.resolve([]),
           user ? enrollmentsApi.getMyEnrollments().catch(() => []) : Promise.resolve([]),
-          programsApi.getPrograms().catch(() => []),
+          programsApi.getPrograms().catch(() => {
+            setProgramLoadError(true);
+            if (!user) setCourseLoadError(true);
+            return [];
+          }),
         ]);
 
         setOfferings(offeringsData);
@@ -83,16 +132,12 @@ export default function HomePage() {
         setMyCourses(authorized || []);
         setMyEnrollments(enrollments);
         setPublicCourses(programs.filter((program) => program.type === 'curso'));
-        setLicenciaturas(programs.filter((program) => program.type === 'licenciatura'));
 
-        setDiplomados(programs.filter((program) => program.type === 'diplomado'));
         setCertificaciones(programs.filter((program) => program.type === 'certificacion'));
       } catch {
         setCourseLoadError(true);
         setOfferings([]);
         setPublicCourses([]);
-        setLicenciaturas([]);
-        setDiplomados([]);
         setCertificaciones([]);
       } finally {
         setCoursesLoading(false);
@@ -188,753 +233,376 @@ export default function HomePage() {
 
   return (
     <div className="flex-1 bg-background text-foreground">
-      {/* =================================================================== */}
-      {/* SECTION 1: INICIO / HERO                                           */}
-      {/* =================================================================== */}
-      <section id="inicio" className="relative overflow-hidden border-b border-border bg-surface pt-16 pb-20 sm:pt-24 sm:pb-28">
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-aurora opacity-70" />
-
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-mono font-medium text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-            <span>Instituto de Innovación y Ciencias Aplicadas</span>
-          </div>
-
-          <h1 className="mx-auto max-w-4xl text-balance text-3xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Tu educación comienza hoy,{' '}
-            <span className="text-primary">estés donde estés.</span>
-          </h1>
-
-          <p className="mx-auto max-w-2xl text-balance text-sm sm:text-base lg:text-lg text-muted leading-relaxed">
-            Formación universitaria y continua de alta exigencia técnica. Accede a cursos, diplomados y certificaciones oficiales integradas con nuestro Campus Virtual.
-          </p>
-
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/registro"
-              className="rounded-[6px] bg-primary-action px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-minimal hover:bg-primary-action/90 transition-all"
-            >
-              Comienza ahora
-            </Link>
-            <a
-              href="#universidad"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('universidad')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="rounded-[6px] border border-border bg-surface hover:bg-surface-muted px-5 py-2.5 text-xs sm:text-sm font-medium text-foreground transition-all"
-            >
-              Conoce la Universidad
-            </a>
-            <a
-              href="#cursos"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('cursos')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="rounded-[6px] border border-primary/30 bg-primary/5 hover:bg-primary/10 px-5 py-2.5 text-xs sm:text-sm font-medium text-primary transition-all"
-            >
-              Explorar Catálogo
-            </a>
-          </div>
-        </div>
-
-        {/* Institutional Statistics */}
-        <div className="mx-auto mt-16 max-w-5xl px-4 sm:px-6">
-          <div className="grid grid-cols-2 gap-4 rounded-[10px] border border-white/15 bg-welcome-panel p-6 shadow-minimal sm:grid-cols-4">
-            <div className="text-center space-y-1 border-r border-white/20 last:border-r-0">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">100%</p>
-              <p className="text-xs text-white/75">Modalidad en línea</p>
-            </div>
-            <div className="text-center space-y-1 sm:border-r border-white/20 last:border-r-0">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">+40</p>
-              <p className="text-xs text-white/75">Programas académicos</p>
-            </div>
-            <div className="text-center space-y-1 border-r border-white/20 last:border-r-0">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">24/7</p>
-              <p className="text-xs text-white/75">Acceso a Campus Moodle</p>
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-mono">+1,000</p>
-              <p className="text-xs text-white/75">Alumnos y graduados</p>
+      <div className={styles.heroFrame}>
+        <section id="inicio" aria-labelledby="inicio-titulo" className={styles.hero}>
+          <Image
+            src="/iinicia-landing-hero.webp"
+            alt=""
+            fill
+            preload
+            sizes="100vw"
+            className={styles.heroImage}
+          />
+          <div className={styles.heroShade} />
+          <div className={styles.heroContent}>
+            <p className={styles.institute}>Instituto de Innovación y Ciencias Aplicadas</p>
+            <h1 id="inicio-titulo" className={styles.heroTitle}>
+              Tu educación comienza hoy, <span>estés donde estés.</span>
+            </h1>
+            <p className={styles.heroDescription}>
+              Estudia a tu ritmo con cursos y certificaciones en el Campus Virtual de IINICIA.
+            </p>
+            <div className={styles.heroActions}>
+              <Link href="/registro" className={styles.heroPrimary}>Comienza ahora</Link>
+              <a href="#cursos" className={styles.heroSecondary}>Explorar cursos <span aria-hidden="true">↓</span></a>
             </div>
           </div>
-        </div>
+        </section>
+      </div>
 
-        {/* Quick jump cards */}
-        <div className="mx-auto mt-8 max-w-5xl px-4 sm:px-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <a
-              href="#cursos"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('cursos')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="group rounded-[10px] border border-border bg-surface p-5 shadow-minimal transition-all hover:border-primary/50 hover:bg-surface-muted/40 cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="h-8 w-8 rounded-[6px] bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                  <IconBookOpen className="w-4 h-4 text-primary" />
-                </span>
-                <span className="text-[11px] font-mono text-muted group-hover:text-primary transition-colors">Ver sección</span>
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Cursos Prácticos</h3>
-              <p className="mt-1 text-xs text-muted leading-relaxed">
-                Asignaturas modulares y habilidades específicas con validez institucional.
-              </p>
-            </a>
-
-            <a
-              href="#diplomados"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('diplomados')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="group rounded-[10px] border border-border bg-surface p-5 shadow-minimal transition-all hover:border-primary/50 hover:bg-surface-muted/40 cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="h-8 w-8 rounded-[6px] bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                  <IconGroups className="w-4 h-4 text-primary" />
-                </span>
-                <span className="text-[11px] font-mono text-muted group-hover:text-primary transition-colors">Ver sección</span>
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Diplomados de Especialización</h3>
-              <p className="mt-1 text-xs text-muted leading-relaxed">
-                Formación integral de 120 a 180 horas con proyectos aplicados de posgrado.
-              </p>
-            </a>
-
-            <a
-              href="#certificaciones"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('certificaciones')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="group rounded-[10px] border border-border bg-surface p-5 shadow-minimal transition-all hover:border-primary/50 hover:bg-surface-muted/40 cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <span className="h-8 w-8 rounded-[6px] bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                  <IconShield className="w-4 h-4 text-primary" />
-                </span>
-                <span className="text-[11px] font-mono text-muted group-hover:text-primary transition-colors">Ver sección</span>
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Certificaciones Oficiales</h3>
-              <p className="mt-1 text-xs text-muted leading-relaxed">
-                Acreditación de competencias técnicas evaluadas por docentes titulares.
-              </p>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* =================================================================== */}
-      {/* SECTION 2: UNIVERSIDAD                                              */}
-      {/* =================================================================== */}
-      <section id="universidad" className="border-b border-border py-20 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl space-y-12">
-          {/* Header */}
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="mx-auto w-full max-w-[680px] rounded-xl border border-primary/20 bg-welcome-panel px-5 py-4 shadow-soft sm:px-8">
-              <Image
-                src="/universidad-inicia-wordmark.png"
-                alt="Universidad INICIA"
-                width={1024}
-                height={100}
-                className="mx-auto h-auto w-full max-w-[640px]"
-              />
-            </div>
-            <h2 className="sr-only">Universidad INICIA</h2>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              El Instituto de Innovación y Ciencias Aplicadas forma profesionales de vanguardia en ciencias de la computación, desarrollo tecnológico y gestión académica. Nuestro claustro combina excelencia investigadora y experiencia activa en la industria.
+      <section id="cursos" aria-labelledby="cursos-titulo" className={styles.catalog}>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className={styles.catalogIntro}>
+            <h2 id="cursos-titulo" className={styles.catalogTitle}>Todos nuestros cursos</h2>
+            <p className="max-w-xl text-pretty text-base leading-relaxed">
+              Explora la oferta de formación de IINICIA y encuentra un curso que se adapte a tus metas.
             </p>
           </div>
 
-          {/* Misión y Visión */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-[10px] border border-border bg-surface p-6 shadow-minimal space-y-3">
-              <div className="h-8 w-8 rounded-[6px] bg-primary/10 text-primary flex items-center justify-center">
-                <IconAudit className="w-4 h-4 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold tracking-tight text-foreground">Misión Institucional</h3>
-              <p className="text-xs sm:text-sm text-muted leading-relaxed">
-                Brindar educación superior y continua de excelencia, democratizando el acceso al conocimiento tecnológico avanzado mediante metodologías pedagógicas innovadoras, infraestructura digital robusta y un claustro docente de primer nivel.
-              </p>
+          <div className="space-y-6">
+            <div className="flex justify-end">
+              <label className="relative block w-full max-w-sm">
+                <span className="sr-only">Buscar cursos por código o nombre</span>
+                <input
+                  type="search"
+                  placeholder="Buscar por código o nombre"
+                  value={courseSearch}
+                  onChange={(e) => setCourseSearch(e.target.value)}
+                  className="h-11 w-full rounded-full border border-border bg-surface px-4 ps-10 text-sm text-foreground placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                />
+                <IconSearch aria-hidden="true" className="pointer-events-none absolute start-3.5 top-3.5 size-4 text-muted" />
+              </label>
             </div>
 
-            <div className="rounded-[10px] border border-border bg-surface p-6 shadow-minimal space-y-3">
-              <div className="h-8 w-8 rounded-[6px] bg-accent-lime/20 text-foreground flex items-center justify-center">
-                <IconGrades className="w-4 h-4 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold tracking-tight text-foreground">Visión Institucional</h3>
-              <p className="text-xs sm:text-sm text-muted leading-relaxed">
-                Consolidarnos como la institución universitaria referente en formación tecnológica e innovación en América Latina, reconocida por la empleabilidad sobresaliente de sus egresados, la calidad de sus programas académicos y su liderazgo en educación virtual.
-              </p>
-            </div>
-          </div>
-
-          {/* Modelo Educativo (4 Pilares) */}
-          <div className="space-y-6 pt-4">
-            <div className="text-center max-w-xl mx-auto space-y-1">
-              <h3 className="text-xl font-bold tracking-tight text-foreground">Modelo Educativo INICIA</h3>
-              <p className="text-xs text-muted">Cuatro pilares estructurales diseñados para maximizar la efectividad del aprendizaje.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {pilaresModelo.map((pilar, idx) => (
-                <div key={idx} className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-2">
-                  <span className="inline-block rounded-[4px] bg-primary/10 px-2 py-0.5 text-xs font-mono font-bold text-primary">
-                    0{idx + 1}
-                  </span>
-                  <h4 className="text-sm font-semibold text-foreground">{pilar.titulo}</h4>
-                  <p className="text-xs text-muted leading-relaxed">{pilar.descripcion}</p>
+            {/* Feedback banners */}
+            {enrollMessage && (
+              <div className="rounded-2xl border border-success/30 bg-success/10 backdrop-blur-md p-4 text-xs text-foreground flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-6 w-6 rounded-full bg-success/20 grid place-items-center shrink-0">
+                    <IconCheck className="w-3.5 h-3.5 text-success" />
+                  </div>
+                  <span className="font-medium">{enrollMessage}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Claustro Académico y Autoridades */}
-          <div className="space-y-6 pt-6 border-t border-border">
-            <div className="text-center max-w-xl mx-auto space-y-1">
-              <h3 className="text-xl font-bold tracking-tight text-foreground">Autoridades y Claustro Académico</h3>
-              <p className="text-xs text-muted">Equipo directivo responsable de la gobernanza académica y el rigor curricular.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {autoridades.map((auth, idx) => (
-                <div key={idx} className="rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-2">
-                  <div className="h-8 w-8 rounded-full bg-surface-muted border border-border flex items-center justify-center font-mono text-xs font-bold text-foreground">
-                    {auth.nombre.split(' ')[1]?.[0] || 'A'}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground leading-snug">{auth.nombre}</h4>
-                    <p className="text-[11px] font-mono text-primary">{auth.cargo}</p>
-                  </div>
-                  <p className="text-xs text-muted leading-relaxed">{auth.semblanza}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =================================================================== */}
-      {/* SECTION 3: CURSOS Y ASIGNATURAS                                     */}
-      {/* =================================================================== */}
-      <section id="licenciaturas" className="border-b border-border py-16 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl space-y-7">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Licenciaturas</h2>
-            <p className="mt-2 text-sm text-muted">Conoce los programas universitarios publicados por INICIA.</p>
-          </div>
-          {licenciaturas.length ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {licenciaturas.map((program) => (
-                <article key={program.id} className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-minimal">
-                  <div>
-                    <p className="font-mono text-xs font-semibold text-primary">{program.code}</p>
-                    <h3 className="mt-2 text-lg font-semibold text-foreground">{program.name}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted">{program.short_description || program.description}</p>
-                  </div>
-                  <Link href={`/programas/${program.slug}`} className="mt-5 inline-flex w-fit items-center rounded-md bg-primary-action px-4 py-2 text-sm font-semibold text-white hover:bg-accent-strong">
-                    Ver programa
-                  </Link>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-xl border border-border bg-surface p-5 text-center text-sm text-muted">No hay licenciaturas publicadas por el momento.</p>
-          )}
-        </div>
-      </section>
-
-      {/* =================================================================== */}
-      {/* SECTION 4: CURSOS Y ASIGNATURAS                                     */}
-      {/* =================================================================== */}
-      {/* SECCIÓN CURSOS - REDISEÑO SEGÚN APPLE HIG (MATERIALS & CARDS)       */}
-      {/* =================================================================== */}
-      <section id="cursos" className="relative border-b border-border/80 py-24 px-4 sm:px-6 lg:px-8 bg-surface-muted/30 overflow-hidden">
-        {/* Glow sutil de fondo (depth material) */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative mx-auto max-w-6xl space-y-10">
-          {/* Header con jerarquía Apple HIG */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-[11px] font-semibold text-primary shadow-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent-lime animate-pulse" />
-                <span>Oferta académica en línea</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-                Cursos y Asignaturas
-              </h2>
-              <p className="text-sm text-muted max-w-xl font-normal leading-relaxed">
-                Programas curriculares sincronizados con Moodle LMS. Solicita tu inscripción o accede a tu contenido si ya estás matriculado.
-              </p>
-            </div>
-
-            {/* Buscador estilo macOS / iOS Search Capsule */}
-            <div className="relative w-full md:w-72">
-              <input
-                type="text"
-                placeholder="Buscar por código o nombre..."
-                value={courseSearch}
-                onChange={(e) => setCourseSearch(e.target.value)}
-                className="w-full rounded-full border border-border/70 bg-surface/80 backdrop-blur-md px-4 py-2 pl-9 text-xs text-foreground placeholder:text-muted/80 shadow-xs focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
-              />
-              <IconSearch className="absolute left-3.5 top-2.5 w-3.5 h-3.5 text-muted pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Feedback banners */}
-          {enrollMessage && (
-            <div className="rounded-2xl border border-success/30 bg-success/10 backdrop-blur-md p-4 text-xs text-foreground flex items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="h-6 w-6 rounded-full bg-success/20 grid place-items-center shrink-0">
-                  <IconCheck className="w-3.5 h-3.5 text-success" />
-                </div>
-                <span className="font-medium">{enrollMessage}</span>
-              </div>
-              <Link
-                href="/dashboard"
-                className="rounded-full bg-success text-white px-3 py-1.5 text-xs font-semibold shrink-0 shadow-xs hover:opacity-90 transition-opacity"
-              >
-                Ver mi panel
-              </Link>
-            </div>
-          )}
-
-          {enrollError && (
-            <div className="rounded-2xl border border-danger/30 bg-danger/10 backdrop-blur-md p-4 text-xs text-danger flex items-center gap-2.5 shadow-xs">
-              <div className="h-6 w-6 rounded-full bg-danger/20 grid place-items-center shrink-0">
-                <IconAlertTriangle className="w-3.5 h-3.5 text-danger" />
-              </div>
-              <span className="font-medium">{enrollError}</span>
-            </div>
-          )}
-
-          {/* Lista de cursos en Grid con estética Apple Card */}
-          {coursesLoading ? (
-            <div className="flex min-h-[220px] items-center justify-center rounded-3xl border border-border/60 bg-surface/40 backdrop-blur-md">
-              <div className="flex items-center gap-3 text-xs text-muted font-medium">
-                <IconRefresh className="w-4 h-4 animate-spin text-primary" />
-                <span>Cargando catálogo curricular desde el servidor...</span>
-              </div>
-            </div>
-          ) : !user && filteredPublicCourses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredPublicCourses.map((course) => (
-                <div
-                  key={course.id}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-border/70 bg-surface p-6 shadow-sm hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.4)] hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <div className="space-y-3.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
-                        {course.code}
-                      </span>
-                      {course.duration_text && (
-                        <span className="text-[11px] font-medium text-muted">
-                          {course.duration_text}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
-                      {course.name}
-                    </h3>
-                    {(course.short_description || course.description) && (
-                      <p className="text-xs text-muted leading-relaxed line-clamp-3">
-                        {course.short_description || course.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-5 flex items-center justify-between gap-2 border-t border-border/60 pt-4">
-                    <Link
-                      href={`/programas/${course.slug}`}
-                      className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity"
-                    >
-                      Ver detalles →
-                    </Link>
-                    <Link
-                      href="/login"
-                      className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:opacity-95 active:scale-95 transition-all"
-                    >
-                      Iniciar sesión
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredCourses.length === 0 ? (
-            <div className="rounded-3xl border border-border/70 bg-surface/70 backdrop-blur-md p-12 text-center space-y-3 shadow-xs">
-              <div className="h-10 w-10 mx-auto rounded-full bg-surface-muted grid place-items-center text-muted">
-                <IconSearch className="w-5 h-5" />
-              </div>
-              <p className="text-sm font-semibold text-foreground">
-                {!user
-                  ? publicCourses.length === 0
-                    ? 'Aún no hay cursos publicados'
-                    : 'No se encontraron cursos coincidentes'
-                  : courseLoadError
-                  ? 'No fue posible cargar los cursos'
-                  : offerings.length === 0
-                  ? 'Aún no hay cursos publicados'
-                  : 'No se encontraron cursos coincidentes'}
-              </p>
-              <p className="text-xs text-muted max-w-sm mx-auto">
-                {!user
-                  ? publicCourses.length === 0
-                    ? 'Consulta el catálogo curricular más tarde.'
-                    : 'Intenta con otro término o palabra clave de búsqueda.'
-                  : courseLoadError
-                  ? 'Revisa la conexión con la API e inténtalo de nuevo.'
-                  : offerings.length === 0
-                  ? 'Consulta el catálogo más tarde.'
-                  : 'Intenta con otro término de búsqueda.'}
-              </p>
-              {!user && (
                 <Link
-                  href="/login"
-                  className="inline-block rounded-full bg-primary-action px-5 py-2 text-xs font-semibold text-white shadow-xs hover:opacity-95"
+                  href="/dashboard"
+                  className="rounded-full bg-success text-white px-3 py-1.5 text-xs font-semibold shrink-0 shadow-xs hover:opacity-90 transition-opacity"
                 >
-                  Iniciar sesión
+                  Ver mi panel
                 </Link>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCourses.map((course) => {
-                const enrolled = isEnrolled(course.course_mapping_id);
-                const pending = myEnrollments.some(
-                  (request) =>
-                    request.course_mapping_id === course.course_mapping_id &&
-                    request.status === 'pendiente',
-                );
+              </div>
+            )}
 
-                return (
+            {enrollError && (
+              <div className="rounded-2xl border border-danger/30 bg-danger/10 backdrop-blur-md p-4 text-xs text-danger flex items-center gap-2.5 shadow-xs">
+                <div className="h-6 w-6 rounded-full bg-danger/20 grid place-items-center shrink-0">
+                  <IconAlertTriangle className="w-3.5 h-3.5 text-danger" />
+                </div>
+                <span className="font-medium">{enrollError}</span>
+              </div>
+            )}
+
+            {/* Lista de cursos en Grid con estética Apple Card */}
+            {coursesLoading ? (
+              <div className="flex min-h-[220px] items-center justify-center rounded-3xl border border-border/60 bg-surface/40 backdrop-blur-md">
+                <div className="flex items-center gap-3 text-xs text-muted font-medium">
+                  <IconRefresh className="w-4 h-4 animate-spin text-primary" />
+                  <span>Cargando catálogo curricular desde el servidor...</span>
+                </div>
+              </div>
+            ) : !user && filteredPublicCourses.length > 0 ? (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredPublicCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="group relative flex flex-col justify-between rounded-2xl border border-border/70 bg-surface p-6 shadow-sm hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_32px_rgba(0,0,0,0.4)] hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300"
+                    className={styles.courseCard}
                   >
-                    <div className="space-y-3.5">
-                      <div className="flex items-center justify-between gap-2">
+                    <CourseCover />
+                    <div className="flex-1 space-y-3 px-5 pt-5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
                           {course.code}
                         </span>
-                        {course.credits != null && (
+                        {course.duration_text && (
                           <span className="text-[11px] font-medium text-muted">
-                            {course.credits} créditos
+                            {course.duration_text}
                           </span>
                         )}
                       </div>
-                      <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
+                      <h3 className="text-xl font-bold leading-snug text-foreground">
                         {course.name}
                       </h3>
-                      <p className="text-xs text-muted leading-relaxed line-clamp-3">
-                        {course.course_description || 'Curso disponible en el catálogo de INICIA.'}
-                      </p>
+                      {(course.short_description || course.description) && (
+                        <p className="line-clamp-3 text-sm leading-relaxed text-muted">
+                          {course.short_description || course.description}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="mt-5 pt-4 border-t border-border/60 flex items-center justify-between gap-2">
-                      {course.programs?.slug ? (
-                        <Link
-                          href={`/programas/${course.programs.slug}`}
-                          className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity"
-                        >
-                          Detalles →
-                        </Link>
-                      ) : (
-                        <span className="text-[11px] font-medium text-muted">Moodle LMS</span>
-                      )}
+                    <div className="mx-5 my-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                      <Link
+                        href={`/programas/${course.slug}`}
+                        className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity"
+                      >
+                        Ver detalles →
+                      </Link>
+                      <Link
+                        href="/login"
+                        className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:opacity-95 active:scale-95 transition-all"
+                      >
+                        Iniciar sesión
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredCourses.length === 0 ? (
+              <div className="rounded-3xl border border-border/70 bg-surface/70 backdrop-blur-md p-12 text-center space-y-3 shadow-xs">
+                <div className="h-10 w-10 mx-auto rounded-full bg-surface-muted grid place-items-center text-muted">
+                  <IconSearch className="w-5 h-5" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">
+                  {courseLoadError
+                    ? 'No fue posible cargar los cursos'
+                    : (user ? offerings : publicCourses).length === 0
+                      ? 'Aún no hay cursos publicados'
+                      : 'No se encontraron cursos coincidentes'}
+                </p>
+                <p className="text-xs text-muted max-w-sm mx-auto">
+                  {courseLoadError
+                    ? 'Recarga la página para intentar de nuevo.'
+                    : (user ? offerings : publicCourses).length === 0
+                      ? 'Consulta el catálogo más tarde.'
+                      : 'Intenta con otro término de búsqueda.'}
+                </p>
+                {!user && (
+                  <Link
+                    href="/login"
+                    className="inline-block rounded-full bg-primary-action px-5 py-2 text-xs font-semibold text-white shadow-xs hover:opacity-95"
+                  >
+                    Iniciar sesión
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredCourses.map((course) => {
+                  const enrolled = isEnrolled(course.course_mapping_id);
+                  const pending = myEnrollments.some(
+                    (request) =>
+                      request.course_mapping_id === course.course_mapping_id &&
+                      request.status === 'pendiente',
+                  );
 
-                      {enrolled ? (
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-[11px] font-semibold text-success border border-success/20">
-                            Matriculado
+                  return (
+                    <div
+                      key={course.id}
+                      className={styles.courseCard}
+                    >
+                      <CourseCover />
+                      <div className="flex-1 space-y-3 px-5 pt-5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="rounded-md bg-surface-muted px-2.5 py-0.5 text-[11px] font-mono font-medium text-foreground border border-border/40">
+                            {course.code}
                           </span>
-                          <Link
-                            href="/dashboard/estudiante"
-                            className="rounded-full bg-primary-action text-white px-3 py-1 text-xs font-semibold hover:opacity-95 shadow-xs transition-opacity"
-                          >
-                            Entrar
-                          </Link>
+                          {course.credits != null && (
+                            <span className="text-[11px] font-medium text-muted">
+                              {course.credits} créditos
+                            </span>
+                          )}
                         </div>
-                      ) : pending ? (
-                        <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary border border-primary/20">
-                          Solicitud pendiente
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleEnroll(
-                              course.course_mapping_id || course.id,
-                              course.name,
-                            )
-                          }
-                          disabled={
-                            enrollingId ===
-                            (course.course_mapping_id || course.id)
-                          }
-                          className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-95 transition-all shadow-xs disabled:opacity-50 active:scale-95"
-                        >
-                          {enrollingId === (course.course_mapping_id || course.id)
-                            ? 'Solicitando...'
-                            : user
-                            ? 'Solicitar inscripción'
-                            : 'Iniciar sesión'}
-                        </button>
-                      )}
+                        <h3 className="text-xl font-bold leading-snug text-foreground">
+                          {course.name}
+                        </h3>
+                        <p className="line-clamp-3 text-sm leading-relaxed text-muted">
+                          {course.course_description || 'Curso disponible en el catálogo de INICIA.'}
+                        </p>
+                      </div>
+
+                      <div className="mx-5 my-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                        {course.programs?.slug ? (
+                          <Link
+                            href={`/programas/${course.programs.slug}`}
+                            className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity"
+                          >
+                            Detalles →
+                          </Link>
+                        ) : (
+                          <span className="text-[11px] font-medium text-muted">Moodle LMS</span>
+                        )}
+
+                        {enrolled ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-[11px] font-semibold text-success border border-success/20">
+                              Matriculado
+                            </span>
+                            <Link
+                              href="/dashboard/estudiante"
+                              className="rounded-full bg-primary-action text-white px-3 py-1 text-xs font-semibold hover:opacity-95 shadow-xs transition-opacity"
+                            >
+                              Entrar
+                            </Link>
+                          </div>
+                        ) : pending ? (
+                          <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary border border-primary/20">
+                            Solicitud pendiente
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleEnroll(
+                                course.course_mapping_id || course.id,
+                                course.name,
+                              )
+                            }
+                            disabled={
+                              enrollingId ===
+                              (course.course_mapping_id || course.id)
+                            }
+                            className="rounded-full bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-95 transition-all shadow-xs disabled:opacity-50 active:scale-95"
+                          >
+                            {enrollingId === (course.course_mapping_id || course.id)
+                              ? 'Solicitando...'
+                              : user
+                              ? 'Solicitar inscripción'
+                              : 'Iniciar sesión'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* =================================================================== */}
-      {/* SECTION 4: DIPLOMADOS                                               */}
-      {/* =================================================================== */}
-      <section id="diplomados" className="border-b border-border py-20 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-              <span>Formación de Posgrado y Continua</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Diplomados de Especialización
-            </h2>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Consulta la oferta de formación continua publicada por INICIA.
-            </p>
-          </div>
-
-          {diplomados.length === 0 && !coursesLoading && (
-            <p className="rounded-[10px] border border-border bg-surface p-6 text-center text-sm text-muted">Aún no hay diplomados publicados.</p>
-          )}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {diplomados.map((dip) => (
-              <div
-                key={dip.id}
-                className="flex flex-col justify-between rounded-[10px] border border-border bg-surface p-6 shadow-minimal space-y-5 hover:border-primary/40 transition-all"
-              >
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="rounded-[4px] bg-primary/10 px-2.5 py-0.5 text-xs font-mono font-bold text-primary">
-                      {dip.code}
-                    </span>
-                    <span className="rounded-[4px] border border-border bg-surface-muted px-2 py-0.5 text-[11px] font-mono text-muted">
-                      {dip.duration_text || `${dip.duration_hours} hrs`}
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-foreground leading-snug">{dip.name}</h3>
-                  <p className="text-xs sm:text-sm text-muted leading-relaxed">{dip.description}</p>
-
-                  <div className="space-y-1.5 pt-2">
-                    <p className="text-[11px] font-mono uppercase tracking-wider text-muted">Competencias clave:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {getDipBadges(dip.code).map((tag, i) => (
-                        <span key={i} className="rounded-[4px] bg-surface-muted px-2 py-0.5 text-[11px] text-foreground/80 border border-border/60">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5 text-xs font-mono text-muted">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-                    <span>Campus Virtual Moodle</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Link href={`/programas/${dip.slug}`} className="text-xs font-semibold text-primary hover:underline">Ver programa</Link>
-                    <Link href="/registro" className="rounded-[6px] bg-primary-action px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-accent-strong transition-all">Postularme</Link>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
 
-      {/* =================================================================== */}
-      {/* SECTION 5: CERTIFICACIONES                                          */}
-      {/* =================================================================== */}
-      <section id="certificaciones" className="border-b border-border py-20 px-4 sm:px-6 lg:px-8 bg-surface-muted/20">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-              <span>Acreditación Profesional de Competencias</span>
+      <section id="universidad" aria-labelledby="universidad-titulo" className={`${styles.section} px-4 sm:px-6 lg:px-8`}>
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-14">
+          <div className={`${styles.universityIntro} grid items-center gap-6 md:grid-cols-[1.2fr_1fr]`}>
+            <div className="space-y-4">
+              <h2 id="universidad-titulo" className={styles.sectionTitle}>Universidad IINICIA</h2>
+              <p className="max-w-md text-base leading-relaxed text-white/90">
+                Formación universitaria en computación, tecnología y gestión académica.
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Certificaciones Técnicas Oficiales
-            </h2>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Exámenes y proyectos evaluados por pares y docentes titulares con emisión de credencial digital verificable.
-            </p>
+            <Image
+              src="/universidad-inicia-wordmark.png"
+              alt=""
+              width={1024}
+              height={100}
+              className="h-auto w-full max-w-xs md:justify-self-end"
+            />
           </div>
 
-          {certificaciones.length === 0 && !coursesLoading && (
-            <p className="rounded-[10px] border border-border bg-surface p-6 text-center text-sm text-muted">Aún no hay certificaciones publicadas.</p>
-          )}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {certificaciones.map((cert) => (
-              <div
-                key={cert.id}
-                className="flex flex-col justify-between rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-4 hover:border-primary/40 transition-all"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-[4px] bg-accent-lime/20 px-2 py-0.5 text-[11px] font-mono font-bold text-foreground">
-                      {cert.code}
-                    </span>
-                    <span className="text-[11px] font-mono text-muted">{cert.duration_text || `${cert.duration_hours} hrs`}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-foreground leading-snug">{cert.name}</h3>
-                  <p className="text-xs text-muted leading-relaxed line-clamp-3">{cert.description}</p>
-                </div>
-
-                <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-mono text-muted">Evaluación continua</span>
-                  <div className="flex items-center gap-3">
-                    <Link href={`/programas/${cert.slug}`} className="text-xs font-semibold text-primary hover:underline">Ver programa</Link>
-                    <Link href="/registro" className="rounded-[6px] border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-all">Inscribirme</Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =================================================================== */}
-      {/* SECTION 6: ADMISIONES                                               */}
-      {/* =================================================================== */}
-      <section id="admisiones" className="border-b border-border py-20 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl space-y-12">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-              <span>Convocatoria Abierta Ciclo 2026</span>
+          <div className="grid gap-8 md:grid-cols-2 md:gap-14">
+            <div>
+              <h3 className={styles.subheading}>Misión</h3>
+              <p className="mt-2 max-w-md text-base leading-relaxed text-muted">
+                Ampliar el acceso a la educación superior y a la formación tecnológica mediante la enseñanza en línea.
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Proceso de Admisión y Registro
-            </h2>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Un flujo de ingreso 100% digital, transparente y validado por la Dirección de Servicios Escolares.
-            </p>
-          </div>
-
-          {/* Sequential 4-Step Process */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {pasosAdmision.map((paso) => (
-              <div
-                key={paso.numero}
-                className="relative rounded-[10px] border border-border bg-surface p-5 shadow-minimal space-y-2.5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="rounded-[4px] bg-primary-action px-2 py-0.5 text-xs font-mono font-bold text-white">
-                    {paso.numero}
-                  </span>
-                  <span className="text-[11px] font-mono text-muted">{paso.tiempo}</span>
-                </div>
-                <h3 className="text-sm font-semibold text-foreground">{paso.titulo}</h3>
-                <p className="text-xs text-muted leading-relaxed">{paso.descripcion}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Expediente digital checklist */}
-          <div className="rounded-[10px] border border-border bg-surface p-6 sm:p-8 shadow-minimal space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
-              <div>
-                <h3 className="text-base font-bold text-foreground">Requisitos de Expediente Digital</h3>
-                <p className="text-xs text-muted mt-0.5">Los documentos se suben en formato PDF desde tu panel de aspirante.</p>
-              </div>
-              <Link
-                href="/registro"
-                className="rounded-[6px] bg-primary-action px-4 py-2 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all shrink-0 text-center"
-              >
-                Crear cuenta de aspirante
-              </Link>
+            <div>
+              <h3 className={styles.subheading}>Visión</h3>
+              <p className="mt-2 max-w-md text-base leading-relaxed text-muted">
+                Ser un referente en educación virtual e innovación tecnológica en América Latina.
+              </p>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {requisitosExpediente.map((req, i) => (
-                <div key={i} className="rounded-[8px] border border-border/80 bg-surface-muted/40 p-4 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                    <IconCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                    <span>{req.nombre}</span>
-                  </div>
-                  <p className="text-xs text-muted leading-relaxed">{req.detalle}</p>
-                </div>
+          <div className="space-y-5">
+            <h3 className={styles.subheading}>Cómo se estudia en IINICIA</h3>
+            <ul className="grid gap-x-10 sm:grid-cols-2">
+              {pilaresModelo.map((pilar) => (
+                <li key={pilar.titulo} className="border-t border-border py-4">
+                  <h4 className="font-semibold text-foreground">{pilar.titulo}</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">{pilar.descripcion}</p>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
+
+          <details className={styles.disclosure}>
+            <summary className={styles.disclosureSummary}>
+              Autoridades y equipo académico <span aria-hidden="true">⌄</span>
+            </summary>
+            <ul className="grid gap-x-8 gap-y-5 border-t border-border px-5 py-6 sm:grid-cols-2 sm:px-6">
+              {autoridades.map((persona) => (
+                <li key={persona.nombre}>
+                  <p className="font-semibold text-foreground">{persona.nombre}</p>
+                  <p className="mt-1 text-sm text-muted">{persona.cargo}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{persona.semblanza}</p>
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
       </section>
 
-      {/* =================================================================== */}
-      {/* SECTION 7: CONTACTO Y CANALES                                       */}
-      {/* =================================================================== */}
-      <section id="contacto" className="py-20 px-4 sm:px-6 lg:px-8 bg-surface-muted/20">
+      <CertificationSection
+        programs={certificaciones}
+        loading={coursesLoading}
+        loadError={programLoadError}
+      />
+
+      <section id="admisiones" aria-labelledby="admisiones-titulo" className={`${styles.section} px-4 sm:px-6 lg:px-8`}>
+        <div className="mx-auto max-w-6xl space-y-10 sm:space-y-14">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <h2 id="admisiones-titulo" className={styles.sectionTitle}>Admisiones</h2>
+            <Link href="/registro" className={styles.primaryAction}>Crear cuenta de aspirante</Link>
+          </div>
+
+          <ol className="grid gap-y-5 sm:grid-cols-2 lg:grid-cols-4" role="list">
+            {pasosAdmision.map((paso, indice) => (
+              <li key={paso.titulo} className={styles.stepCard}>
+                <span className={styles.stepNumber} aria-hidden="true">{indice + 1}</span>
+                <h3 className="mt-3 font-semibold text-foreground">{paso.titulo}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{paso.descripcion}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="contacto" aria-labelledby="contacto-titulo" className={`${styles.section} ${styles.sectionTint} px-4 sm:px-6 lg:px-8`}>
         <div className="mx-auto max-w-6xl space-y-12">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-[4px] bg-primary/10 px-2.5 py-1 text-xs font-mono font-semibold text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent-lime" />
-              <span>Atención y Mesa de Ayuda</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Canales de Contacto Oficial
-            </h2>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Comunícate con nuestro equipo académico o técnico. Resolvemos solicitudes de admisión, soporte de aula Moodle y trámites escolares.
-            </p>
+          <div className={styles.sectionHeading}>
+            <h2 id="contacto-titulo" className={styles.sectionTitle}>Contacto</h2>
+            <p className={styles.sectionDescription}>Envía una consulta o contacta directamente al departamento que necesitas.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-            {/* Contact directory */}
-            <div className="space-y-4 lg:col-span-5">
-              {canalesAtencion.map((canal, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-[10px] border border-border bg-surface p-4 shadow-minimal space-y-1.5"
-                >
-                  <h3 className="text-sm font-semibold text-foreground">{canal.departamento}</h3>
-                  <p className="text-xs font-mono text-primary font-medium">{canal.email}</p>
-                  <p className="text-[11px] font-mono text-muted">{canal.horario}</p>
-                  <p className="text-xs text-muted pt-1 leading-relaxed">{canal.descripcion}</p>
-                </div>
-              ))}
-            </div>
-
             {/* Interactive Message Form */}
             <div className="lg:col-span-7">
-              <div className="rounded-[10px] border border-border bg-surface p-6 sm:p-8 shadow-minimal space-y-4">
+              <div className={`${styles.detailCard} space-y-5 p-6 sm:p-8`}>
                 <div className="border-b border-border pb-3">
-                  <h3 className="text-base font-bold text-foreground">Enviar Consulta a la Mesa de Ayuda</h3>
-                  <p className="text-xs text-muted">Recibirás respuesta en tu correo institucional o personal.</p>
+                  <h3 className={styles.subheading}>Enviar un mensaje</h3>
                 </div>
 
                 {contactSuccess ? (
-                  <div className="rounded-[8px] border border-success/30 bg-success/10 p-6 text-center space-y-3">
+                  <div role="status" className="rounded-[8px] border border-success/30 bg-success/10 p-6 text-center space-y-3">
                     <div className="mx-auto h-10 w-10 rounded-full bg-success/20 flex items-center justify-center text-success">
                       <IconCheck className="w-5 h-5 text-success" />
                     </div>
-                    <h4 className="text-sm font-bold text-foreground">¡Mensaje recibido con éxito!</h4>
+                    <h4 className="text-sm font-bold text-foreground">Mensaje recibido</h4>
                     <p className="text-xs text-muted max-w-sm mx-auto">
-                      Hemos canalizado tu solicitud al departamento correspondiente. Te responderemos en un plazo máximo de 24 horas hábiles.
+                      Te responderemos al correo que proporcionaste.
                     </p>
                     <button
                       type="button"
                       onClick={() => setContactSuccess(false)}
-                      className="rounded-[6px] border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-muted"
+                      className="min-h-11 rounded-full border border-border bg-surface px-4 text-sm font-semibold text-primary hover:bg-surface-muted"
                     >
                       Enviar otro mensaje
                     </button>
@@ -942,53 +610,58 @@ export default function HomePage() {
                 ) : (
                   <form onSubmit={handleContactSubmit} className="space-y-4">
                     {contactError && (
-                      <div className="rounded-[6px] border border-danger/30 bg-danger/10 p-2.5 text-xs text-danger">
+                      <div role="alert" className="rounded-[6px] border border-danger/30 bg-danger/10 p-2.5 text-sm text-danger">
                         {contactError}
                       </div>
                     )}
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground">Nombre completo *</label>
+                        <label htmlFor="contacto-nombre" className="text-sm font-medium text-foreground">Nombre completo *</label>
                         <input
+                          id="contacto-nombre"
+                          autoComplete="name"
                           type="text"
                           required
                           value={contactName}
                           onChange={(e) => setContactName(e.target.value)}
-                          placeholder="Ej. Sofía Hernández"
-                          className="w-full rounded-[6px] border border-border bg-surface-muted/30 px-3 py-2 text-xs text-foreground placeholder:text-muted focus:border-primary focus:outline-none"
+                          className={styles.contactField}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground">Correo electrónico *</label>
+                        <label htmlFor="contacto-correo" className="text-sm font-medium text-foreground">Correo electrónico *</label>
                         <input
+                          id="contacto-correo"
+                          autoComplete="email"
                           type="email"
                           required
                           value={contactEmail}
                           onChange={(e) => setContactEmail(e.target.value)}
-                          placeholder="correo@ejemplo.com"
-                          className="w-full rounded-[6px] border border-border bg-surface-muted/30 px-3 py-2 text-xs text-foreground placeholder:text-muted focus:border-primary focus:outline-none"
+                          className={styles.contactField}
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground">Teléfono (opcional)</label>
+                        <label htmlFor="contacto-telefono" className="text-sm font-medium text-foreground">Teléfono (opcional)</label>
                         <input
+                          id="contacto-telefono"
+                          autoComplete="tel"
                           type="tel"
                           value={contactPhone}
                           onChange={(e) => setContactPhone(e.target.value)}
-                          placeholder="+52 55 0000 0000"
-                          className="w-full rounded-[6px] border border-border bg-surface-muted/30 px-3 py-2 text-xs text-foreground placeholder:text-muted focus:border-primary focus:outline-none"
+                          className={styles.contactField}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground">Departamento destinatario *</label>
+                        <label htmlFor="contacto-departamento" className="text-sm font-medium text-foreground">Departamento *</label>
                         <select
+                          id="contacto-departamento"
+                          required
                           value={contactArea}
                           onChange={(e) => setContactArea(e.target.value)}
-                          className="w-full rounded-[6px] border border-border bg-surface-muted/30 px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                          className={styles.contactField}
                         >
                           <option value="admisiones">Admisiones y Convocatorias</option>
                           <option value="soporte">Soporte Campus Virtual Moodle</option>
@@ -999,21 +672,21 @@ export default function HomePage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground">Mensaje o consulta *</label>
+                      <label htmlFor="contacto-mensaje" className="text-sm font-medium text-foreground">Mensaje *</label>
                       <textarea
+                        id="contacto-mensaje"
                         required
                         rows={4}
                         value={contactMessage}
                         onChange={(e) => setContactMessage(e.target.value)}
-                        placeholder="Detalla tu consulta o el asunto sobre el que requieres orientación..."
-                        className="w-full rounded-[6px] border border-border bg-surface-muted/30 px-3 py-2 text-xs text-foreground placeholder:text-muted focus:border-primary focus:outline-none resize-none"
+                        className={styles.contactField}
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={contactSubmitting}
-                      className="w-full rounded-[6px] bg-primary-action py-2.5 text-xs font-semibold text-white hover:bg-primary-action/90 transition-all disabled:opacity-50"
+                      className={styles.primaryAction}
                     >
                       {contactSubmitting ? 'Enviando...' : 'Enviar mensaje'}
                     </button>
@@ -1021,6 +694,19 @@ export default function HomePage() {
                 )}
               </div>
             </div>
+            <aside aria-labelledby="contacto-directorio" className="lg:col-span-5 lg:ps-4">
+              <h3 id="contacto-directorio" className={styles.subheading}>Directorio</h3>
+              <ul className="mt-4">
+                {canalesAtencion.map((canal) => (
+                  <li key={canal.email} className="border-t border-border py-4">
+                    <h4 className="font-semibold text-foreground">{canal.departamento}</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted">{canal.descripcion}</p>
+                    <a href={`mailto:${canal.email}`} className={`${styles.programLink} text-sm`}>{canal.email}</a>
+                    <p className="text-sm text-muted">{canal.horario}</p>
+                  </li>
+                ))}
+              </ul>
+            </aside>
           </div>
         </div>
       </section>
@@ -1034,20 +720,20 @@ export default function HomePage() {
 
 const pilaresModelo = [
   {
-    titulo: 'Aprendizaje Práctico Aplicado',
-    descripcion: 'Cada materia integra proyectos reales, laboratorios virtuales y retos del sector productivo para garantizar empleabilidad inmediata.',
+    titulo: 'Aprendizaje práctico',
+    descripcion: 'Aplica lo aprendido en proyectos y laboratorios virtuales.',
   },
   {
-    titulo: 'Campus Virtual Integrado',
-    descripcion: 'Plataforma Moodle LMS de última generación con acceso transparente, evaluaciones formativas y recursos interactivos 24/7.',
+    titulo: 'Campus virtual',
+    descripcion: 'Consulta materiales y evaluaciones en Moodle.',
   },
   {
-    titulo: 'Acompañamiento Docente Titular',
-    descripcion: 'Profesores con experiencia activa en la industria que guían de forma personalizada cada etapa de tu formación académica.',
+    titulo: 'Acompañamiento docente',
+    descripcion: 'Aprende con profesores que tienen experiencia en la industria.',
   },
   {
-    titulo: 'Flexibilidad Curricular Modular',
-    descripcion: 'Estructura por créditos SATCA y módulos que te permiten avanzar a tu propio ritmo compatibilizando vida laboral y estudio.',
+    titulo: 'Formación por módulos',
+    descripcion: 'Organiza el estudio junto con tus demás actividades.',
   },
 ];
 
@@ -1075,83 +761,29 @@ const autoridades = [
 ];
 
 const pasosAdmision = [
-  {
-    numero: '01',
-    titulo: 'Creación de cuenta en el portal',
-    descripcion: 'Completa tu registro con correo y contraseña para habilitar tu perfil de aspirante en el sistema.',
-    tiempo: '3 minutos',
-  },
-  {
-    numero: '02',
-    titulo: 'Carga de expediente digital',
-    descripcion: 'Adjunta en formato PDF tu identificación oficial, comprobante de domicilio y certificado de estudios.',
-    tiempo: '1 a 2 días',
-  },
-  {
-    numero: '03',
-    titulo: 'Validación por Servicios Escolares',
-    descripcion: 'El comité revisa tus documentos y emite tu matrícula oficial de estudiante.',
-    tiempo: '24 a 48 hrs',
-  },
-  {
-    numero: '04',
-    titulo: 'Matriculación en Campus Moodle',
-    descripcion: 'Acceso inmediato a tus asignaturas, contacto con docentes y seguimiento académico 24/7.',
-    tiempo: 'Inmediato',
-  },
-];
-
-const requisitosExpediente = [
-  {
-    nombre: 'Identificación Oficial',
-    detalle: 'INE, Pasaporte o Cédula Profesional en formato PDF legible.',
-  },
-  {
-    nombre: 'Certificado de Estudios',
-    detalle: 'Bachillerato concluido para licenciaturas o título previo para diplomados.',
-  },
-  {
-    nombre: 'CURP Certificada',
-    detalle: 'Formato digital descargado del portal oficial de RENAPO.',
-  },
-  {
-    nombre: 'Comprobante de Domicilio',
-    detalle: 'Recibo reciente no mayor a tres meses de antigüedad.',
-  },
+  { titulo: 'Crea tu cuenta', descripcion: 'Regístrate como aspirante y confirma tu correo.' },
+  { titulo: 'Envía tu postulación', descripcion: 'Elige un programa en tu panel de aspirante.' },
+  { titulo: 'Consulta el dictamen', descripcion: 'Revisa el estado de tu solicitud en el portal.' },
+  { titulo: 'Entra al aula', descripcion: 'Accede desde tu panel cuando se confirme tu matrícula en Moodle.' },
 ];
 
 const canalesAtencion = [
   {
-    departamento: 'Admisiones y Nuevos Aspirantes',
+    departamento: 'Admisiones',
     email: 'admisiones@iinicia.org',
-    horario: 'Lunes a Viernes: 8:00 a 19:00 hrs',
+    horario: 'Lunes a viernes, 8:00–19:00',
     descripcion: 'Orientación vocacional, convocatorias abiertas y requisitos de ingreso.',
   },
   {
-    departamento: 'Soporte Técnico Campus Moodle',
+    departamento: 'Soporte de Moodle',
     email: 'soporte@iinicia.org',
-    horario: 'Atención 24/7 vía ticket y correo',
+    horario: 'Ticket y correo disponibles 24/7',
     descripcion: 'Incidencias con accesos, matriculación o navegación en el aula virtual.',
   },
   {
-    departamento: 'Servicios Escolares y Acreditación',
+    departamento: 'Servicios escolares',
     email: 'escolar@iinicia.org',
-    horario: 'Lunes a Viernes: 9:00 a 17:00 hrs',
-    descripcion: 'Constancias oficiales, validación de expedientes y actas de calificación.',
+    horario: 'Lunes a viernes, 9:00–17:00',
+    descripcion: 'Constancias oficiales y actas de calificación.',
   },
 ];
-
-function getDipBadges(code: string): string[] {
-  switch (code) {
-    case 'DIP-FULLSTACK':
-      return ['Next.js 15', 'NestJS', 'PostgreSQL', 'Docker', 'TypeScript'];
-    case 'DIP-DATA-AI':
-      return ['Python', 'Machine Learning', 'Pandas', 'Computer Vision', 'PyTorch'];
-    case 'DIP-CYBERSEC':
-      return ['Ethical Hacking', 'ISO 27001', 'Auditoría', 'OWASP Top 10'];
-    case 'DIP-EDTECH':
-      return ['Moodle 5.x', 'Web Services REST', 'SSO Userkey', 'Instrucción Digital'];
-    default:
-      return ['Ciencias Aplicadas', 'Innovación Digital'];
-  }
-}
