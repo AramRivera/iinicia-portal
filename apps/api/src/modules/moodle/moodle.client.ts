@@ -1,4 +1,5 @@
 /** Traduce las operaciones de integración a Web Services de Moodle y procesa sus respuestas. */
+import { randomInt } from 'node:crypto';
 import {
   Injectable,
   InternalServerErrorException,
@@ -16,56 +17,14 @@ import type {
 @Injectable()
 export class MoodleClient {
   private readonly logger = new Logger(MoodleClient.name);
-  private canonicalBaseUrl: string | null = null;
-
   constructor(private readonly config: ConfigService) {}
 
-  private getBaseUrl(): string {
-    if (this.canonicalBaseUrl) return this.canonicalBaseUrl;
+  async getEffectiveBaseUrl(): Promise<string> {
     const url =
       this.config.get<string>('MOODLE_URL') ||
       this.config.get<string>('MOODLE_BASE_URL') ||
       'http://192.168.191.171/moodle';
     return url.replace(/\/+$/, '');
-  }
-
-  /**
-   * Resuelve la URL canónica de Moodle (siguiendo redirecciones si Moodle está configurado con IP específica).
-   */
-  // Resuelve la URL efectiva de Moodle para usarla de forma coherente en los enlaces al campus.
-  async getEffectiveBaseUrl(): Promise<string> {
-    if (this.canonicalBaseUrl) {
-      return this.canonicalBaseUrl;
-    }
-
-    const token = this.getToken();
-    const configuredUrl = (
-      this.config.get<string>('MOODLE_URL') ||
-      this.config.get<string>('MOODLE_BASE_URL') ||
-      'http://192.168.191.171/moodle'
-    ).replace(/\/+$/, '');
-
-    if (!token) {
-      return configuredUrl;
-    }
-
-    try {
-      // Petición GET que sigue redirecciones HTTP de forma nativa para obtener el siteurl canónico
-      const pingUrl = `${configuredUrl}/webservice/rest/server.php?wstoken=${token}&wsfunction=core_webservice_get_site_info&moodlewsrestformat=json`;
-      const res = await fetch(pingUrl, { method: 'GET' });
-      if (res.ok) {
-        const data = (await res.json()) as any;
-        if (data && typeof data.siteurl === 'string' && data.siteurl.startsWith('http')) {
-          const canonical = data.siteurl.replace(/\/+$/, '');
-          this.canonicalBaseUrl = canonical;
-          return canonical;
-        }
-      }
-    } catch (err: any) {
-      this.logger.warn(`No fue posible auto-descubrir siteurl de Moodle: ${err?.message}`);
-    }
-
-    return configuredUrl;
   }
 
   private getToken(): string {
@@ -110,9 +69,21 @@ export class MoodleClient {
           user: { email: email.toLowerCase().trim() },
         },
       );
-      return response?.loginurl ?? null;
-    } catch (err: any) {
-      this.logger.warn(`Error al solicitar loginurl con auth_userkey para ${email}: ${err?.message}`);
+      if (typeof response?.loginurl !== 'string') return null;
+
+      const base = new URL(await this.getEffectiveBaseUrl());
+      const login = new URL(response.loginurl);
+      const loginPath = `${base.pathname.replace(/\/+$/, '')}/auth/userkey/login.php`;
+      const key = login.searchParams.get('key');
+      if (login.origin !== base.origin || login.pathname !== loginPath ||
+        login.username || login.password || login.hash || !key) {
+        return null;
+      }
+      const canonicalLogin = new URL(loginPath, base.origin);
+      canonicalLogin.searchParams.set('key', key);
+      return canonicalLogin.toString();
+    } catch {
+      this.logger.warn('No fue posible obtener un enlace de inicio de sesión de Moodle.');
       return null;
     }
   }
@@ -446,30 +417,30 @@ export class MoodleClient {
     try {
       response = await fetch(endpoint, {
         method: 'POST',
+        redirect: 'error',
+        signal: AbortSignal.timeout(10000),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: body.toString(),
       });
-    } catch (err: any) {
-      this.logger.error(
-        `Fallo al comunicar con Moodle (${wsfunction}): ${err?.message || err}`,
-      );
+    } catch {
+      this.logger.error(`Fallo al comunicar con Moodle (${wsfunction}).`);
       throw new ServiceUnavailableException(
         'No fue posible comunicar con el servidor de Moodle LMS.',
       );
     }
 
     if (!response.ok) {
-      this.logger.error(
-        `Moodle respondió con estado HTTP ${response.status}: ${response.statusText}`,
-      );
+      this.logger.error(`Moodle respondió con estado HTTP ${response.status}.`);
       throw new ServiceUnavailableException(
         `Moodle LMS respondió con código de error ${response.status}.`,
       );
     }
 
-    const json = (await response.json()) as MoodleErrorResponse & T;
+    const json = await response.json().catch(() => {
+      throw new ServiceUnavailableException('Moodle LMS devolvió una respuesta inválida.');
+    }) as MoodleErrorResponse & T;
 
     // Moodle devuelve excepciones con `{ exception: "...", errorcode: "...", message: "..." }`
     if (json && typeof json === 'object' && ('exception' in json || 'errorcode' in json)) {
@@ -479,18 +450,15 @@ export class MoodleClient {
           options.silentErrors.includes(json.errorcode),
       );
 
-      if (!isSilent) {
-        this.logger.error(
-          `Error de Moodle Web Service (${wsfunction}): [${json.errorcode}] ${json.message}`,
-        );
-      } else {
-        this.logger.debug?.(
-          `Aviso de Moodle Web Service (${wsfunction}): [${json.errorcode}] ${json.message}`,
-        );
-      }
+      const code = typeof json.errorcode === 'string' && /^[a-z0-9_]{1,64}$/i.test(json.errorcode)
+        ? json.errorcode
+        : 'desconocido';
+      const detail = `Moodle Web Service (${wsfunction}): ${code}`;
+      if (!isSilent) this.logger.error(detail);
+      else this.logger.debug(detail);
 
       throw new InternalServerErrorException(
-        `Error en Moodle LMS: ${json.message || json.errorcode || 'Error desconocido'}`,
+        'Moodle LMS rechazó la operación.',
       );
     }
 
@@ -530,11 +498,8 @@ function generateTemporaryPassword(): string {
   const uppers = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const numbers = '0123456789';
   const symbols = '!@#$%*_+';
-  return (
-    uppers[Math.floor(Math.random() * uppers.length)] +
-    Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('') +
-    symbols[Math.floor(Math.random() * symbols.length)] +
-    Array.from({ length: 4 }, () => numbers[Math.floor(Math.random() * numbers.length)]).join('') +
-    '!'
-  );
+  const categories = [chars, uppers, numbers, symbols];
+  const alphabet = categories.join('');
+  const pick = (set: string) => set[randomInt(set.length)];
+  return categories.map(pick).join('') + Array.from({ length: 20 }, () => pick(alphabet)).join('');
 }

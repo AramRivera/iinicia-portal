@@ -79,7 +79,7 @@ De conformidad con el criterio `CA-19`, toda mutación administrativa sobre usua
 
 ### Garantías de Inmutabilidad (RLS)
 - **Lectura:** Exclusiva para administradores (`public.is_admin() = true`). Los estudiantes y profesores reciben 0 registros.
-- **Escritura:** Inserción permitida bajo contexto autenticado (`actor_id = auth.uid()` o administrador).
+- **Escritura:** La migración `20261120120000_limit_client_privileges.sql` reserva la inserción a la API y los disparadores internos.
 - **Prohibición de Borrado y Edición:** No existe ninguna política de `UPDATE` ni `DELETE` para clientes en `public.audit_logs`. La bitácora es estrictamente de adición (*append-only*).
 
 ---
@@ -116,3 +116,5 @@ De conformidad con el criterio `CA-19`, toda mutación administrativa sobre usua
 La migración `20261116120000_staff_scope.sql` limita la lectura del directorio, las afiliaciones y las matrículas según el rol y el ámbito. Reserva a la API privilegiada las escrituras directas de roles, estados y matrículas. La edición del perfil propio conserva sus columnas de contacto y presentación. Validar con `supabase/tests/staff_scope.sql` en un entorno local con la línea base y semillas, usando `psql -X -v ON_ERROR_STOP=1`. El archivo de prueba hace rollback de sus datos.
 
 Aplicar la migración primero en un entorno de ensayo existente y luego repetir el recorrido con cuentas de cada rol. Docker Compose la aplica al inicializar un volumen nuevo. Un entorno con datos requiere ejecutar la migración correspondiente.
+
+Los cambios y las verificaciones del 20 de noviembre están en la [revisión de seguridad](revision-seguridad-20261120.md).

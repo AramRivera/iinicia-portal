@@ -81,7 +81,7 @@ export class CmsService {
    * Registra un mensaje del formulario público de contacto.
    */
   async submitContactMessage(dto: CreateContactMessageDto, ipAddress?: string) {
-    const client = this.supabase.getClient('');
+    const client = this.supabase.getAdminClient();
     const { data, error } = await client
       .from('contact_messages')
       .insert({
@@ -98,7 +98,7 @@ export class CmsService {
       .maybeSingle();
 
     if (error || !data) {
-      this.logger.error(`Error al registrar mensaje de contacto: ${error?.message}`);
+      this.logger.error('Error al registrar mensaje de contacto.');
       throw new InternalServerErrorException('No fue posible enviar tu mensaje de contacto.');
     }
 

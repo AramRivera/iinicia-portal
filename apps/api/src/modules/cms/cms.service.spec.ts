@@ -9,6 +9,7 @@ describe('CmsService', () => {
   let service: CmsService;
   let supabaseMock: {
     getClient: ReturnType<typeof vi.fn>;
+    getAdminClient: ReturnType<typeof vi.fn>;
   };
   let clientMock: any;
 
@@ -19,6 +20,7 @@ describe('CmsService', () => {
 
     supabaseMock = {
       getClient: vi.fn().mockReturnValue(clientMock),
+      getAdminClient: vi.fn().mockReturnValue(clientMock),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -159,6 +161,8 @@ describe('CmsService', () => {
         '127.0.0.1',
       );
 
+      expect(supabaseMock.getAdminClient).toHaveBeenCalledOnce();
+      expect(supabaseMock.getClient).not.toHaveBeenCalled();
       expect(result).toEqual({
         success: true,
         message_id: 'msg-123',

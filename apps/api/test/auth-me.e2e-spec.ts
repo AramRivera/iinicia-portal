@@ -42,7 +42,7 @@ describe('GET /api/v1/auth/me', () => {
 
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(SupabaseService)
-      .useValue({ getAuthenticatedUser })
+      .useValue({ getAuthenticatedUser, assertPortalAccount: vi.fn().mockResolvedValue(undefined) })
       .overrideProvider(AuthService)
       .useValue({ getMe })
       .compile();

@@ -37,6 +37,7 @@ export class SupabaseAuthGuard implements CanActivate {
     if (readSupabaseTokenClaims(accessToken).aal !== 'aal2') {
       throw new ForbiddenException('Completa la verificación en dos pasos.');
     }
+    await this.supabase.assertPortalAccount(accessToken, user.id);
     request.accessToken = accessToken;
     request.user = user;
 

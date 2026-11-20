@@ -16,8 +16,9 @@ services:
       - iinicia_pgdata:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d:ro
       - ../supabase/migrations/20261116120000_staff_scope.sql:/docker-entrypoint-initdb.d/04-staff-scope.sql:ro
+      - ../supabase/migrations/20261120120000_limit_client_privileges.sql:/docker-entrypoint-initdb.d/05-limit-client-privileges.sql:ro
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
       interval: 10s
@@ -53,7 +54,7 @@ services:
       GOTRUE_SMTP_ADMIN_EMAIL: noreply@iinicia.org
       GOTRUE_SMTP_SENDER_NAME: "IINICIA Portal"
     ports:
-      - "${AUTH_PORT:-9999}:9999"
+      - "127.0.0.1:${AUTH_PORT:-9999}:9999"
     networks:
       - iinicia-net
 
@@ -74,7 +75,7 @@ services:
       PGRST_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
       PGRST_DB_PRE_REQUEST: public.iinicia_require_mfa
     ports:
-      - "${REST_PORT:-3001}:3000"
+      - "127.0.0.1:${REST_PORT:-3001}:3000"
     networks:
       - iinicia-net
 
@@ -86,8 +87,8 @@ services:
     container_name: iinicia-mail
     restart: unless-stopped
     ports:
-      - "${MAILPIT_UI_PORT:-8025}:8025"
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
     networks:
       - iinicia-net
 
@@ -121,7 +122,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "${API_PORT:-3000}:3000"
+      - "127.0.0.1:${API_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
       interval: 15s
@@ -150,7 +151,7 @@ services:
       api:
         condition: service_started
     ports:
-      - "${WEB_PORT:-4000}:4000"
+      - "127.0.0.1:${WEB_PORT:-4000}:4000"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/"]
       interval: 20s
@@ -201,7 +202,7 @@ services:
       - moodle_data:/bitnami/moodle
       - moodledata_data:/bitnami/moodledata
     ports:
-      - "${MOODLE_PORT:-8080}:8080"
+      - "127.0.0.1:${MOODLE_PORT:-8080}:8080"
     networks:
       - iinicia-net
 

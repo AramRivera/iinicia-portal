@@ -8,7 +8,9 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { CmsService } from './cms.service.js';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto.js';
 
@@ -33,6 +35,8 @@ export class CmsController {
 
   @Post('contact')
   @HttpCode(201)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   submitContact(
     @Body() dto: CreateContactMessageDto,
     @Ip() ipAddress: string,

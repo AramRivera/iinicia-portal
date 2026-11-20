@@ -916,6 +916,8 @@ paths:
                     format: date-time
         "400":
           description: Datos de contacto inválidos.
+        "429":
+          description: Límite de solicitudes del formulario alcanzado. Reintenta más tarde.
         "500":
           description: No fue posible registrar el mensaje.
 
@@ -1221,35 +1223,6 @@ paths:
       responses:
         "200":
           description: Miembros del directorio.
-
-  /contact:
-    post:
-      summary: Enviar mensaje de contacto
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [full_name, email, subject, message]
-              properties:
-                full_name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                phone:
-                  type: string
-                subject:
-                  type: string
-                program_of_interest:
-                  type: string
-                  format: uuid
-                message:
-                  type: string
-      responses:
-        "201":
-          description: Mensaje recibido.
 
   /migration/redirects:
     get:

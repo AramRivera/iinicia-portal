@@ -1150,6 +1150,9 @@
         "responses": {
           "201": {
             "description": "Mensaje recibido."
+          },
+          "429": {
+            "description": "Límite de solicitudes del formulario alcanzado. Reintenta más tarde."
           }
         }
       }
