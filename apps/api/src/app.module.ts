@@ -17,6 +17,7 @@ import { AdmissionsModule } from './modules/admissions/admissions.module.js';
 import { MoodleModule } from './modules/moodle/moodle.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { CmsModule } from './modules/cms/cms.module.js';
+import { HelpChatModule } from './modules/help-chat/help-chat.module.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CmsModule } from './modules/cms/cms.module.js';
     MoodleModule,
     AuditModule,
     CmsModule,
+    HelpChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
