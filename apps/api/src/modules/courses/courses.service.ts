@@ -59,8 +59,7 @@ export class CoursesService {
       return data || [];
     }
 
-    const admin = this.supabase.getAdminClient();
-    const scoped = isScopedCoordinator(await loadActiveRoleSlugs(admin, userId));
+    const scoped = isScopedCoordinator(await loadActiveRoleSlugs(client, userId));
     if (!scoped) {
       try {
         await this.syncCoursesFromMoodle();
@@ -74,7 +73,7 @@ export class CoursesService {
       .select('*, programs!program_id ( code, name, slug )')
       .order('created_at', { ascending: false });
     if (scoped) {
-      const programIds = await listAssignedProgramIds(admin, userId);
+      const programIds = await listAssignedProgramIds(client, userId);
       if (!programIds.length) return [];
       query = query.in('program_id', programIds);
     }

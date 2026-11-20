@@ -43,18 +43,24 @@ describe('CoursesService catalog and authorization', () => {
   });
 
   it('does not give an unassigned coordinator the global administrative catalog', async () => {
-    const client = { from: () => ({ select: () => ({ order: () => ({}) }) }) };
-    const admin = { from: (table: string) => ({ select: () => ({ eq: () => (
-      table === 'user_roles'
-        ? { eq: async () => ({ data: [{ roles: { slug: 'coordinador' }, expires_at: null }] }) }
-        : { in: async () => ({ data: [] }) }
-    ) }) }) };
-    const supabase = {
-      getAdminClient: () => admin, getResilientClient: () => client,
-    } as unknown as SupabaseService;
-    const sync = vi.fn();
-    const service = new CoursesService(supabase, { getAllCourses: sync } as unknown as MoodleClient);
+    const { service, fetch, sync } = setup([]);
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify([
+      { roles: { slug: 'coordinador' }, expires_at: null },
+    ]), { headers: { 'content-type': 'application/json' } }));
     expect(await service.findCourses('coordinator', true, 'jwt')).toEqual([]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(String(fetch.mock.calls[1][0])).toContain('user_programs');
+    expect(sync).not.toHaveBeenCalled();
+  });
+
+  it('returns mapped courses under the administrator JWT when synchronization cannot start', async () => {
+    const { service, fetch, sync } = setup([{ id: 'mapped-course' }]);
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify([
+      { roles: { slug: 'superadministrador' }, expires_at: null },
+    ]), { headers: { 'content-type': 'application/json' } }));
+    await expect(service.findCourses('admin', true, 'admin-jwt')).resolves.toEqual([{ id: 'mapped-course' }]);
+    expect(String(fetch.mock.calls[1][0])).toContain('course_mappings');
+    expect(new Headers(fetch.mock.calls[1][1].headers).get('Authorization')).toBe('Bearer admin-jwt');
     expect(sync).not.toHaveBeenCalled();
   });
 });

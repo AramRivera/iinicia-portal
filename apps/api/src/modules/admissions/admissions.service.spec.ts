@@ -4,7 +4,7 @@ import type { SupabaseService } from '../../common/supabase/supabase.service.js'
 import { AdmissionsService } from './admissions.service.js';
 
 describe('AdmissionsService', () => {
-  const fromAdmin = vi.fn();
+  const fromUser = vi.fn();
   const rpc = vi.fn();
   const query = {
     select: vi.fn().mockReturnThis(),
@@ -14,16 +14,17 @@ describe('AdmissionsService', () => {
   };
   const enrollAdmittedStudent = vi.fn().mockResolvedValue({ state: 'synced', total: 1, synced: 1 });
   const service = new AdmissionsService({
-    getAdminClient: () => ({ from: fromAdmin, rpc }),
-    getResilientClient: () => ({ from: () => query }),
+    getAdminClient: () => ({ rpc }),
+    getResilientClient: () => ({ from: fromUser }),
   } as unknown as SupabaseService, { enrollAdmittedStudent } as unknown as ConstructorParameters<typeof AdmissionsService>[1]);
 
   beforeEach(() => {
     vi.clearAllMocks();
+    fromUser.mockReset().mockReturnValue(query);
   });
 
   function roles(...slugs: string[]) {
-    fromAdmin.mockReturnValueOnce({
+    fromUser.mockReturnValueOnce({
       select: () => ({
         eq: () => ({
           eq: async () => ({
@@ -45,9 +46,10 @@ describe('AdmissionsService', () => {
 
   it('limits coordinator reads to assigned programs', async () => {
     roles('coordinador');
-    fromAdmin.mockReturnValueOnce({
+    const memberships = {
       select: () => ({ eq: () => ({ in: async () => ({ data: [{ program_id: 'program' }] }) }) }),
-    });
+    };
+    fromUser.mockImplementation((table: string) => table === 'user_programs' ? memberships : query);
     await service.findApplications('coordinator', 'jwt');
     expect(query.in).toHaveBeenCalledWith('program_id', ['program']);
   });

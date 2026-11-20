@@ -29,9 +29,8 @@ export class AdmissionsService {
    * Consulta solicitudes de admisión.
    */
   async findApplications(userId: string, accessToken: string) {
-    const admin = this.supabase.getAdminClient();
-    const roles = await loadActiveRoleSlugs(admin, userId);
     const client = this.supabase.getResilientClient(accessToken);
+    const roles = await loadActiveRoleSlugs(client, userId);
     let query = client
       .from('admission_applications')
       .select('*, programs!program_id ( code, name, slug ), profiles!applicant_id ( id, email, first_name, last_name, phone )')
@@ -39,7 +38,7 @@ export class AdmissionsService {
 
     // Acota la bandeja de coordinación a sus programas y la consulta de un aspirante a sus propios registros.
     if (isScopedCoordinator(roles)) {
-      const programIds = await listAssignedProgramIds(admin, userId);
+      const programIds = await listAssignedProgramIds(client, userId);
       if (!programIds.length) return [];
       query = query.in('program_id', programIds);
     } else if (!hasGlobalAcademicAccess(roles)) {
