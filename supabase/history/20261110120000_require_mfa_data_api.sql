@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261110120000_require_mfa_data_api.sql
 BEGIN;
 
 -- No reemplazar controles de otro proyecto o ambiente.

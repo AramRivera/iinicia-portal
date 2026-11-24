@@ -1,3 +1,4 @@
+-- IINICIA Portal · base PostgreSQL · 001_initial_user_tables.sql
 begin;
 
 -- 1. Catálogo de roles

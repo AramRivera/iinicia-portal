@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · seed.sql
 -- =================================================================================
 -- PROYECTO: PORTAL IINICIA
 -- SEMILLAS REPRODUCIBLES DE LINEA BASE (ROLES, PERMISOS, CATALOGOS)

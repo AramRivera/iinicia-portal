@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · 1100_sessions_password_changed_at.sql
 -- =====================================================================
 -- 1100 · Revocación de sesiones por cambio de contraseña
 --

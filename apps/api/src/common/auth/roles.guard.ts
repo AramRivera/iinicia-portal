@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · roles.guard.ts
 /** Exige los roles de la ruta y resuelve sus asignaciones vigentes para el usuario autenticado. */
 import {
   CanActivate,
@@ -16,11 +17,13 @@ interface RequestWithRoles extends AuthenticatedRequest {
 
 @Injectable()
 export class RolesGuard implements CanActivate {
+  /** Recibe reflector y supabase como dependencias del módulo de identidad y autenticación. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly reflector: Reflector,
     private readonly supabase: SupabaseService,
   ) {}
 
+  /** Lee los roles requeridos y resuelve los de la sesión. Adjunta los roles incluso cuando el controlador los necesita solo para filtrar la consulta. */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
       ROLES_KEY,
@@ -35,6 +38,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Usuario no autenticado.');
     }
 
+    // El rol proviene de una consulta con la sesión validada y se reutiliza durante la misma petición.
     if (!request.userRoles) {
       request.userRoles = await this.resolveUserRoles(accessToken, user.id);
     }
@@ -64,6 +68,7 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 
+  /** Intenta resolver los roles con la función de Supabase y recurre a las asignaciones vigentes cuando la función no devuelve roles. */
   private async resolveUserRoles(
     accessToken: string,
     userId: string,
@@ -77,6 +82,7 @@ export class RolesGuard implements CanActivate {
         return rpcRoles as string[];
       }
 
+      // Si la consulta de roles mediante la función falla o no devuelve roles, se leen las asignaciones vigentes del titular.
       const { data, error } = await client
         .from('user_roles')
         .select('is_active, expires_at, roles!role_id ( slug )')

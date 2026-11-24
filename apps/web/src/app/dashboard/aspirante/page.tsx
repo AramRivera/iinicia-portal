@@ -1,3 +1,4 @@
+// IINICIA Portal · panel de aspirantes · page.tsx
 /** Muestra el avance de las postulaciones y las opciones académicas que puede solicitar el aspirante. */
 'use client';
 
@@ -16,6 +17,7 @@ import {
   IconPlus,
 } from '@/components/campus-tech/Icons';
 
+/** Muestra el estado del perfil y las postulaciones de la cuenta aspirante. Las nuevas solicitudes se validan en la API. */
 export default function AspiranteDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();
@@ -43,6 +45,7 @@ export default function AspiranteDashboardPage() {
       return;
     }
 
+    /** Consulta el perfil y las solicitudes del aspirante en paralelo para actualizar las secciones del panel. */
     async function loadData() {
       try {
         setLoading(true);

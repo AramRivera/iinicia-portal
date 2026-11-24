@@ -1,3 +1,5 @@
+// IINICIA Portal · asistente de ayuda · help-knowledge.ts
+/** El catálogo de ayuda une cada tema del portal a un destino conocido. El servicio utiliza sus identificadores para adjuntar enlaces que controla IINICIA. */
 type HelpAnswer = {
   text: string;
   action: { href: string; label: string };
@@ -69,6 +71,7 @@ const answers = {
 
 type Topic = keyof typeof answers;
 
+// Las reglas vinculan expresiones comunes del portal a temas documentados y sus destinos internos.
 const rules: [Topic, RegExp][] = [
   ['password', /\b(contrasena|password|clave|olvide|olvidado)\b/],
   ['verification', /\b(2fa|mfa|totp|autenticador[ae]?|dos pasos|codigo qr|codigo de (seis|6) digitos)\b/],
@@ -88,6 +91,7 @@ const rules: [Topic, RegExp][] = [
   ['roles', /\b(roles?|permisos?|admin\w*|superadmin\w*|coordina\w*)\b/],
 ];
 
+/** Selecciona los temas de ayuda que coinciden con la pregunta para dar al asistente contexto y destinos documentados. */
 export function retrieveHelpEntries(question: string) {
   const normalized = question
     .toLowerCase()

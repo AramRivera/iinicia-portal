@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · RoleWorkspace.tsx
 /** Comparte el espacio de coordinación y soporte, con datos y opciones ajustados al rol. */
 'use client';
 
@@ -31,6 +32,7 @@ const statusLabels: Record<UserStatus, string> = {
   baja: 'Baja',
 };
 
+/** Comparte la estructura de soporte y coordinación. Deriva las consultas y las acciones visibles de la sesión y del rol del panel. */
 export function RoleWorkspace({ role }: Props) {
   const router = useRouter();
   const { user, loading, hasPermission } = useAuth();
@@ -46,6 +48,7 @@ export function RoleWorkspace({ role }: Props) {
   const [statusFilter, setStatusFilter] = useState('');
   const isCoordinator = role === 'coordinador';
   const title = isCoordinator ? 'Coordinación académica' : 'Soporte';
+  // Los permisos de la sesión determinan qué consultas y acciones ofrece el panel. La API aplica el alcance a los resultados.
   const canReadUsers = hasPermission('users.read');
   const canReview = isCoordinator && hasPermission('admissions.review');
   const canAuthorize = isCoordinator && hasPermission('enrollments.authorize');
@@ -92,6 +95,7 @@ export function RoleWorkspace({ role }: Props) {
   }, [loading, user, role, canReadUsers, search, roleFilter, statusFilter]);
 
   // Prepara los cursos de la vista de coordinación a partir de las adscripciones del perfil.
+  // En coordinación, el panel agrupa la oferta accesible según los programas del perfil.
   const scopedCourses = useMemo(() => {
     if (!isCoordinator || userPrograms.length === 0) return [];
     const programIds = new Set(userPrograms.map((program) => program.program_id));

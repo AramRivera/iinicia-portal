@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · SiteHeader.tsx
 /** Coordina la navegación pública, la búsqueda, el tema y los accesos de sesión. */
 "use client";
 
@@ -18,6 +19,7 @@ const navItems = [
   { label: "Contacto", href: "/#contacto", id: "contacto" },
 ];
 
+/** Ofrece navegación pública y contexto de sesión en las variantes de escritorio y móvil. */
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("inicio");

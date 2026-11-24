@@ -1,3 +1,4 @@
+// IINICIA Portal · API NestJS · app.controller.ts
 /** Sirve el punto de entrada y las versiones del contrato OpenAPI que consume Swagger. */
 import { Controller, Get, Header, Res } from '@nestjs/common';
 import type { Response } from 'express';
@@ -5,6 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AppService } from './app.service.js';
 
+/** Busca el contrato generado en las ubicaciones que usan el desarrollo y la compilación. Devuelve el contenido disponible para servirlo por HTTP. */
 function getDocFile(filename: 'openapi.yaml' | 'openapi.json'): string | null {
   const candidatePaths = [
     resolve(process.cwd(), `../../docs/${filename}`),
@@ -15,6 +17,7 @@ function getDocFile(filename: 'openapi.yaml' | 'openapi.json'): string | null {
   return found ? readFileSync(found, 'utf8') : null;
 }
 
+/** Incorpora el contrato JSON a la vista interactiva de Scalar. La página utiliza el documento ya publicado por la API. */
 function buildScalarHtml(specJson: string): string {
   return `<!doctype html>
 <html lang="es">
@@ -42,6 +45,7 @@ function buildScalarHtml(specJson: string): string {
 </html>`;
 }
 
+/** Prepara una segunda vista interactiva del contrato para lectores que usan Swagger UI. */
 function buildSwaggerHtml(specJson: string): string {
   return `<!doctype html>
 <html lang="es">
@@ -140,13 +144,17 @@ function buildSwaggerHtml(specJson: string): string {
 
 @Controller()
 export class AppController {
+  /** Recibe appService como dependencias del módulo de API NestJS. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly appService: AppService) {}
 
+  /** Expone un mensaje de bienvenida como respuesta de la raíz de la API. */
   @Get()
   getHello(): string {
     return this.appService.getHello();
   }
 
+  // YAML y JSON publican el contrato de la API para herramientas y lectores que usan formatos distintos.
+  /** Entrega el contrato YAML con su cabecera de contenido. Si no encuentra el archivo, responde con estado 404. */
   @Get('openapi.yaml')
   @Header('Content-Type', 'text/yaml; charset=utf-8')
   getYamlRoot(@Res() res: Response) {
@@ -155,6 +163,7 @@ export class AppController {
     return res.send(content);
   }
 
+  /** Entrega el mismo contrato en JSON para herramientas que consumen ese formato. */
   @Get('openapi.json')
   @Header('Content-Type', 'application/json; charset=utf-8')
   getJsonRoot(@Res() res: Response) {
@@ -163,6 +172,7 @@ export class AppController {
     return res.send(content);
   }
 
+  /** Sirve la interfaz interactiva de Scalar a partir del contrato JSON disponible. */
   @Get('docs')
   @Header('Content-Type', 'text/html; charset=utf-8')
   getDocsScalar(@Res() res: Response) {
@@ -170,6 +180,7 @@ export class AppController {
     return res.send(buildScalarHtml(json));
   }
 
+  /** Sirve la interfaz de Swagger UI a partir de la misma especificación que usa Scalar. */
   @Get('swagger')
   @Header('Content-Type', 'text/html; charset=utf-8')
   getDocsSwagger(@Res() res: Response) {

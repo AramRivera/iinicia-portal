@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · permissions.guard.ts
 /** Resuelve los permisos requeridos por la ruta y los compara con los permisos de la sesión. */
 import {
   CanActivate,
@@ -17,11 +18,13 @@ interface RequestWithPermissions extends AuthenticatedRequest {
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
+  /** Recibe reflector y supabase como dependencias del módulo de identidad y autenticación. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly reflector: Reflector,
     private readonly supabase: SupabaseService,
   ) {}
 
+  /** Lee los permisos declarados por la ruta y exige que la cuenta satisfaga el conjunto con su sesión autorizada. */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
       PERMISSIONS_KEY,
@@ -44,6 +47,7 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
+    // Los permisos se resuelven una vez por petición a partir de la identidad y las asignaciones vigentes.
     if (!request.userPermissions) {
       request.userPermissions = await this.resolveUserPermissions(
         accessToken,
@@ -53,6 +57,7 @@ export class PermissionsGuard implements CanActivate {
 
     const userPermissions = request.userPermissions;
 
+    // Una ruta puede declarar varios permisos. La autorización exige que la sesión cumpla todos.
     const hasAll = requiredPermissions.every((perm) =>
       userPermissions.includes(perm),
     );
@@ -66,6 +71,7 @@ export class PermissionsGuard implements CanActivate {
     return true;
   }
 
+  /** Obtiene los permisos derivados de los roles activos bajo la sesión de Supabase. Los fallos de resolución dejan la lista vacía. */
   private async resolveUserPermissions(
     accessToken: string,
     userId: string,

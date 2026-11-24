@@ -1,3 +1,4 @@
+// IINICIA Portal · admisiones · admissions.service.ts
 /** Implementa las reglas para filtrar postulaciones por ámbito y promover al aspirante después del dictamen. */
 import { EnrollmentsService } from '../enrollments/enrollments.service.js';
 import {
@@ -23,6 +24,7 @@ import { ReviewAdmissionDto } from './dto/review-admission.dto.js';
 export class AdmissionsService {
   private readonly logger = new Logger(AdmissionsService.name);
 
+  /** Recibe supabase y enrollments como dependencias del módulo de admisiones. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly supabase: SupabaseService, private readonly enrollments: EnrollmentsService) {}
 
   /**

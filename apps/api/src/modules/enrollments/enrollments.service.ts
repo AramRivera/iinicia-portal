@@ -1,3 +1,4 @@
+// IINICIA Portal · matrículas · enrollments.service.ts
 /** Implementa las reglas para controlar las transiciones locales y coordinar las operaciones remotas en Moodle. */
 import {
   ConflictException,
@@ -25,6 +26,7 @@ import { UpdateEnrollmentStatusDto } from './dto/update-enrollment-status.dto.js
 export class EnrollmentsService {
   private readonly logger = new Logger(EnrollmentsService.name);
 
+  /** Recibe supabase y moodleService como dependencias del módulo de matrículas. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly supabase: SupabaseService,
     private readonly moodleService: MoodleService,
@@ -32,6 +34,7 @@ export class EnrollmentsService {
 
   // Se invoca tras el dictamen transaccional que autoriza al revisor y al programa.
   // Selecciona los cursos obligatorios del primer módulo para iniciar la matrícula del estudiante.
+  /** Vincula la admisión a la matrícula del programa y devuelve el resultado que el flujo de admisión necesita informar. */
   async enrollAdmittedStudent(userId: string, programId: string, reviewerId: string) {
     const admin = this.supabase.getAdminClient();
     const { data: courses, error } = await admin.from('course_mappings')
@@ -74,6 +77,7 @@ export class EnrollmentsService {
     return { total, synced, state: !total ? 'no_courses' as const : synced === total ? 'synced' as const : 'incomplete' as const };
   }
 
+  /** Lista las solicitudes de matrícula que puede consultar la sesión actual. */
   async findEnrollments(userId: string, accessToken: string) {
     const admin = this.supabase.getAdminClient();
     const roles = await loadActiveRoleSlugs(admin, userId);
@@ -105,6 +109,7 @@ export class EnrollmentsService {
     );
   }
 
+  /** Recibe la solicitud de inscripción y usa la identidad autenticada para determinar su titular y registrar el estado inicial. */
   async createEnrollmentRequest(
     userId: string,
     dto: CreateEnrollmentRequestDto,
@@ -305,6 +310,7 @@ export class EnrollmentsService {
   }
 
   // Reutiliza la solicitud persistida para reintentar la sincronización de una matrícula.
+  /** Vuelve a intentar la sincronización de la matrícula y refleja el resultado que devuelve el campus. */
   async syncToMoodle(enrollmentId: string, actorId: string, actorRoles: string[] = []) {
     const admin = this.supabase.getAdminClient();
     const { data: enrollment, error } = await admin
@@ -326,6 +332,7 @@ export class EnrollmentsService {
     return result;
   }
 
+  /** Comprueba y completa la asignación del rol de estudiante antes de continuar la inscripción. */
   private async ensureStudentRole(userId: string, actorId: string) {
     const admin = this.supabase.getAdminClient();
     const { data: role, error: roleError } = await admin.from('roles')
@@ -343,6 +350,7 @@ export class EnrollmentsService {
     if (error) throw new InternalServerErrorException('No fue posible activar el rol Estudiante. Reintenta la sincronización.');
   }
 
+  /** Recupera la solicitud con el cliente recibido para conservar el alcance de datos del flujo que llamó al servicio. */
   private async readEnrollment(id: string) {
     const { data, error } = await this.supabase.getAdminClient()
       .from('enrollment_requests').select('*').eq('id', id).maybeSingle();

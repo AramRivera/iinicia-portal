@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · auth.controller.ts
 /** Expone por HTTP registro, inicio de sesión con TOTP, recuperación y consulta del perfil propio. */
 import {
   BadRequestException,
@@ -25,12 +26,14 @@ import { readSupabaseTokenClaims } from '../../common/auth/supabase-token-claims
 
 @Controller('auth')
 export class AuthController {
+  /** Recibe supabase y authService como dependencias del módulo de identidad y autenticación. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly supabase: SupabaseService,
     private readonly authService: AuthService,
   ) {}
 
   // El inicio con contraseña devuelve el paso de MFA y las respuestas de autenticación se marcan como no almacenables.
+  /** Recibe credenciales y el token CAPTCHA, aplica el límite de intentos y devuelve el paso de segundo factor. */
   @Post('login')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
@@ -44,6 +47,7 @@ export class AuthController {
     );
   }
 
+  /** Recibe el código del segundo factor y la continuación de login. Devuelve la sesión que verifica el proveedor. */
   @Post('mfa/verify')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
@@ -54,6 +58,7 @@ export class AuthController {
   }
 
   // Mantiene separado el desafío para recuperación del que completa una sesión de ingreso.
+  /** Recibe el código del segundo factor del flujo de recuperación para completar el cambio solicitado. */
   @Post('mfa/recover')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
@@ -63,6 +68,7 @@ export class AuthController {
     return this.supabase.resetPasswordWithMfa(mfaToken(request), dto.factor_id, dto.code, dto.password);
   }
 
+  /** Recibe el formulario de alta e inicia la confirmación por correo a través del servicio de identidad. */
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(201)
@@ -72,6 +78,7 @@ export class AuthController {
     return this.authService.register(data, origin);
   }
 
+  /** Elige el flujo de recuperación PKCE cuando recibe un reto y conserva el método de recuperación mediante enlace para los demás casos. */
   @Post('recover')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
@@ -83,6 +90,7 @@ export class AuthController {
       : this.supabase.requestPasswordRecovery(dto.email, dto.captcha_token, origin);
   }
 
+  /** Acepta una prueba de recuperación completa y selecciona el intercambio que corresponde a su tipo antes del cambio de contraseña. */
   @Post('reset-password')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
@@ -123,12 +131,14 @@ export class AuthController {
   }
 }
 
+/** Extrae la continuación del segundo factor desde el encabezado de autorización y rechaza solicitudes sin ese token. */
 function mfaToken(request: AuthenticatedRequest): string {
   const match = request.headers.authorization?.match(/^Bearer\s+(\S+)$/i);
   if (!match) throw new UnauthorizedException('Se requiere una sesión de verificación.');
   return match[1];
 }
 
+/** Lee el momento de emisión del token cuando está disponible para preparar la respuesta de la sesión. */
 function issuedAtSeconds(accessToken: string): number | null {
   const { iat } = readSupabaseTokenClaims(accessToken);
   return typeof iat === 'number' && Number.isFinite(iat) ? iat : null;

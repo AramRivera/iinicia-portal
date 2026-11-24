@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · BrandWordmark.tsx
 /** Dibuja la marca textual que se reutiliza en la navegación del portal. */
 type BrandWordmarkProps = {
   className?: string;

@@ -1,3 +1,4 @@
+// IINICIA Portal · administración · page.tsx
 /** Reúne las operaciones de asignación académica y revocación de matrículas desde administración. */
 'use client';
 
@@ -23,6 +24,7 @@ import {
   IconExternalLink,
 } from '@/components/campus-tech/Icons';
 
+/** Carga el directorio administrativo y las asignaciones disponibles para gestionar la relación de usuarios con cursos. */
 export default function AsignacionesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();

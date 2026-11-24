@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · dev-demo.cjs
 /** Arranca la demo local o compartida con su configuración de red y un directorio de compilación propio. */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { spawn } = require('node:child_process');

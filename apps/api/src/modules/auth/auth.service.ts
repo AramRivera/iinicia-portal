@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · auth.service.ts
 /** Implementa las reglas para coordinar el registro y construir el perfil de sesión con roles y permisos. */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthRepository, UserRoleEmbed } from './auth.repository.js';
@@ -9,11 +10,13 @@ type RoleEmbed = { slug: string } | { slug: string }[] | null;
 
 @Injectable()
 export class AuthService {
+  /** Recibe repository y supabase como dependencias del módulo de identidad y autenticación. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly repository: AuthRepository,
     private readonly supabase: SupabaseService,
   ) {}
 
+  /** Adapta el formulario validado al contrato de registro de Supabase Auth. */
   async register(dto: RegisterDto, origin?: string) {
     return this.supabase.signUp({
       email: dto.email,
@@ -110,6 +113,7 @@ export class AuthService {
   }
 }
 
+/** Extrae el identificador legible del rol desde la relación devuelta por la consulta. */
 function roleSlug(embed: RoleEmbed): string | null {
   if (!embed) return null;
   if (Array.isArray(embed)) {
@@ -118,6 +122,7 @@ function roleSlug(embed: RoleEmbed): string | null {
   return embed.slug ?? null;
 }
 
+/** Elimina duplicados y ordena los identificadores para que la respuesta de sesión sea estable. */
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 }

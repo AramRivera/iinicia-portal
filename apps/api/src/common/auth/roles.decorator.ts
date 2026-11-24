@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · roles.decorator.ts
 /** Declara los roles aceptados por una ruta y normaliza alias para compararlos. */
 import { SetMetadata } from '@nestjs/common';
 

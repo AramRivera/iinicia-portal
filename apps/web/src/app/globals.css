@@ -1,3 +1,4 @@
+/* IINICIA Portal · portal Next.js · globals.css */
 /** Define las variables de color y las utilidades de movimiento y presentación compartidas por el portal. */
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
@@ -76,6 +77,7 @@
 }
 
 /* Aplica la preferencia del sistema cuando el documento todavía no tiene un tema elegido. */
+/* La preferencia del sistema se usa como base para el tema cuando no hay una selección explícita. */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
     --brand-wash: #142e42;
@@ -445,6 +447,7 @@ body {
 }
 
 /* Respeta la preferencia de movimiento reducido en la animación del texto. */
+/* El contenido conserva su acceso y reduce las transiciones cuando el usuario solicita menos movimiento. */
 @media (prefers-reduced-motion: reduce) {
   .scroll-reveal-text {
     background: none;

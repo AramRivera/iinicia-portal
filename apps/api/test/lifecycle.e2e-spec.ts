@@ -1,3 +1,4 @@
+// IINICIA Portal · pruebas de integración · lifecycle.e2e-spec.ts
 /** Ejercita el recorrido HTTP de identidad, admisión y acceso académico con integraciones simuladas. */
 import { Test } from '@nestjs/testing';
 import {
@@ -10,6 +11,7 @@ import { AppModule } from '../src/app.module.js';
 import { SupabaseService } from '../src/common/supabase/supabase.service.js';
 import { MoodleClient } from '../src/modules/moodle/moodle.client.js';
 
+/** Construye el JWT simulado que acompaña las solicitudes del ciclo de vida académico. */
 function fakeAccessToken(issuedAt: number = 1_790_000_000): string {
   const encode = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -146,6 +148,18 @@ describe('Portal Lifecycle E2E Test Suite', () => {
       expect(res.body.status).toBe('ok');
       expect(res.body.services.supabase.status).toBe('ok');
       expect(res.body.services.moodle.status).toBe('ok');
+    });
+
+    it('GET /api/v1/health keeps database diagnostic details private', async () => {
+      mockClient.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({ error: { message: 'Internal database diagnostic' } }),
+        }),
+      });
+      mockMoodleClient.checkConnection.mockResolvedValueOnce({ ok: true });
+      const res = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
+      expect(res.body.services.supabase.status).toBe('degraded');
+      expect(res.text).not.toContain('Internal database diagnostic');
     });
 
     it('GET /api/v1/moodle/status reports Moodle connectivity', async () => {

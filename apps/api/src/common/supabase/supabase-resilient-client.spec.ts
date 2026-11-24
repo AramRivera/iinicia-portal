@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · supabase-resilient-client.spec.ts
 /** Comprueba que el cliente REST preserve el token del usuario y los errores de PostgREST. */
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from './supabase.service.js';
@@ -28,6 +29,7 @@ describe('SupabaseService.getResilientClient', () => {
     vi.unstubAllGlobals();
   });
 
+  /** Construye una respuesta de prueba para comprobar cómo se conservan los datos y los errores. */
   function jsonResponse(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
       status,
@@ -35,6 +37,7 @@ describe('SupabaseService.getResilientClient', () => {
     });
   }
 
+  /** Recupera la petición registrada para comprobar sus encabezados y opciones. */
   function sentRequest(callIndex = 0): { url: string; headers: Headers } {
     const [input, init] = fetchMock.mock.calls[callIndex] as [
       RequestInfo | URL,

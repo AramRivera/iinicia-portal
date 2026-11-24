@@ -1,3 +1,4 @@
+// IINICIA Portal · bitácora · audit.module.ts
 /** Registra el controlador y los proveedores de consulta de la bitácora en NestJS. */
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';

@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · supabase-login.spec.ts
 /** Ejercita el inicio de sesión con contraseña, el desafío TOTP y el uso del token de usuario. */
 import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
@@ -33,6 +34,7 @@ describe('Supabase password login', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
+  /** Simula el resultado inicial de Supabase para probar los pasos que siguen al ingreso con contraseña. */
   function signInWithAal1() {
     signInWithPassword.mockResolvedValue({
       data: {

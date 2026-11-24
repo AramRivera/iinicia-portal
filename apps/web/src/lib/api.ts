@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · api.ts
 /** Centraliza el transporte HTTP y separa las operaciones del portal en clientes por recurso. */
 import type {
   AdmissionApplication,
@@ -21,6 +22,7 @@ export class ApiError extends Error {
   statusCode: number;
   details?: any;
 
+  /** Conserva el código HTTP junto al mensaje para que la interfaz distinga la causa del error. */
   constructor(message: string, statusCode: number, details?: any) {
     super(message);
     this.name = 'ApiError';
@@ -29,22 +31,26 @@ export class ApiError extends Error {
   }
 }
 
+/** Lee el token de sesión que el navegador usa para identificar peticiones protegidas. */
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('iinicia_access_token');
 }
 
+/** Guarda el token devuelto por un flujo de autenticación aceptado para futuras peticiones en el navegador. */
 export function setToken(token: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem('iinicia_access_token', token);
 }
 
+/** Elimina la referencia de sesión local que se adjuntaría a peticiones posteriores. */
 export function removeToken(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('iinicia_access_token');
 }
 
 // Unifica la URL base, el token de sesión y la traducción de errores para los clientes del portal.
+/** Centraliza el envío a la API, adjunta el token cuando corresponde y representa los fallos como errores que entiende el formulario o panel. */
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
@@ -152,6 +158,7 @@ type CourseMappingResponse = Omit<CourseOffering, 'course_mapping_id' | 'code' |
   program_name?: string;
 };
 
+/** Adapta la identificación de un curso para que los componentes consuman una estructura uniforme. */
 function normalizeCourseOffering(course: CourseMappingResponse): CourseOffering {
   return {
     ...course,

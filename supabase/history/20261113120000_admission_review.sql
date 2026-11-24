@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261113120000_admission_review.sql
 BEGIN;
 
 -- Requires the current portal schema, including admission_applications and roles.slug.

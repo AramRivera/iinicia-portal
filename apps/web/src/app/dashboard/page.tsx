@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Presenta los accesos disponibles para la sesión y redirige cuando corresponde a un panel específico. */
 'use client';
 
@@ -13,8 +14,10 @@ import {
   IconArrowRight,
 } from '@/components/campus-tech/Icons';
 
+/** Resuelve el destino del usuario después de cargar la sesión. Cuando corresponde, presenta las opciones del espacio personal. */
 export default function MiIiniciaDashboardHub() {
   const router = useRouter();
+  // El concentrador espera la resolución de la sesión antes de decidir qué panel corresponde al usuario.
   const { user, loading, getDefaultDashboardPath } = useAuth();
 
   useEffect(() => {

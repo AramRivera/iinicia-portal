@@ -1,3 +1,4 @@
+// IINICIA Portal · pruebas de integración · auth.e2e-spec.ts
 /** Comprueba los contratos HTTP de registro, sesión, TOTP y recuperación. */
 import { Test } from '@nestjs/testing';
 import {

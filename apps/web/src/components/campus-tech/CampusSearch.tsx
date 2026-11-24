@@ -1,3 +1,4 @@
+// IINICIA Portal · interfaz del campus · CampusSearch.tsx
 /** Filtra las acciones del panel suministradas por la vista y permite saltar a la pestaña elegida. */
 'use client';
 
@@ -13,6 +14,7 @@ export interface CampusSearchItem {
   tab?: string;
 }
 
+/** Permite encontrar y elegir destinos de la lista de navegación que proporciona el panel. */
 export function CampusSearch({ open, onClose, items, onSelectTab }: {
   open: boolean;
   onClose: () => void;

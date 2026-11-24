@@ -1,3 +1,4 @@
+// IINICIA Portal · oferta de cursos · create-course-mapping.dto.ts
 /** Valida la relación entre un curso Moodle y su publicación en el portal. */
 import {
   IsBoolean,

@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · layout.tsx
 /** Define el documento común y monta los proveedores, la cabecera y el pie del portal. */
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   icons: { icon: '/icon.svg' },
 };
 
+/** Monta los proveedores de sesión y tema, junto con la navegación y los elementos comunes a las páginas. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="h-full antialiased" suppressHydrationWarning>

@@ -1,3 +1,4 @@
+// IINICIA Portal · interfaz del campus · CampusSidebar.tsx
 /** Renderiza secciones y opciones del menú lateral según la configuración del panel. */
 'use client';
 
@@ -56,6 +57,7 @@ interface CampusSidebarProps {
   customSections?: SidebarSection[];
 }
 
+/** Organiza secciones y destinos de navegación para el rol actual. Admite menús específicos suministrados por un panel. */
 export function CampusSidebar({
   currentTab,
   onSelectTab,
@@ -70,6 +72,7 @@ export function CampusSidebar({
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  // El menú reconoce los nombres históricos de los roles para mantener la navegación de las cuentas existentes.
   const userRoles = (user?.roles || []) as string[];
   const isSuperOrAdmin = userRoles.some((r) =>
     ['superadministrador', 'superadmin', 'administrador', 'admin', 'coordinador', 'coordinator'].includes(r)
@@ -248,6 +251,7 @@ export function CampusSidebar({
         },
       ];
 
+  // Un panel puede proporcionar su propio menú. Los demás usan la estructura predeterminada de su rol.
   const navigationSections = customSections || defaultRoleSections;
 
   const renderNavList = () => (

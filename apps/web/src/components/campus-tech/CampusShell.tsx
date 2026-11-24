@@ -1,3 +1,4 @@
+// IINICIA Portal · interfaz del campus · CampusShell.tsx
 /** Organiza los paneles del campus alrededor de una barra superior y un menú adaptable. */
 'use client';
 
@@ -23,6 +24,7 @@ interface CampusShellProps {
   children: React.ReactNode;
 }
 
+/** Reúne la barra lateral, cabecera y contenido de un panel con la estructura común del campus. */
 export function CampusShell({
   searchItems = [],
   currentTab,

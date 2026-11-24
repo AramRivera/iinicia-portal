@@ -1,3 +1,4 @@
+// IINICIA Portal · integración con Moodle · moodle.controller.ts
 /** Expone por HTTP sincronización, acceso al campus y consultas académicas. */
 import {
   BadRequestException,
@@ -25,13 +26,16 @@ import { MoodleService } from './moodle.service.js';
 
 @Controller('moodle')
 export class MoodleController {
+  /** Recibe moodleService como dependencias del módulo de integración con Moodle. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly moodleService: MoodleService) {}
 
+  /** Entrega el diagnóstico reciente del cliente Moodle a la ruta pública de estado. */
   @Get('status')
   checkStatus() {
     return this.moodleService.checkStatus();
   }
 
+  /** Vincula o sincroniza el perfil de un usuario autorizado con su cuenta del campus. */
   @Post('sync/user/:userId')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -41,6 +45,7 @@ export class MoodleController {
     return this.moodleService.syncUser(userId);
   }
 
+  /** Solicita la sincronización de los perfiles que el servicio considera elegibles y devuelve los resultados. */
   @Post('sync/users')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -50,6 +55,7 @@ export class MoodleController {
     return this.moodleService.syncAllUsers();
   }
 
+  /** Solicita actualizar una matrícula delegando al servicio la resolución de la equivalencia de curso y usuario. */
   @Post('sync/enrollment/:enrollmentId')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -105,6 +111,7 @@ export class MoodleController {
     });
   }
 
+  /** Obtiene un enlace temporal al calificador con los permisos y el destino que aplica el servicio de integración. */
   @Post('courses/:courseMappingId/launch-gradebook')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')

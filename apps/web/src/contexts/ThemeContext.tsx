@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · ThemeContext.tsx
 /** Aplica el tema elegido al documento y conserva la preferencia en el navegador. */
 'use client';
 
@@ -13,6 +14,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/** Mantiene la preferencia visual y sincroniza el tema elegido con el estado y la clase aplicada al documento. */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
@@ -65,6 +67,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Da acceso al tema y a la operación de alternancia desde un componente envuelto por el proveedor. */
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {

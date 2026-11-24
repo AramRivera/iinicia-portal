@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · auth.module.ts
 /** Registra el controlador y los proveedores de identidad, sesión y perfil del usuario en NestJS. */
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';

@@ -1,3 +1,4 @@
+// IINICIA Portal · cuentas de usuario · users.service.ts
 /** Implementa las reglas para coordinar los cambios de cuenta, perfil y vínculo con Moodle. */
 import {
   BadRequestException,
@@ -22,6 +23,7 @@ import { CreateUserAdminDto } from './dto/create-user-admin.dto.js';
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
+  /** Recibe supabase y moodleClient y moodleService como dependencias del módulo de cuentas de usuario. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly supabase: SupabaseService,
     private readonly moodleClient: MoodleClient,

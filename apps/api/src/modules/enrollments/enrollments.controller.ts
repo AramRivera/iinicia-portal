@@ -1,3 +1,4 @@
+// IINICIA Portal · matrículas · enrollments.controller.ts
 /** Expone por HTTP solicitud, autorización, sincronización y baja de matrículas. */
 import {
   Body,
@@ -23,14 +24,17 @@ import { UpdateEnrollmentStatusDto } from './dto/update-enrollment-status.dto.js
 
 @Controller('enrollments')
 export class EnrollmentsController {
+  /** Recibe enrollmentsService como dependencias del módulo de matrículas. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
+  /** Lista las solicitudes de matrícula que puede consultar la sesión actual. */
   @Get()
   @UseGuards(SupabaseAuthGuard)
   findEnrollments(@Req() req: AuthenticatedRequest) {
     return this.enrollmentsService.findEnrollments(req.user.id, req.accessToken);
   }
 
+  /** Recibe la solicitud de inscripción y usa la identidad autenticada para determinar su titular y registrar el estado inicial. */
   @Post()
   @HttpCode(201)
   @UseGuards(SupabaseAuthGuard)
@@ -46,6 +50,7 @@ export class EnrollmentsController {
     );
   }
 
+  /** Recibe una decisión sobre matrícula y entrega el identificador, la decisión y la sesión al servicio que comprueba el alcance. */
   @Patch(':id/status')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -59,6 +64,7 @@ export class EnrollmentsController {
     return this.enrollmentsService.updateEnrollmentStatus(id, dto, req.user.id, req.userRoles);
   }
 
+  /** Vuelve a intentar la sincronización de la matrícula y refleja el resultado que devuelve el campus. */
   @Post(':id/sync')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -68,6 +74,7 @@ export class EnrollmentsController {
     return this.enrollmentsService.syncToMoodle(id, req.user.id, req.userRoles);
   }
 
+  /** Solicita al servicio que gestione la baja de una matrícula identificada y las comprobaciones asociadas. */
   @Delete(':id')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard)

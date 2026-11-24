@@ -1,3 +1,4 @@
+// IINICIA Portal · panel estudiantil · page.tsx
 /** Muestra cursos autorizados, avance y perfil del estudiante, y permite iniciar el acceso al campus. */
 'use client';
 
@@ -39,6 +40,7 @@ interface CourseDropTarget {
   courseCode: string;
 }
 
+/** Presenta cursos, solicitudes y avance de la cuenta estudiante, y permite abrir las rutas de Moodle asignadas. */
 export default function EstudianteDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();

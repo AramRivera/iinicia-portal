@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · staff_scope.sql
 -- Ejecutar como postgres en una base de pruebas con línea base, migraciones y semillas.
 \set ON_ERROR_STOP on
 BEGIN;

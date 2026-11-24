@@ -1,3 +1,4 @@
+// IINICIA Portal · permisos · permissions.module.ts
 /** Registra el controlador y los proveedores de catálogo de permisos en NestJS. */
 // apps/api/src/modules/permissions/permissions.module.ts
 import { Module } from '@nestjs/common';

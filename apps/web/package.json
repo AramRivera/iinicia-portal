@@ -7,7 +7,8 @@
     "dev:demo": "node scripts/dev-demo.cjs",
     "build": "next build",
     "start": "next start --port ${PORT:-4000}",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "next": "16.4.6",

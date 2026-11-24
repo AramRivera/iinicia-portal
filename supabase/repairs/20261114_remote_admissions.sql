@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261114_remote_admissions.sql
 -- Reparación del Supabase de desarrollo: mmtuaangwbsdtddeplfv.
 -- Revisar y ejecutar en SQL Editor. No borra tablas ni filas.
 -- Reejecutable: conserva políticas preexistentes y reemplaza las funciones del proyecto.

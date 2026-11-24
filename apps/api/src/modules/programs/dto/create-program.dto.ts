@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · create-program.dto.ts
 /** Valida los datos académicos y de publicación de un programa nuevo. */
 import {
   IsBoolean,

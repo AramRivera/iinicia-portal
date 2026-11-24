@@ -1,3 +1,4 @@
+// IINICIA Portal · matrículas · enrollments.service.spec.ts
 /** Aísla las dependencias del servicio para comprobar cómo debe controlar las transiciones locales y coordinar las operaciones remotas en Moodle. */
 import {
   ConflictException,

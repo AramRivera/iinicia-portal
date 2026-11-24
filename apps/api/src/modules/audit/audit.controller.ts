@@ -1,3 +1,4 @@
+// IINICIA Portal · bitácora · audit.controller.ts
 /** Expone por HTTP la lectura paginada de eventos administrativos. */
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { SupabaseAuthGuard } from '../../common/auth/supabase-auth.guard.js';
@@ -11,8 +12,10 @@ import { QueryAuditDto } from './dto/query-audit.dto.js';
 
 @Controller('audit')
 export class AuditController {
+  /** Recibe auditService como dependencias del módulo de bitácora. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly auditService: AuditService) {}
 
+  /** Recibe filtros y paginación para consultar la bitácora con los permisos de la sesión. */
   @Get()
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('superadministrador', 'administrador')

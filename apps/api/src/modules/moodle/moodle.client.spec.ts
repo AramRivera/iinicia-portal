@@ -1,15 +1,37 @@
+// IINICIA Portal · integración con Moodle · moodle.client.spec.ts
+/** Simula Moodle para comprobar el transporte del token, la validación de destinos y la reutilización de consultas de disponibilidad. */
 import { ConfigService } from '@nestjs/config';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MoodleClient } from './moodle.client.js';
 
 describe('MoodleClient transport', () => {
   const site = 'https://moodle.example/moodle';
-  const client = new MoodleClient(new ConfigService({
-    MOODLE_URL: site,
-    MOODLE_WS_TOKEN: 'example-token',
-  }));
+  let client: MoodleClient;
+
+  beforeEach(() => {
+    client = new MoodleClient(new ConfigService({
+      MOODLE_URL: site,
+      MOODLE_WS_TOKEN: 'example-token',
+    }));
+  });
 
   afterEach(() => vi.unstubAllGlobals());
+
+  it('shares one Moodle health probe and refreshes it after its lifetime', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(0);
+    const fetch = vi.fn(async () => Response.json({ sitename: 'Campus' }));
+    vi.stubGlobal('fetch', fetch);
+    try {
+      await Promise.all([client.checkConnection(), client.checkConnection()]);
+      await client.checkConnection();
+      expect(fetch).toHaveBeenCalledTimes(1);
+      now.mockReturnValue(15_000);
+      await client.checkConnection();
+      expect(fetch).toHaveBeenCalledTimes(2);
+    } finally {
+      now.mockRestore();
+    }
+  });
 
   it('uses only the configured endpoint and keeps the service token in the POST body', async () => {
     const fetch = vi.fn().mockResolvedValue(Response.json({

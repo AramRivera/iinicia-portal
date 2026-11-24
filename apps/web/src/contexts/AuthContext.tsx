@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · AuthContext.tsx
 /** Mantiene el perfil autenticado y las acciones de sesión que comparten las pantallas. */
 'use client';
 
@@ -27,6 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Restaura la sesión del portal y comparte el perfil, los roles y las operaciones de identidad con los componentes descendientes. */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('focus', refreshOnFocus);
   }, [fetchProfile]);
 
+  /** Inicia el primer paso y descarta la sesión anterior antes de pedir la siguiente acción al servidor. */
   const login = (email: string, password: string, captchaToken?: string): Promise<LoginResponse> => {
     removeToken();
     setUser(null);
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /** Mantiene pendiente el formulario mientras se registra la solicitud de confirmación de correo. */
   const register = async (payload: {
     email: string;
     password: string;
@@ -97,21 +101,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /** Limpia el token y el perfil del navegador antes de volver a la página de ingreso. */
   const logout = () => {
     authApi.logout();
     setUser(null);
     window.location.href = '/login';
   };
 
+  /** Vuelve a leer el perfil cuando el panel necesita reflejar cambios recientes de la cuenta. */
   const refreshUser = async () => {
     await fetchProfile();
   };
 
+  /** Expone los roles del perfil para elegir qué elementos de interfaz se muestran. */
   const hasRole = (role: RoleSlug): boolean => {
     if (!user) return false;
     return user.roles.includes(role);
   };
 
+  /** Controla la disponibilidad visual de una acción. La API vuelve a verificar el permiso al procesarla. */
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
     if (user.roles.includes('superadministrador')) return true;
@@ -155,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Entrega el contexto que los componentes usan para consultar la sesión y ejecutar las operaciones de identidad. */
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {

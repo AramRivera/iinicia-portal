@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261120120000_limit_client_privileges.sql
 BEGIN;
 
 -- Estos privilegios operan fuera de RLS y no los necesita ningún cliente del portal.
@@ -35,6 +36,7 @@ $$;
 REVOKE ALL ON FUNCTION iinicia_private.portal_session_allowed() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION iinicia_private.portal_session_allowed() TO authenticated;
 
+-- Se aplica la misma precondición de sesión a las tablas protegidas para conservar el alcance de las políticas existentes.
 DO $$
 DECLARE
   protected_table text;

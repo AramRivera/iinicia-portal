@@ -1,9 +1,11 @@
+// IINICIA Portal · API NestJS · main.ts
 /** Configura el servidor HTTP, el prefijo de la API, CORS y la validación de las solicitudes. */
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 import { SupabaseService } from './common/supabase/supabase.service.js';
 
+/** Configura NestJS, la validación de solicitudes y CORS antes de iniciar la escucha de la API. */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

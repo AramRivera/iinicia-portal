@@ -1,3 +1,5 @@
+// IINICIA Portal · portal Next.js · portal-help.ts
+/** La ayuda es pública. El navegador envía solo la pregunta y hasta tres preguntas anteriores sin adjuntar credenciales de sesión. */
 import { API_URL } from './api';
 
 export type HelpAnswer = {
@@ -13,6 +15,7 @@ export const helpTopics = [
   'Ya me admitieron, ¿por qué no veo mi curso en Moodle?',
 ];
 
+/** Envía la pregunta y hasta tres antecedentes sin credenciales. Traduce el límite de frecuencia y los fallos del proveedor a mensajes del diálogo. */
 export async function askPortalHelp(question: string, previousQuestions: string[] = []): Promise<HelpAnswer> {
   const response = await fetch(`${API_URL}/help-chat`, {
     method: 'POST',

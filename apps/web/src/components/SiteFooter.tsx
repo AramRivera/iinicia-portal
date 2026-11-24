@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · SiteFooter.tsx
 /** Agrupa la navegación secundaria del portal y los enlaces institucionales. */
 "use client";
 
@@ -31,10 +32,12 @@ const linkGroups = [
   },
 ];
 
+/** Mantiene enlaces institucionales y aplica la navegación a las secciones de la portada según la ubicación actual. */
 export function SiteFooter() {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
+  // Las anclas se desplazan dentro de la portada cuando ya estamos en ella. En otras páginas, el enlace lleva a la portada y su sección.
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, id?: string) => {
     if (isHome && id) {
       e.preventDefault();

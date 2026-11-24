@@ -1,3 +1,4 @@
+// IINICIA Portal · integración con Moodle · moodle.service.ts
 /** Implementa las reglas para enlazar identidades, sincronizar matrículas y controlar el acceso académico. */
 import {
   BadRequestException,
@@ -24,12 +25,14 @@ import type { MoodleRoleType } from '../../common/supabase/database.types.js';
 export class MoodleService {
   private readonly logger = new Logger(MoodleService.name);
 
+  /** Recibe client y supabase y config como dependencias del módulo de integración con Moodle. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly client: MoodleClient,
     private readonly supabase: SupabaseService,
     private readonly config: ConfigService,
   ) {}
 
+  /** Traduce un rol del portal al identificador de rol configurado en el campus para la operación de matrícula. */
   private getMoodleRoleId(moodleRole: MoodleRoleType): number {
     if (moodleRole === 'student') {
       const envStudentId = this.config.get<string | number>('MOODLE_ROLE_STUDENT_ID');
@@ -42,6 +45,7 @@ export class MoodleService {
     return MOODLE_ROLE_IDS[moodleRole] ?? MOODLE_ROLE_IDS.student;
   }
 
+  /** Entrega el diagnóstico reciente del cliente Moodle a la ruta pública de estado. */
   async checkStatus() {
     return this.client.checkConnection();
   }

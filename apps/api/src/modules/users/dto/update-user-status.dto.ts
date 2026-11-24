@@ -1,3 +1,4 @@
+// IINICIA Portal · cuentas de usuario · update-user-status.dto.ts
 /** Valida el estado solicitado para la cuenta gestionada desde administración. */
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 

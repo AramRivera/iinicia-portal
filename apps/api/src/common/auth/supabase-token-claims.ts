@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · supabase-token-claims.ts
 /** Lee los atributos del JWT para que otros componentes interpreten la sesión validada. */
 /** Lee claims de un JWT. La firma debe validarse por separado en Supabase. */
 export function readSupabaseTokenClaims(token: string): Record<string, unknown> {

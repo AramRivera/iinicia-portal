@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Interpreta el resultado del enlace de verificación de correo y orienta al usuario hacia el inicio de sesión. */
 'use client';
 
@@ -6,6 +7,7 @@ import Link from 'next/link';
 
 type Confirmation = 'checking' | 'confirmed' | 'invalid';
 
+/** Presenta el resultado de la confirmación de correo y ofrece continuar hacia el inicio de sesión. */
 export default function ConfirmarCorreoPage() {
   const [confirmation, setConfirmation] = useState<Confirmation>('checking');
 

@@ -1,3 +1,4 @@
+// IINICIA Portal · roles · roles.module.ts
 /** Registra el controlador y los proveedores de catálogo y asignación de roles en NestJS. */
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';

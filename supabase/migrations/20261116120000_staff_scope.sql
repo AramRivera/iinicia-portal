@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261116120000_staff_scope.sql
 BEGIN;
 
 -- Las mutaciones administrativas pasan por NestJS para comprobar jerarquía y ámbito.
@@ -16,6 +17,7 @@ CREATE SCHEMA IF NOT EXISTS iinicia_private;
 REVOKE ALL ON SCHEMA iinicia_private FROM PUBLIC;
 GRANT USAGE ON SCHEMA iinicia_private TO authenticated;
 
+-- La coordinación obtiene ámbito a partir de una afiliación académica vigente que pertenece a su sesión.
 CREATE FUNCTION iinicia_private.coordinator_has_program(program uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $$
@@ -27,6 +29,7 @@ AS $$
   )
 $$;
 
+-- Una cuenta objetivo queda visible si comparte un programa mediante afiliación, postulación o matrícula.
 CREATE FUNCTION iinicia_private.coordinator_can_read_user(person uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $$

@@ -1,3 +1,4 @@
+// IINICIA Portal · oferta de cursos · courses.service.spec.ts
 /** Aísla las dependencias del servicio para comprobar cómo debe distinguir la oferta de los cursos autorizados y mantener su vínculo con Moodle. */
 import { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,7 @@ import { CoursesService } from './courses.service.js';
 describe('CoursesService catalog and authorization', () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  /** Configura el servicio y sus dependencias simuladas para cada escenario de oferta académica. */
   function setup(rows: unknown, status = 200) {
     const fetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify(rows), {
       status, headers: { 'content-type': 'application/json' },

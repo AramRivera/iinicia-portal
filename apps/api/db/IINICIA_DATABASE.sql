@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · IINICIA_DATABASE.sql
 -- =================================================================================
 -- PROYECTO: REDISEÑO Y MIGRACIÓN DEL PORTAL IINICIA (VERSIÓN DEFINITIVA PRODUCCIÓN)
 -- ARQUITECTURA: Next.js + NestJS + Supabase (PostgreSQL 15+) + Moodle LMS

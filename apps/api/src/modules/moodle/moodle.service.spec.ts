@@ -1,3 +1,4 @@
+// IINICIA Portal · integración con Moodle · moodle.service.spec.ts
 /** Aísla las dependencias del servicio para comprobar cómo debe enlazar identidades, sincronizar matrículas y controlar el acceso académico. */
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

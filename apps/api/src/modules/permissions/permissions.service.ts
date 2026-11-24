@@ -1,3 +1,4 @@
+// IINICIA Portal · permisos · permissions.service.ts
 /** Implementa las reglas para entregar el catálogo con metadatos de paginación. */
 import { Injectable } from '@nestjs/common';
 import { PermissionRecord } from '../../common/supabase/database.types.js';
@@ -16,8 +17,10 @@ export interface PermissionsResponse {
 
 @Injectable()
 export class PermissionsService {
+  /** Recibe repository como dependencias del módulo de permisos. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly repository: PermissionsRepository) {}
 
+  /** Acota la consulta paginada y delega al repositorio la lectura de los permisos con el token de sesión. */
   async findAll(
     query: QueryPermissionsDto,
     accessToken: string,

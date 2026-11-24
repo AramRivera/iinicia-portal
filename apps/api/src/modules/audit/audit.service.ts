@@ -1,3 +1,4 @@
+// IINICIA Portal · bitácora · audit.service.ts
 /** Implementa las reglas para aplicar filtros por actor, acción y entidad sobre eventos visibles para la sesión. */
 import {
   Injectable,
@@ -11,9 +12,11 @@ import { QueryAuditDto } from './dto/query-audit.dto.js';
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
 
+  /** Recibe supabase como dependencias del módulo de bitácora. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly supabase: SupabaseService) {}
 
   // Compone filtros y paginación usando los eventos visibles con el token de la sesión.
+  /** Aplica los filtros y la paginación al cliente de la sesión para devolver las entradas de auditoría permitidas. */
   async findAll(query: QueryAuditDto, accessToken: string) {
     const client = this.supabase.getResilientClient(accessToken);
     let q = client

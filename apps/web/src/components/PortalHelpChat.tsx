@@ -1,6 +1,8 @@
 'use client';
+// IINICIA Portal · portal Next.js · PortalHelpChat.tsx
 
 import Link from 'next/link';
+// El diálogo conserva los turnos en memoria para dar contexto a la siguiente pregunta.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { IconClose, IconHelp } from '@/components/campus-tech/Icons';
 import { askPortalHelp, helpTopics, type HelpAnswer } from '@/lib/portal-help';
@@ -12,6 +14,7 @@ type Turn = {
   answer: HelpAnswer;
 };
 
+/** Abre el diálogo de ayuda y conserva el historial en memoria. Las preguntas recientes se envían como contexto y las respuestas se presentan en el mismo diálogo. */
 export function PortalHelpChat() {
   const dialog = useRef<HTMLDialogElement>(null);
   const log = useRef<HTMLDivElement>(null);
@@ -24,6 +27,7 @@ export function PortalHelpChat() {
     if (log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [turns, pendingQuestion]);
 
+  // Una pregunta pendiente bloquea otro envío mientras la respuesta incorpora el contexto reciente.
   const ask = async (message: string) => {
     const cleaned = message.trim();
     if (!cleaned || pendingQuestion) return;
@@ -43,6 +47,7 @@ export function PortalHelpChat() {
     setPendingQuestion(null);
   };
 
+  // El formulario devuelve el foco al campo para que se pueda enviar otra consulta con el teclado.
   const send = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!question.trim() || pendingQuestion) return;

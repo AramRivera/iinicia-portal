@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · ProgramDetail.tsx
 /** Carga el programa identificado por su slug y distingue carga, error y programa inexistente. */
 'use client';
 
@@ -22,6 +23,7 @@ const modalityLabels: Record<Program['modality'], string> = {
   autogestivo: 'Autogestiva',
 };
 
+/** Pide el programa por su identificador y prepara la vista de carga, detalle o ausencia. La acción siguiente depende de la sesión. */
 export default function ProgramDetail({ slug }: { slug: string }) {
   const { user } = useAuth();
   const [program, setProgram] = useState<Program | null>(null);
@@ -68,6 +70,7 @@ export default function ProgramDetail({ slug }: { slug: string }) {
     );
   }
 
+  // El detalle público dirige a la sesión existente o al registro antes de iniciar una solicitud.
   const nextStepHref = user ? '/dashboard' : '/registro';
   const nextStepLabel = user ? 'Ir a Mi IINICIA' : 'Crear cuenta para solicitar admisión';
   const catalogHref = program.type === 'certificacion' ? '/#certificaciones' : '/#cursos';

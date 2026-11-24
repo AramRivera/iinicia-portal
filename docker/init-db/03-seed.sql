@@ -1,3 +1,4 @@
+-- IINICIA Portal · despliegue local · 03-seed.sql
 -- =================================================================================
 -- PROYECTO: PORTAL IINICIA
 -- SEMILLAS REPRODUCIBLES DE LINEA BASE (ROLES, PERMISOS, CATALOGOS)

@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · supabase-recovery.spec.ts
 /** Cubre los enlaces de recuperación, el intercambio PKCE y la verificación de TOTP antes del cambio de contraseña. */
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';

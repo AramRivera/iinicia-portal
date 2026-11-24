@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · programs.controller.ts
 /** Expone por HTTP catálogo, edición y asignación de usuarios a programas. */
 import {
   Body,
@@ -24,8 +25,10 @@ import { AssignUserProgramDto } from './dto/assign-user-program.dto.js';
 
 @Controller('programs')
 export class ProgramsController {
+  /** Recibe programsService como dependencias del módulo de programas académicos. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly programsService: ProgramsService) {}
 
+  /** Entrega el listado público de programas con los filtros que admite el catálogo. */
   @Get()
   findAll(@Req() req: Request) {
     const authHeader = req.headers.authorization;
@@ -33,6 +36,7 @@ export class ProgramsController {
     return this.programsService.findAll(token, false);
   }
 
+  /** Resuelve el programa a partir de su UUID o su identificador legible para servir el detalle. */
   @Get(':idOrSlug')
   findByIdOrSlug(
     @Param('idOrSlug') idOrSlug: string,
@@ -43,6 +47,7 @@ export class ProgramsController {
     return this.programsService.findByIdOrSlug(idOrSlug, token);
   }
 
+  /** Recibe la definición de un programa de una sesión autorizada y delega su alta al servicio. */
   @Post()
   @HttpCode(201)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -55,6 +60,7 @@ export class ProgramsController {
     return this.programsService.create(dto, req.user.id);
   }
 
+  /** Entrega el programa y los campos de actualización al servicio después de verificar el permiso administrativo. */
   @Patch(':id')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -68,6 +74,7 @@ export class ProgramsController {
     return this.programsService.update(id, dto, req.user.id);
   }
 
+  /** Solicita vincular una cuenta a un programa y delega al servicio la comprobación de autorización y alcance. */
   @Post(':id/enroll-user')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard)

@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · register.dto.ts
 /** Define los datos de identidad y contacto que admite el registro público. */
 import {
   IsEmail,

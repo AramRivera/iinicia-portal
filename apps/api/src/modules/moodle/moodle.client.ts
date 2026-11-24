@@ -1,3 +1,4 @@
+// IINICIA Portal · integración con Moodle · moodle.client.ts
 /** Traduce las operaciones de integración a Web Services de Moodle y procesa sus respuestas. */
 import { randomInt } from 'node:crypto';
 import {
@@ -17,8 +18,14 @@ import type {
 @Injectable()
 export class MoodleClient {
   private readonly logger = new Logger(MoodleClient.name);
+  private connectionProbe?: {
+    expiresAt: number;
+    result: Promise<{ ok: boolean; message?: string }>;
+  };
+  /** Recibe config como dependencias del módulo de integración con Moodle. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly config: ConfigService) {}
 
+  /** Resuelve la base configurada para las llamadas al campus y normaliza el separador final. */
   async getEffectiveBaseUrl(): Promise<string> {
     const url =
       this.config.get<string>('MOODLE_URL') ||
@@ -27,11 +34,23 @@ export class MoodleClient {
     return url.replace(/\/+$/, '');
   }
 
+  /** Lee el token de sesión que el navegador usa para identificar peticiones protegidas. */
   private getToken(): string {
     return this.config.get<string>('MOODLE_WS_TOKEN') || '';
   }
 
+  /** Reutiliza la comprobación reciente de Moodle y comparte la que está en curso entre peticiones de la misma instancia. */
   async checkConnection(): Promise<{ ok: boolean; message?: string }> {
+    // Compartir la promesa limita las conexiones de solicitudes simultáneas dentro de esta instancia.
+    const now = Date.now();
+    if (!this.connectionProbe || now >= this.connectionProbe.expiresAt) {
+      this.connectionProbe = { expiresAt: now + 15_000, result: this.probeConnection() };
+    }
+    return this.connectionProbe.result;
+  }
+
+  /** Consulta Moodle para determinar la disponibilidad y transforma el resultado en el estado utilizado por los diagnósticos. */
+  private async probeConnection(): Promise<{ ok: boolean; message?: string }> {
     const token = this.getToken();
     if (!token) {
       return {
@@ -492,6 +511,7 @@ function serializeMoodleParams(
   }
 }
 
+/** Construye una contraseña temporal con aleatoriedad criptográfica y representación de las categorías requeridas. */
 function generateTemporaryPassword(): string {
   // Cumple con la política habitual de Moodle: mayúscula, minúscula, número y símbolo
   const chars = 'abcdefghijklmnopqrstuvwxyz';

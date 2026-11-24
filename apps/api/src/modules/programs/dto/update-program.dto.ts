@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · update-program.dto.ts
 /** Valida los cambios parciales en la información de un programa. */
 import {
   IsBoolean,

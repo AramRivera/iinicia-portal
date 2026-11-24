@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · auth.repository.ts
 /** Carga el perfil propio y sus roles y permisos respetando el alcance de la sesión. */
 import {
   Injectable,
@@ -33,6 +34,7 @@ export interface RolePermissionEmbed {
 export class AuthRepository {
   private readonly logger = new Logger(AuthRepository.name);
 
+  /** Recibe supabase como dependencias del módulo de identidad y autenticación. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly supabase: SupabaseService) {}
 
   /**
@@ -113,6 +115,7 @@ export class AuthRepository {
     return data as unknown as RolePermissionEmbed[];
   }
 
+  /** Traduce un error de persistencia a una excepción HTTP adecuada para el flujo de autenticación. */
   private toHttpException(
     error: PostgrestError,
     subject: string,

@@ -1,3 +1,5 @@
+# IINICIA Portal · contrato HTTP · openapi.yaml
+# Contrato HTTP de la API. Las rutas documentan el método, los datos de entrada y las respuestas que consumen el portal y las pruebas.
 openapi: 3.0.3
 info:
   title: IINICIA API

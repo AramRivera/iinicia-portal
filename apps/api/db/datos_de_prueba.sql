@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · datos_de_prueba.sql
 -- =====================================================================
 -- SEED DE DATOS DE PRUEBA · IINICIA · Supabase (DEV) - CORREGIDO
 -- =====================================================================

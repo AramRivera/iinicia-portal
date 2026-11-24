@@ -1,3 +1,4 @@
+// IINICIA Portal · cuentas de usuario · users.controller.ts
 /** Expone por HTTP listado, alta administrativa, cambios de estado y edición del perfil propio. */
 import {
   Body,
@@ -25,6 +26,7 @@ import { CreateUserAdminDto } from './dto/create-user-admin.dto.js';
 
 @Controller('users')
 export class UsersController {
+  /** Recibe usersService como dependencias del módulo de cuentas de usuario. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly usersService: UsersService) {}
 
   /**

@@ -1,8 +1,10 @@
+// IINICIA Portal · portal Next.js · next.config.ts
 /** Configura la compilación de Next.js y las reglas de Turbopack para los estilos. */
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  /** Configura las cabeceras globales que limitan el encuadre, el envío del referente y la interpretación de tipos MIME. */
   async headers() {
     return [{
       source: "/:path*",

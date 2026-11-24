@@ -1,3 +1,4 @@
+// IINICIA Portal · admisiones · create-admission.dto.ts
 /** Valida el programa y los datos enviados por el aspirante al postularse. */
 import {
   IsNumber,

@@ -1,3 +1,4 @@
+// IINICIA Portal · permisos · query-permissions.dto.spec.ts
 /** Comprueba la normalización y validación de la consulta paginada de permisos. */
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';

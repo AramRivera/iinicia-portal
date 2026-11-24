@@ -1,3 +1,4 @@
+// IINICIA Portal · pruebas de integración · auth-me.e2e-spec.ts
 /** Comprueba que el perfil HTTP se derive de una identidad autenticada con MFA. */
 import { Test } from '@nestjs/testing';
 import {
@@ -12,6 +13,7 @@ import { AppModule } from '../src/app.module.js';
 import { SupabaseService } from '../src/common/supabase/supabase.service.js';
 import { AuthService } from '../src/modules/auth/auth.service.js';
 
+/** Genera el token de prueba que usa la suite para representar una sesión en el endpoint de perfil. */
 function fakeAccessToken(issuedAt: number, aal = 'aal2'): string {
   const encode = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');

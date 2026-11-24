@@ -1,3 +1,4 @@
+// IINICIA Portal · interfaz del campus · CampusTopBar.tsx
 /** Muestra el encabezado de la sesión, los controles de tema y el acceso a la búsqueda. */
 'use client';
 
@@ -20,6 +21,7 @@ interface CampusTopBarProps {
   onLaunchMoodleSSO?: () => void;
 }
 
+/** Muestra el contexto del panel, la cuenta y las acciones de navegación, búsqueda o cambio de tema que corresponden a la vista. */
 export function CampusTopBar({
   breadcrumbs = ['INICIA', 'Panel de Control'],
   onOpenSearch,
@@ -27,6 +29,7 @@ export function CampusTopBar({
   navigationOpen,
   onLaunchMoodleSSO,
 }: CampusTopBarProps) {
+  // La barra reúne el aspecto de la interfaz y los datos de sesión compartidos con el resto del panel.
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 

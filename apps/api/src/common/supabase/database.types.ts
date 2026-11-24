@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · database.types.ts
 /** Describe las tablas, vistas, funciones y estados que usa el cliente tipado de Supabase. */
 export type Json =
   | string
@@ -80,6 +81,7 @@ export type WpMigrationAction =
 
 export type ContactMessageStatus = 'nuevo' | 'en_atencion' | 'resuelto' | 'spam';
 
+// Los registros representan filas persistidas, con los campos nulos definidos por PostgreSQL.
 export type ProfileRecord = {
   id: string;
   email: string;
@@ -354,6 +356,7 @@ export type SystemSettingRecord = {
   updated_at: string;
 };
 
+// Las vistas exponen proyecciones de lectura. Sus columnas combinan información de varias tablas.
 export type VUserCompleteProfileRecord = {
   id: string;
   email: string;
@@ -396,6 +399,7 @@ export type VUserAuthorizedCourseRecord = {
   program_slug: string | null;
 };
 
+// El cliente Supabase usa este mapa para distinguir lectura, inserción y modificación en cada tabla.
 export type Database = {
   public: {
     Tables: {

@@ -1,3 +1,5 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · client_privileges.sql
+-- Comprueba primero los permisos de tabla y después el efecto de las políticas sobre sesiones de prueba.
 DO $$
 DECLARE
   client_role text;

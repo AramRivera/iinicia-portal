@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · eslint.config.mjs
 /** Configura las reglas de Next.js y TypeScript para el análisis del frontend. */
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";

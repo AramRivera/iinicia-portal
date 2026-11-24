@@ -1,3 +1,4 @@
+// IINICIA Portal · API NestJS · app.controller.spec.ts
 /** Comprueba la respuesta de bienvenida del controlador raíz aislado. */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller.js';

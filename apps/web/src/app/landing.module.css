@@ -1,3 +1,5 @@
+/* IINICIA Portal · portal Next.js · landing.module.css */
+/** La página de inicio comparte tiempos de transición entre la portada, el catálogo y las secciones. Las reglas de movimiento reducido adaptan los efectos a la preferencia del navegador. */
 .heroFrame,
 .catalog,
 .section {

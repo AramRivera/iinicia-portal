@@ -1,3 +1,4 @@
+// IINICIA Portal · interfaz del campus · Icons.tsx
 /** Define los SVG reutilizados por la navegación y los estados de los paneles. */
 import React from 'react';
 
@@ -6,6 +7,7 @@ interface IconProps {
   size?: number;
 }
 
+/** Representa panel general con el tamaño y el estilo que el panel indica para este icono. */
 export function IconDashboard({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -17,6 +19,7 @@ export function IconDashboard({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa estudiantes con el tamaño y el estilo que el panel indica para este icono. */
 export function IconStudents({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -28,6 +31,7 @@ export function IconStudents({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa docentes con el tamaño y el estilo que el panel indica para este icono. */
 export function IconTeachers({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -38,6 +42,7 @@ export function IconTeachers({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa grupos académicos con el tamaño y el estilo que el panel indica para este icono. */
 export function IconGroups({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -48,6 +53,7 @@ export function IconGroups({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa horarios con el tamaño y el estilo que el panel indica para este icono. */
 export function IconSchedule({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -60,6 +66,7 @@ export function IconSchedule({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa asistencia con el tamaño y el estilo que el panel indica para este icono. */
 export function IconAttendance({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -70,6 +77,7 @@ export function IconAttendance({ className = 'w-4 h-4', size = 16 }: IconProps) 
   );
 }
 
+/** Representa calificaciones con el tamaño y el estilo que el panel indica para este icono. */
 export function IconGrades({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -79,6 +87,7 @@ export function IconGrades({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa reportes con el tamaño y el estilo que el panel indica para este icono. */
 export function IconReports({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -88,6 +97,7 @@ export function IconReports({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa avisos con el tamaño y el estilo que el panel indica para este icono. */
 export function IconAnnouncements({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -97,6 +107,7 @@ export function IconAnnouncements({ className = 'w-4 h-4', size = 16 }: IconProp
   );
 }
 
+/** Representa configuración con el tamaño y el estilo que el panel indica para este icono. */
 export function IconSettings({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -106,6 +117,7 @@ export function IconSettings({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa integración con Moodle con el tamaño y el estilo que el panel indica para este icono. */
 export function IconMoodle({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -114,6 +126,7 @@ export function IconMoodle({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa auditoría con el tamaño y el estilo que el panel indica para este icono. */
 export function IconAudit({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -123,6 +136,7 @@ export function IconAudit({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa búsqueda con el tamaño y el estilo que el panel indica para este icono. */
 export function IconSearch({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -132,6 +146,7 @@ export function IconSearch({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa tema claro con el tamaño y el estilo que el panel indica para este icono. */
 export function IconSun({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -141,6 +156,7 @@ export function IconSun({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa tema oscuro con el tamaño y el estilo que el panel indica para este icono. */
 export function IconMoon({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -149,6 +165,7 @@ export function IconMoon({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa menú con el tamaño y el estilo que el panel indica para este icono. */
 export function IconMenu({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -159,6 +176,7 @@ export function IconMenu({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa cierre con el tamaño y el estilo que el panel indica para este icono. */
 export function IconClose({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -167,6 +185,7 @@ export function IconClose({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa alta de elementos con el tamaño y el estilo que el panel indica para este icono. */
 export function IconPlus({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -175,6 +194,7 @@ export function IconPlus({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa confirmación con el tamaño y el estilo que el panel indica para este icono. */
 export function IconCheck({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -183,6 +203,7 @@ export function IconCheck({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa enlace externo con el tamaño y el estilo que el panel indica para este icono. */
 export function IconExternalLink({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -191,6 +212,7 @@ export function IconExternalLink({ className = 'w-4 h-4', size = 16 }: IconProps
   );
 }
 
+/** Representa recarga con el tamaño y el estilo que el panel indica para este icono. */
 export function IconRefresh({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -202,6 +224,7 @@ export function IconRefresh({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa filtros con el tamaño y el estilo que el panel indica para este icono. */
 export function IconFilter({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -210,6 +233,7 @@ export function IconFilter({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa ayuda con el tamaño y el estilo que el panel indica para este icono. */
 export function IconHelp({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -220,6 +244,7 @@ export function IconHelp({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa advertencia con el tamaño y el estilo que el panel indica para este icono. */
 export function IconAlertTriangle({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -230,6 +255,7 @@ export function IconAlertTriangle({ className = 'w-4 h-4', size = 16 }: IconProp
   );
 }
 
+/** Representa perfil con el tamaño y el estilo que el panel indica para este icono. */
 export function IconUser({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -239,6 +265,7 @@ export function IconUser({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa seguridad con el tamaño y el estilo que el panel indica para este icono. */
 export function IconShield({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -247,6 +274,7 @@ export function IconShield({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa material de lectura con el tamaño y el estilo que el panel indica para este icono. */
 export function IconBookOpen({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -256,6 +284,7 @@ export function IconBookOpen({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa navegación hacia la izquierda con el tamaño y el estilo que el panel indica para este icono. */
 export function IconChevronLeft({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -264,6 +293,7 @@ export function IconChevronLeft({ className = 'w-4 h-4', size = 16 }: IconProps)
   );
 }
 
+/** Representa navegación hacia la derecha con el tamaño y el estilo que el panel indica para este icono. */
 export function IconChevronRight({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -272,6 +302,7 @@ export function IconChevronRight({ className = 'w-4 h-4', size = 16 }: IconProps
   );
 }
 
+/** Representa tiempos y estados pendientes con el tamaño y el estilo que el panel indica para este icono. */
 export function IconClock({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -281,6 +312,7 @@ export function IconClock({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa avance con el tamaño y el estilo que el panel indica para este icono. */
 export function IconArrowRight({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -290,6 +322,7 @@ export function IconArrowRight({ className = 'w-4 h-4', size = 16 }: IconProps) 
   );
 }
 
+/** Representa documento con el tamaño y el estilo que el panel indica para este icono. */
 export function IconFileText({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -302,6 +335,7 @@ export function IconFileText({ className = 'w-4 h-4', size = 16 }: IconProps) {
   );
 }
 
+/** Representa cursos con el tamaño y el estilo que el panel indica para este icono. */
 export function IconCourses({ className = 'w-4 h-4', size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>

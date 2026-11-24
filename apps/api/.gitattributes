@@ -1,1 +1,3 @@
+# IINICIA Portal · API NestJS · .gitattributes
+# Fija el trato de los archivos de la API para mantener diffs y scripts consistentes entre sistemas operativos.
 * text=auto eol=lf

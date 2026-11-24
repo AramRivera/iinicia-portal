@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · supabase.module.ts
 /** Registra el servicio de Supabase para compartirlo entre los módulos de NestJS. */
 import { Module } from '@nestjs/common';
 import { SupabaseService } from './supabase.service.js';

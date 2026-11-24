@@ -1,3 +1,5 @@
+# IINICIA Portal · portal Next.js · .dockerignore
+# Excluye archivos de desarrollo y de compilación del contexto que recibe Docker para la web.
 node_modules
 .next
 .git

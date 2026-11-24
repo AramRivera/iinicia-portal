@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · iinicia_schema_completo.sql
 -- =====================================================================
 -- 0100 · Extensiones, esquemas y tipos enumerados
 -- Proyecto IINICIA · Supabase (DEV)

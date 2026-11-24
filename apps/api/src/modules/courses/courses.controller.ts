@@ -1,3 +1,4 @@
+// IINICIA Portal · oferta de cursos · courses.controller.ts
 /** Expone por HTTP oferta, cursos autorizados y administración de equivalencias. */
 import {
   Body,
@@ -22,8 +23,10 @@ import { UpdateCourseMappingDto } from './dto/update-course-mapping.dto.js';
 
 @Controller('courses')
 export class CoursesController {
+  /** Recibe coursesService como dependencias del módulo de oferta de cursos. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly coursesService: CoursesService) {}
 
+  /** Devuelve la oferta académica accesible a la sesión que consulta el catálogo. */
   @Get('offerings')
   @UseGuards(SupabaseAuthGuard)
   findOfferings(@Req() req: AuthenticatedRequest) {
@@ -63,6 +66,7 @@ export class CoursesController {
     );
   }
 
+  /** Consulta un curso mediante su identificador y mantiene el contexto de autorización de quien lo solicita. */
   @Get(':id')
   @UseGuards(SupabaseAuthGuard)
   findById(
@@ -72,6 +76,7 @@ export class CoursesController {
     return this.coursesService.findById(id, req.accessToken);
   }
 
+  /** Solicita registrar la equivalencia de un curso de Moodle con la oferta del portal. */
   @Post()
   @HttpCode(201)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -84,6 +89,7 @@ export class CoursesController {
     return this.coursesService.create(dto, req.user.id);
   }
 
+  /** Recibe cambios para una equivalencia existente y delega al servicio la comprobación de sus relaciones. */
   @Patch(':id')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)

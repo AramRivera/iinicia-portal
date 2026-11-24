@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Completa la recuperación a partir del enlace por correo y solicita TOTP cuando la API lo exige. */
 'use client';
 
@@ -9,6 +10,7 @@ import type { LoginResponse } from '@/types';
 
 type RecoveryProof = { token_hash: string } | { auth_code: string; code_verifier: string };
 
+/** Interpreta la prueba de recuperación recibida, permite definir la contraseña y completa un segundo factor cuando la API lo solicita. */
 export default function RestablecerPasswordPage() {
   const [proof, setProof] = useState<RecoveryProof | null>(null);
   const [missingVerifier, setMissingVerifier] = useState(false);
@@ -35,6 +37,7 @@ export default function RestablecerPasswordPage() {
       } else if (fragment.get('type') === 'recovery' && tokenHash) {
         setProof({ token_hash: tokenHash });
       }
+      // Una vez preparada en memoria, la prueba se elimina de la barra de direcciones y de la entrada activa del historial.
       if (url.search || url.hash) {
         window.history.replaceState(null, '', url.pathname);
       }

@@ -1,3 +1,5 @@
+# IINICIA Portal · herramientas del proyecto · .gitignore
+# Excluye artefactos locales, dependencias instaladas y archivos privados del historial del repositorio.
 node_modules/
 .next/
 .next-demo-*/

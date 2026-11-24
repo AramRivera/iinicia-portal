@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Solicita un enlace de recuperación vinculado al navegador mediante PKCE. */
 'use client';
 
@@ -12,6 +13,7 @@ import {
   IconAlertTriangle,
 } from '@/components/campus-tech/Icons';
 
+/** Inicia la recuperación de contraseña con CAPTCHA, un reto PKCE y una confirmación que no depende de revelar si existe la cuenta. */
 export default function RecuperarPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,7 @@ export default function RecuperarPasswordPage() {
 
     let verifier: string | undefined;
     try {
+      // El navegador conserva el verificador. La API recibe el desafío para vincularlo al enlace de correo.
       const proof = await startRecoveryProof();
       verifier = proof.verifier;
       await authApi.recoverPassword(email.trim(), proof.challenge, captchaToken);

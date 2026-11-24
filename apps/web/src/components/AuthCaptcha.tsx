@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · AuthCaptcha.tsx
 /** Monta Turnstile en el navegador y entrega al formulario un token vigente para cada intento. */
 'use client';
 
@@ -15,9 +16,11 @@ type Turnstile = {
   remove: (id: string) => void;
 };
 
+// La clave pública habilita el widget. La API y Supabase Auth deciden qué solicitudes requieren un token válido.
 const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 export const captchaEnabled = Boolean(sitekey);
 
+/** Monta el desafío en el navegador, entrega el token al formulario y limpia la instancia al renovar el intento o desmontar el componente. */
 export function AuthCaptcha({ attempt, onToken }: {
   attempt: number;
   onToken: (token: string | undefined) => void;

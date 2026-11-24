@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · supabase-auth.guard.spec.ts
 /** Comprueba el rechazo de tokens inválidos, de sesiones sin MFA y de peticiones sin Bearer. */
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -75,10 +76,12 @@ describe('SupabaseAuthGuard', () => {
   });
 });
 
+/** Arma una prueba de JWT con el nivel solicitado para comprobar cómo se interpreta el segundo factor. */
 function tokenWithLevel(aal: string): string {
   return `header.${Buffer.from(JSON.stringify({ aal })).toString('base64url')}.signature`;
 }
 
+/** Entrega al guard de autenticación una solicitud simulada desde un contexto HTTP. */
 function createExecutionContext(request: Request): ExecutionContext {
   return {
     switchToHttp: () => ({

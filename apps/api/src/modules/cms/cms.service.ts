@@ -1,3 +1,4 @@
+// IINICIA Portal · contenido institucional · cms.service.ts
 /** Implementa las reglas para consultar contenido publicado y recibir mensajes desde el portal. */
 import {
   Injectable,
@@ -12,6 +13,7 @@ import { CreateContactMessageDto } from './dto/create-contact-message.dto.js';
 export class CmsService {
   private readonly logger = new Logger(CmsService.name);
 
+  /** Recibe supabase como dependencias del módulo de contenido institucional. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly supabase: SupabaseService) {}
 
   /**

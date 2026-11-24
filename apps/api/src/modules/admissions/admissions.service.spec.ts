@@ -1,3 +1,4 @@
+// IINICIA Portal · admisiones · admissions.service.spec.ts
 /** Aísla las dependencias del servicio para comprobar cómo debe filtrar postulaciones por ámbito y promover al aspirante después del dictamen. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseService } from '../../common/supabase/supabase.service.js';
@@ -23,6 +24,7 @@ describe('AdmissionsService', () => {
     fromUser.mockReset().mockReturnValue(query);
   });
 
+  /** Prepara el resultado de la consulta de roles para ejercitar distintos ámbitos en las pruebas de admisión. */
   function roles(...slugs: string[]) {
     fromUser.mockReturnValueOnce({
       select: () => ({

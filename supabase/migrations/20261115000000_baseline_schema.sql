@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261115000000_baseline_schema.sql
 -- =================================================================================
 -- PROYECTO: PORTAL IINICIA
 -- LINEA BASE UNIFICADA DE SUPABASE / POSTGRESQL

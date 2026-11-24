@@ -1,3 +1,4 @@
+// IINICIA Portal · roles · roles.controller.ts
 /** Expone por HTTP consulta, asignación y revocación de roles. */
 import {
   Body,
@@ -22,14 +23,17 @@ import { AssignRoleDto } from './dto/assign-role.dto.js';
 
 @Controller('roles')
 export class RolesController {
+  /** Recibe rolesService como dependencias del módulo de roles. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly rolesService: RolesService) {}
 
+  /** Devuelve los roles disponibles a través del servicio que consulta el catálogo con la sesión. */
   @Get()
   @UseGuards(SupabaseAuthGuard)
   findAll(@Req() req: AuthenticatedRequest) {
     return this.rolesService.findAll(req.accessToken);
   }
 
+  /** Recibe el rol que se asignará a la cuenta objetivo y delega sus límites jerárquicos y de vigencia. */
   @Post('users/:userId')
   @HttpCode(201)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)
@@ -43,6 +47,7 @@ export class RolesController {
     return this.rolesService.assignRole(userId, dto, req.user.id, req.userRoles ?? []);
   }
 
+  /** Solicita retirar una asignación de rol y deja al servicio la comprobación de las restricciones de administración. */
   @Delete('users/:userId/:roleId')
   @HttpCode(200)
   @UseGuards(SupabaseAuthGuard, RolesGuard, PermissionsGuard)

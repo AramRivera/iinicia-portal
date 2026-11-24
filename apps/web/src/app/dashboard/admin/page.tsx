@@ -1,3 +1,4 @@
+// IINICIA Portal · administración · page.tsx
 /** Centraliza los flujos administrativos de usuarios, admisiones, programas, matrículas y auditoría. */
 'use client';
 
@@ -64,6 +65,7 @@ type AdminTab =
   | 'auditoria'
   | 'configuracion';
 
+/** Coordina las consultas de catálogo, usuarios y solicitudes en la vista administrativa. Los servicios del servidor determinan qué datos y operaciones están permitidos. */
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, hasRole } = useAuth();

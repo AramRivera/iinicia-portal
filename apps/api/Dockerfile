@@ -1,3 +1,4 @@
+# IINICIA Portal · API NestJS · Dockerfile
 # Compila NestJS en una etapa separada y prepara la imagen que ejecuta la API.
 # Multi-stage Dockerfile para NestJS API (IINICIA)
 # Etapa 1: Construcción

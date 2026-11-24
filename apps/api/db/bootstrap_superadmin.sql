@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · bootstrap_superadmin.sql
 -- =====================================================================
 -- Crear el PRIMER superadministrador (se corre una sola vez, en el SQL Editor)
 --

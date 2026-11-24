@@ -1,3 +1,4 @@
+# IINICIA Portal · portal Next.js · Dockerfile
 # Compila Next.js con las variables públicas del portal y prepara su imagen de ejecución.
 # Multi-stage Dockerfile para Next.js Portal (IINICIA)
 # Etapa 1: Dependencias

@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · permissions.decorator.ts
 /** Adjunta a la ruta los permisos que interpreta PermissionsGuard. */
 import { SetMetadata } from '@nestjs/common';
 

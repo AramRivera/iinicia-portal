@@ -1,3 +1,4 @@
+// IINICIA Portal · API NestJS · app.module.ts
 /** Ensambla los módulos de identidad, gestión académica, Moodle y contenido institucional. */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';

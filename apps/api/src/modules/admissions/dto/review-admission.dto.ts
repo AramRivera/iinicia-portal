@@ -1,3 +1,4 @@
+// IINICIA Portal · admisiones · review-admission.dto.ts
 /** Valida el estado y los datos del dictamen enviado al revisar una postulación. */
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import type { AcademicStatus } from '../../../common/supabase/database.types.js';

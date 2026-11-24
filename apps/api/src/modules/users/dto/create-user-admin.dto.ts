@@ -1,3 +1,4 @@
+// IINICIA Portal · cuentas de usuario · create-user-admin.dto.ts
 /** Valida los datos del alta de una cuenta solicitada desde administración. */
 import {
   IsEmail,

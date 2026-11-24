@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · login.dto.ts
 /** Valida el correo, la contraseña y la prueba CAPTCHA que recibe el inicio de sesión. */
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 

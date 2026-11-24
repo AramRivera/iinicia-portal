@@ -1,3 +1,4 @@
+// IINICIA Portal · cuentas de usuario · update-own-profile.dto.ts
 /** Limita la edición del perfil propio a los datos admitidos por la API. */
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 

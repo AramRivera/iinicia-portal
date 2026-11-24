@@ -1,3 +1,4 @@
+// IINICIA Portal · integración con Moodle · MoodleSyncBadge.tsx
 /** Traduce el estado de sincronización de Moodle a una etiqueta visible. */
 'use client';
 
@@ -10,6 +11,7 @@ interface MoodleSyncBadgeProps {
   className?: string;
 }
 
+/** Traduce un estado de sincronización a un indicador visual reutilizable con su etiqueta. */
 export function MoodleSyncBadge({ status, moodleId, className = '' }: MoodleSyncBadgeProps) {
   let label = 'No vinculado';
   let badgeStyle = 'bg-surface-muted text-muted border-border';

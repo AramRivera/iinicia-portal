@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · mostrar_datos_correto.sql
 select * from public.v_admin_users;
 select * from public.v_my_courses;   -- como Luis (necesitas JWT de Luis)
 select * from public.audit_logs order by occurred_at desc limit 20;

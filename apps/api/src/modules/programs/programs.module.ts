@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · programs.module.ts
 /** Registra el controlador y los proveedores de programas académicos y adscripciones en NestJS. */
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from '../../common/supabase/supabase.module.js';

@@ -1,3 +1,4 @@
+# IINICIA Portal · despliegue local · compose.yaml
 name: iinicia
 
 services:

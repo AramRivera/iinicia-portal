@@ -1,3 +1,5 @@
+# IINICIA Portal · API NestJS · .dockerignore
+# Reduce el contexto de construcción de NestJS a los archivos necesarios para formar la imagen.
 node_modules
 dist
 npm-debug.log

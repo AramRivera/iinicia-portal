@@ -1,3 +1,4 @@
+// IINICIA Portal · roles · roles.service.ts
 /** Implementa las reglas para aplicar la jerarquía administrativa y registrar los cambios de roles. */
 import {
   BadRequestException,
@@ -14,6 +15,7 @@ import { AssignRoleDto } from './dto/assign-role.dto.js';
 export class RolesService {
   private readonly logger = new Logger(RolesService.name);
 
+  /** Recibe supabase como dependencias del módulo de roles. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly supabase: SupabaseService) {}
 
   /**

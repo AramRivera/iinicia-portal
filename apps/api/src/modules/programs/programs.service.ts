@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · programs.service.ts
 /** Implementa las reglas para distinguir el catálogo público de la gestión administrativa por ámbito. */
 import {
   ConflictException,
@@ -23,6 +24,7 @@ import { AssignUserProgramDto } from './dto/assign-user-program.dto.js';
 export class ProgramsService {
   private readonly logger = new Logger(ProgramsService.name);
 
+  /** Recibe supabase como dependencias del módulo de programas académicos. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly supabase: SupabaseService) {}
 
   /**

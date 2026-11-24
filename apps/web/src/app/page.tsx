@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Reúne el portal público, carga la oferta desde la API y conecta el catálogo con admisiones y contacto. */
 'use client';
 
@@ -23,6 +24,7 @@ const courseCovers = [
   '/course-covers/tablet.webp',
 ];
 
+/** Selecciona una imagen local por posición del curso para dar variedad visual al catálogo. */
 function CourseCover({ index }: { index: number }) {
   return (
     <div className={styles.courseCover} aria-hidden="true">
@@ -37,6 +39,7 @@ function CourseCover({ index }: { index: number }) {
   );
 }
 
+/** Presenta la oferta de certificaciones como una sección reutilizable de la página institucional. */
 function CertificationSection({ programs, loading, loadError }: {
   programs: Program[];
   loading: boolean;
@@ -78,6 +81,7 @@ function CertificationSection({ programs, loading, loadError }: {
   );
 }
 
+/** Reúne presentación institucional, catálogo y contacto. La sesión determina si se muestran acciones académicas de la cuenta. */
 export default function HomePage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -124,6 +128,7 @@ export default function HomePage() {
 
   // Load dynamic course data
   useEffect(() => {
+    /** Carga los datos que utiliza la portada para presentar el catálogo y adaptar sus acciones según la sesión. */
     async function loadData() {
       try {
         setCoursesLoading(true);

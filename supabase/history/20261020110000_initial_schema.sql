@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261020110000_initial_schema.sql
 -- Esquema inicial de IINICIA.
 -- Revisar antes de aplicar manualmente desde el SQL Editor de Supabase.
 -- La credencial privilegiada de Supabase puede omitir RLS.

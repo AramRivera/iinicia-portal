@@ -1,3 +1,4 @@
+// IINICIA Portal · bitácora · query-audit.dto.ts
 /** Define los filtros y límites de paginación aceptados por la consulta de auditoría. */
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';

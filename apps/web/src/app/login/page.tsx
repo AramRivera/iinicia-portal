@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Presenta las credenciales, el desafío CAPTCHA y el paso TOTP que completa la sesión. */
 'use client';
 
@@ -14,6 +15,7 @@ import type { LoginResponse } from '@/types';
 
 type DemoAccount = { label: string; email: string; password: string };
 
+/** Lee las cuentas demostrativas configuradas y descarta una carga que no cumple la estructura esperada. */
 function readDemoAccounts(value: string | undefined): DemoAccount[] {
   if (!value) return [];
   try {
@@ -35,6 +37,7 @@ const demoAccounts = process.env.NODE_ENV === 'development'
   ? readDemoAccounts(process.env.NEXT_PUBLIC_DEMO_ACCOUNTS)
   : [];
 
+/** Administra el formulario de credenciales, CAPTCHA y segundo factor. Cuando termina la verificación, dirige al panel asociado al rol. */
 export default function LoginPage() {
   const router = useRouter();
   const { login, verifyLoginMfa, getDefaultDashboardPath } = useAuth();
@@ -49,6 +52,7 @@ export default function LoginPage() {
   const [factorId, setFactorId] = useState('');
   const [code, setCode] = useState('');
 
+  // Una verificación caducada vuelve al paso de credenciales y descarta el factor y el código anteriores.
   const resetMfa = () => {
     setMfa(null);
     setFactorId('');

@@ -1,13 +1,16 @@
 'use client';
+// IINICIA Portal · portal Next.js · CoordinatorRequests.tsx
 
 import { useEffect, useState } from 'react';
 import { admissionsApi, enrollmentsApi } from '@/lib/api';
+// El panel muestra las solicitudes que la API autorizó para el ámbito de la coordinación.
 import type { AdmissionApplication, EnrollmentRequest } from '@/types';
 
 const buttonClass = 'rounded-md border border-border px-3 py-1.5 text-sm hover:border-primary disabled:opacity-50';
 
 type Props = { canReview: boolean; canAuthorize: boolean };
 
+/** Carga por separado las postulaciones y solicitudes de matrícula. Después de una decisión vuelve a consultar sus estados. */
 export function CoordinatorRequests({ canReview, canAuthorize }: Props) {
   const [admissions, setAdmissions] = useState<AdmissionApplication[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
@@ -19,6 +22,7 @@ export function CoordinatorRequests({ canReview, canAuthorize }: Props) {
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
 
+  // Admisiones y matrículas se consultan por separado. Un fallo de lectura conserva el resultado disponible de la otra lista.
   useEffect(() => {
     let current = true;
     void Promise.allSettled([
@@ -35,6 +39,8 @@ export function CoordinatorRequests({ canReview, canAuthorize }: Props) {
     return () => { current = false; };
   }, [canReview, canAuthorize, revision]);
 
+  // Después de registrar una decisión, la revisión invalida las listas para volver a consultar su estado en el servidor.
+  /** Controla el estado de escritura de una decisión de coordinación, publica el resultado y solicita actualizar las listas si tiene éxito. */
   async function run(action: () => Promise<string>) {
     setBusy(true);
     setError('');

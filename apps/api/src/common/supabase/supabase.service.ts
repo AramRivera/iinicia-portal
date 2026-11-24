@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · supabase.service.ts
 /** Separa las operaciones de identidad, las consultas bajo RLS y las acciones privilegiadas con Supabase. */
 import {
   BadRequestException,
@@ -23,6 +24,7 @@ const RECOVERY_MESSAGE =
 const REST_PATH = '/rest/v1/';
 const PORTAL_TOTP_FACTOR = 'IINICIA';
 
+/** Adapta los errores JSON de PostgREST a la estructura que espera el cliente de datos. Conserva el estado HTTP y deja pasar respuestas sin esa estructura. */
 function preservePostgrestError(
   fetchImpl: typeof globalThis.fetch,
 ): typeof globalThis.fetch {
@@ -66,8 +68,10 @@ function preservePostgrestError(
 export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
 
+  /** Recibe config como dependencias del módulo de persistencia y sesiones con Supabase. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly config: ConfigService) {}
 
+  /** Valida durante el arranque que los parámetros públicos del cliente Supabase estén disponibles. */
   assertConfiguration(): void {
     this.getConfiguration();
   }
@@ -132,6 +136,7 @@ export class SupabaseService {
     }
   }
 
+  /** Comprueba los ajustes de Supabase Auth antes de permitir el registro. La cuenta debe quedar sujeta a confirmación por correo. */
   private async requireEmailConfirmation(): Promise<void> {
     const { url, publishableKey } = this.getConfiguration();
     const response = await fetch(new URL('/auth/v1/settings', url), {
@@ -157,6 +162,7 @@ export class SupabaseService {
   }
 
   // Los enlaces de correo solo pueden volver a un origen autorizado del portal.
+  /** Construye la vuelta al portal para confirmación o recuperación, restringida a los orígenes configurados. */
   private getAuthRedirect(path: '/confirmar-correo' | '/restablecer-password', origin?: string): string {
     const frontendUrl = this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:4000';
     const allowed = [frontendUrl, ...(this.config.get<string>('CORS_ORIGIN') ?? '').split(',')].map((value) => value.trim());
@@ -175,6 +181,7 @@ export class SupabaseService {
   }
 
   // El primer paso prepara el factor requerido para continuar la autenticación.
+  /** Delega a Supabase la comprobación de contraseña y CAPTCHA. Usa la sesión inicial para solicitar o configurar TOTP y devuelve el siguiente paso al formulario. */
   async signInWithPassword(email: string, password: string, captchaToken?: string) {
     try {
       const { auth } = this.createClient();
@@ -272,10 +279,12 @@ export class SupabaseService {
     }
   }
 
+  /** Completa el segundo factor de una sesión iniciada con contraseña. El flujo compartido verifica el método de origen antes de aceptar el código. */
   verifyLoginMfa(accessToken: string, factorId: string, code: string) {
     return this.verifyMfa(accessToken, factorId, code, 'password');
   }
 
+  /** Completa el segundo factor de recuperación, usa la sesión verificada para autenticar al cliente y actualiza la contraseña solicitada. */
   async resetPasswordWithMfa(accessToken: string, factorId: string, code: string, password: string) {
     this.validatePasswordSize(password);
     const session = await this.verifyMfa(accessToken, factorId, code, 'recovery');
@@ -289,6 +298,7 @@ export class SupabaseService {
   }
 
   // Comprueba el segundo factor dentro del flujo de autenticación o recuperación que lo inició.
+  /** Vincula el token inicial al método de autenticación y a un factor de la cuenta. Obtiene el desafío, comprueba el código y exige una sesión AAL2 del mismo titular. */
   private async verifyMfa(accessToken: string, factorId: string, code: string, method: 'password' | 'recovery') {
     const user = await this.getAuthenticatedUser(accessToken);
     // Supabase etiqueta el enlace PKCE como recovery y el intercambio verifyOtp como otp.
@@ -344,6 +354,7 @@ export class SupabaseService {
     };
   }
 
+  /** Convierte el estado devuelto por Supabase en una excepción del portal, diferenciando fallos del código, disponibilidad y límites de intentos. */
   private throwMfaError(status?: number, verifying = false): never {
     if (status === 429) {
       throw new HttpException('Demasiados intentos. Intenta más tarde.', HttpStatus.TOO_MANY_REQUESTS);
@@ -360,6 +371,7 @@ export class SupabaseService {
     throw new ServiceUnavailableException('La verificación en dos pasos no está disponible.');
   }
 
+  /** Pide a Supabase la identidad asociada al token y rechaza sesiones que el proveedor no puede validar. */
   async getAuthenticatedUser(accessToken: string): Promise<User> {
     try {
       const { data, error } =
@@ -396,10 +408,12 @@ export class SupabaseService {
     }
   }
 
+  /** Proporciona el cliente de datos habitual para consultas que deben conservar el contexto de una sesión. */
   getClient(accessToken: string): SupabaseClient<Database> {
     return this.createClient(accessToken);
   }
 
+  /** Consulta el perfil con la sesión del titular y permite continuar cuando su estado es activo o pendiente. */
   async assertPortalAccount(accessToken: string, userId: string): Promise<void> {
     const { data, error } = await this.getResilientClient(accessToken)
       .from('profiles')
@@ -413,6 +427,7 @@ export class SupabaseService {
     }
   }
 
+  /** Solicita el correo de recuperación y conserva una respuesta uniforme para evitar revelar si existe la cuenta. */
   async requestPasswordRecovery(email: string, captchaToken?: string, origin?: string): Promise<{ message: string }> {
     const { error } = await this.createClient().auth.resetPasswordForEmail(email, {
       redirectTo: this.getAuthRedirect('/restablecer-password', origin),
@@ -425,6 +440,7 @@ export class SupabaseService {
   }
 
   // Envía el hash del verificador para asociar el enlace de recuperación con el navegador que lo solicitó.
+  /** Envía el reto PKCE a Supabase para que el código de recuperación solo pueda canjearse junto con el verificador original. */
   async requestPkcePasswordRecovery(email: string, challenge: string, captchaToken?: string, origin?: string): Promise<{ message: string }> {
     const query = new URLSearchParams({ redirect_to: this.getAuthRedirect('/restablecer-password', origin) });
     const response = await this.postAuth(`/recover?${query}`, {
@@ -444,6 +460,7 @@ export class SupabaseService {
     return { message: RECOVERY_MESSAGE };
   }
 
+  /** Registra un diagnóstico operativo de disponibilidad o frecuencia sin incluir la dirección consultada. */
   private logRecoveryFailure(status?: number): void {
     if (status === 429) {
       this.logger.warn('Supabase Auth limitó una solicitud de recuperación (HTTP 429).');
@@ -452,6 +469,7 @@ export class SupabaseService {
     }
   }
 
+  /** Canjea el código con su verificador PKCE, comprueba que la sesión sea de recuperación y decide si falta TOTP. */
   async resetPasswordWithCode(
     code: string,
     verifier: string,
@@ -484,6 +502,7 @@ export class SupabaseService {
     return this.preparePasswordReset(auth, session.access_token, password);
   }
 
+  /** Envía los POST directos a Supabase Auth con un tiempo de espera y sin seguir redirecciones. Incluye el token del titular cuando el paso lo requiere. */
   private async postAuth(path: string, body: Record<string, unknown>, accessToken?: string): Promise<Response> {
     const { url, publishableKey } = this.getConfiguration();
     try {
@@ -503,12 +522,14 @@ export class SupabaseService {
     }
   }
 
+  /** Mide la contraseña en bytes UTF-8 antes de enviarla al proveedor para respetar el límite del flujo de restablecimiento. */
   private validatePasswordSize(password: string): void {
     if (Buffer.byteLength(password, 'utf8') > 72) {
       throw new BadRequestException('La contraseña no debe superar 72 bytes.');
     }
   }
 
+  /** Valida el hash de un enlace de recuperación y prepara el cambio de contraseña con la sesión devuelta. */
   async resetPassword(tokenHash: string, password: string) {
     this.validatePasswordSize(password);
 
@@ -524,6 +545,7 @@ export class SupabaseService {
     return this.preparePasswordReset(auth, data.session.access_token, password);
   }
 
+  /** Consulta los factores disponibles. Pide TOTP si hay uno registrado y realiza el cambio cuando la cuenta puede continuar sin otro factor. */
   private async preparePasswordReset(auth: SupabaseClient<Database>['auth'], accessToken: string, password: string) {
     const { data, error } = await auth.mfa.listFactors();
     if (error) this.throwMfaError(error.status);
@@ -536,6 +558,7 @@ export class SupabaseService {
     return this.updateRecoveredPassword(auth, password);
   }
 
+  /** Guarda la contraseña usando la sesión de recuperación y traduce el rechazo de una clave débil o repetida en un error del formulario. */
   private async updateRecoveredPassword(auth: SupabaseClient<Database>['auth'], password: string) {
     const { error: updateError } = await auth.updateUser({ password });
     if (updateError) {
@@ -567,6 +590,7 @@ export class SupabaseService {
     });
   }
 
+  /** Conserva el JWT del usuario y adapta los errores REST para que el repositorio pueda reconocerlos sin elevar privilegios. */
   getResilientClient(accessToken: string): SupabaseClient<Database> {
     const client = this.getClient(accessToken);
 
@@ -591,6 +615,7 @@ export class SupabaseService {
   }
 
   // Asocia el token del usuario al cliente que consulta datos sujetos a RLS.
+  /** Construye un cliente con la clave pública y un token de usuario opcional. El servidor deshabilita la persistencia de sesión del SDK. */
   private createClient(accessToken?: string): SupabaseClient<Database> {
     const { url, publishableKey } = this.getConfiguration();
 
@@ -612,6 +637,7 @@ export class SupabaseService {
     });
   }
 
+  /** Lee y valida la URL y la clave pública que necesitan los clientes de Supabase. */
   private getConfiguration(): { url: string; publishableKey: string } {
     const url = this.config.get<string>('SUPABASE_URL');
     const publishableKey = this.config.get<string>('SUPABASE_PUBLISHABLE_KEY');
@@ -637,6 +663,7 @@ export class SupabaseService {
   }
 
   // Reserva la configuración privilegiada para las operaciones del servidor.
+  /** Obtiene los parámetros del cliente de servicio para operaciones internas separadas de las consultas del usuario. */
   private getAdminConfiguration(): { url: string; secretKey: string } {
     const { url } = this.getConfiguration();
     const secretKey = this.config.get<string>('SUPABASE_SECRET_KEY');
@@ -653,6 +680,7 @@ export class SupabaseService {
 
 
 // This token comes directly from Supabase Auth over the PKCE exchange, never from the client.
+/** Comprueba la estructura y las afirmaciones de la respuesta antes de utilizarla como sesión de recuperación. */
 function isPasswordRecoverySession(value: unknown): value is {
   access_token: string;
   refresh_token: string;
@@ -664,6 +692,7 @@ function isPasswordRecoverySession(value: unknown): value is {
   return hasAuthMethod(access_token, 'recovery');
 }
 
+/** Consulta los métodos de autenticación registrados en el token para distinguir los flujos aceptados. */
 function hasAuthMethod(token: string, method: 'password' | 'recovery' | 'otp'): boolean {
   const { amr } = readSupabaseTokenClaims(token);
   return Array.isArray(amr) && amr.some((claim: unknown) =>
@@ -671,6 +700,7 @@ function hasAuthMethod(token: string, method: 'password' | 'recovery' | 'otp'): 
   );
 }
 
+/** Reduce los factores TOTP a las opciones que necesita mostrar el formulario de verificación. */
 function totpOptions(factors: { id: string; friendly_name?: string }[]) {
   return factors.map((factor) => ({ id: factor.id, name: factor.friendly_name }));
 }

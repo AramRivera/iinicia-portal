@@ -1,3 +1,4 @@
+-- IINICIA Portal · despliegue local · 00-roles.sql
 -- =================================================================================
 -- Inicialización de roles estándar de Supabase para PostgreSQL local
 -- =================================================================================

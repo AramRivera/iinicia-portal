@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · roles.guard.spec.ts
 /** Comprueba acceso sin restricción, coincidencia de roles y denegación cuando no existe asignación. */
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -20,6 +21,7 @@ describe('RolesGuard', () => {
     guard = new RolesGuard(reflector, supabaseMock as unknown as SupabaseService);
   });
 
+  /** Prepara el contexto HTTP mínimo para probar el guard con diferentes metadatos de rol. */
   function createMockContext(
     user: { id: string } | null,
     accessToken?: string,

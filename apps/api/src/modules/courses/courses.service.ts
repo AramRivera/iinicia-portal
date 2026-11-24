@@ -1,3 +1,4 @@
+// IINICIA Portal · oferta de cursos · courses.service.ts
 /** Implementa las reglas para distinguir la oferta de los cursos autorizados y mantener su vínculo con Moodle. */
 import {
   ConflictException,
@@ -17,6 +18,7 @@ import { UpdateCourseMappingDto } from './dto/update-course-mapping.dto.js';
 export class CoursesService {
   private readonly logger = new Logger(CoursesService.name);
 
+  /** Recibe supabase y moodleClient como dependencias del módulo de oferta de cursos. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(
     private readonly supabase: SupabaseService,
     private readonly moodleClient: MoodleClient,

@@ -1,3 +1,5 @@
+/* IINICIA Portal · herramientas del proyecto · moodle-theme.scss
+ * Agrupa reglas del tema para adaptar la presencia visual del material del portal dentro de Moodle. */
 /*
  * Propuesta visual IINICIA para el tema Boost de Moodle.
  * Aplicar en la configuración SCSS del tema, no en archivos del núcleo.
@@ -24,6 +26,7 @@ body:not(#page-login-index) #page.drawers {
   background: #f5f8ef;
 }
 
+/* La navegación general usa la paleta institucional y deja la portada de ingreso a su bloque específico. */
 body:not(#page-login-index) .navbar {
   background: var(--iinicia-forest) !important;
   border-bottom: 1px solid #354632;
@@ -90,6 +93,7 @@ body:not(#page-login-index) .custom-select:focus {
 }
 
 /* Login split view: forest-green welcome panel, calm ivory form surface. */
+/* El ingreso tiene un contexto visual independiente para distinguir la autenticación del área de cursos. */
 body#page-login-index {
   background: #f5f8ef;
   color: var(--iinicia-text);

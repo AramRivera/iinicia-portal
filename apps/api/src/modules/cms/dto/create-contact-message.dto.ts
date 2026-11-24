@@ -1,3 +1,4 @@
+// IINICIA Portal · contenido institucional · create-contact-message.dto.ts
 /** Valida los datos de contacto y el contenido del mensaje institucional. */
 import { IsEmail, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 

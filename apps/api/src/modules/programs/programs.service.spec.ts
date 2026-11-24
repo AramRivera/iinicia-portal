@@ -1,3 +1,4 @@
+// IINICIA Portal · programas académicos · programs.service.spec.ts
 /** Aísla las dependencias del servicio para comprobar cómo debe distinguir el catálogo público de la gestión administrativa por ámbito. */
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';

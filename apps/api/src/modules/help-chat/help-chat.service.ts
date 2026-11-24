@@ -1,3 +1,5 @@
+// IINICIA Portal · asistente de ayuda · help-chat.service.ts
+/** El chat recupera material de IINICIA para orientar la respuesta. A partir del resultado, el servidor reconstruye enlaces usando el catálogo local. */
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { helpOutsideScope, retrieveHelpEntries } from './help-knowledge.js';
@@ -17,8 +19,10 @@ type ChatCompletion = {
 
 @Injectable()
 export class HelpChatService {
+  /** Recibe config como dependencias del módulo de asistente de ayuda. NestJS proporciona esas instancias para las operaciones del componente. */
   constructor(private readonly config: ConfigService) {}
 
+  /** Filtra patrones de datos en las preguntas, pide una respuesta basada en el catálogo y valida las fuentes devueltas antes de mostrar enlaces. */
   async reply(question: string, previousQuestions: string[] = []) {
     const redact = (text: string) => text
       .replace(/https?:\/\/[^\s]+/gi, '[enlace]')

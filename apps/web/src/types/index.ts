@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · index.ts
 /** Representa los contratos de identidad, catálogo, admisión y Moodle que consume la web. */
 export type RoleSlug =
   | 'superadministrador'

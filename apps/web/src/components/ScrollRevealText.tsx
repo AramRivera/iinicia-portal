@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · ScrollRevealText.tsx
 /** Aplica una transición de lectura al entrar en la zona visible de la página. */
 "use client";
 
@@ -17,6 +18,7 @@ type ScrollRevealTextProps = {
   completeAt?: number;
 };
 
+/** Organiza un texto que se revela al llegar a su sección y contempla la preferencia de movimiento reducido. */
 export function ScrollRevealText({
   children,
   as: Tag = "span",

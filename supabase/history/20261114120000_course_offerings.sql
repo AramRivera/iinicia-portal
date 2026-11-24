@@ -1,3 +1,4 @@
+-- IINICIA Portal · persistencia y sesiones con Supabase · 20261114120000_course_offerings.sql
 BEGIN;
 
 -- La oferta describe cursos activos; el acceso académico sigue requiriendo

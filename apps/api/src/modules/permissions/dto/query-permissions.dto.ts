@@ -1,3 +1,4 @@
+// IINICIA Portal · permisos · query-permissions.dto.ts
 /** Normaliza los parámetros de paginación del catálogo de permisos. */
 // apps/api/src/modules/permissions/dto/query-permissions.dto.ts
 import { Type } from 'class-transformer';

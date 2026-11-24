@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · ComingSoon.tsx
 /** Presenta un estado temporal para secciones que todavía no ofrecen una acción. */
 import Link from "next/link";
 
@@ -7,6 +8,7 @@ type ComingSoonProps = {
   description: string;
 };
 
+/** Presenta el estado temporal de una sección pública que aún no ofrece su flujo completo. */
 export function ComingSoon({ eyebrow, title, description }: ComingSoonProps) {
   return (
     <section className="relative overflow-hidden">

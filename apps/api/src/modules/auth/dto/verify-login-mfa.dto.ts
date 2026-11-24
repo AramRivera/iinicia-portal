@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · verify-login-mfa.dto.ts
 /** Valida la referencia al factor y el código TOTP del segundo paso. */
 import { IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
 

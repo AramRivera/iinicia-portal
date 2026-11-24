@@ -1,3 +1,4 @@
+// IINICIA Portal · portal Next.js · page.tsx
 /** Recoge los datos del aspirante y muestra el resultado del registro y la confirmación por correo. */
 'use client';
 
@@ -8,6 +9,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconAlertTriangle } from '@/components/campus-tech/Icons';
 
+/** Recoge los datos del aspirante y el desafío CAPTCHA. La API valida el alta y devuelve el resultado del inicio de confirmación por correo. */
 export default function RegistroPage() {
   const { register } = useAuth();
 
@@ -23,6 +25,7 @@ export default function RegistroPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Envía los datos del aspirante y muestra el resultado antes de que se inicie la sesión.
+  // El formulario usa un desafío por intento. La API valida los datos e inicia la confirmación de correo.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading || (captchaEnabled && !captchaToken)) return;

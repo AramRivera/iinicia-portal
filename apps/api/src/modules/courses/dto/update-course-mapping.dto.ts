@@ -1,3 +1,4 @@
+// IINICIA Portal · oferta de cursos · update-course-mapping.dto.ts
 /** Valida los campos editables de una equivalencia con Moodle. */
 import {
   IsBoolean,

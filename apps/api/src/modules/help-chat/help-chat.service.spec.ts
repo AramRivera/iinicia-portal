@@ -1,3 +1,5 @@
+// IINICIA Portal · asistente de ayuda · help-chat.service.spec.ts
+/** Simula el proveedor del chat para comprobar qué contexto se envía y cómo se interpretan las referencias devueltas. */
 import { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HelpChatService } from './help-chat.service.js';
@@ -10,6 +12,7 @@ describe('HelpChatService', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
+  /** Simula la selección de ayuda del proveedor para probar el procesamiento de la respuesta del chat. */
   function mockSelection(content: string) {
     const provider = vi.fn<typeof fetch>().mockResolvedValue(Response.json({
       choices: [{ finish_reason: 'stop', message: { content } }],

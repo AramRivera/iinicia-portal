@@ -1,3 +1,4 @@
+// IINICIA Portal · integración con Moodle · LaunchCourseButton.tsx
 /** Solicita el enlace de sesión del curso y lo abre en una ventana del campus. */
 'use client';
 
@@ -17,6 +18,7 @@ interface LaunchCourseButtonProps {
   className?: string;
 }
 
+/** Abre la ventana durante la interacción, pide al servidor el enlace de acceso y maneja el cierre si el flujo falla. */
 export function LaunchCourseButton({
   courseMappingId,
   courseName,

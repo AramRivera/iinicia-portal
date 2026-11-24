@@ -1,3 +1,4 @@
+// IINICIA Portal · persistencia y sesiones con Supabase · supabase-signup.spec.ts
 /** Cubre el registro sin sesión inmediata y la selección segura del destino de confirmación. */
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';

@@ -1,3 +1,5 @@
+// IINICIA Portal · identidad y autenticación · staff-hierarchy.spec.ts
+/** Ejercita las reglas de jerarquía por separado para que los permisos de administración ordinaria y global conserven sus límites. */
 import { ForbiddenException } from '@nestjs/common';
 import { requireManageableAccount, requireManageableRole } from './staff-hierarchy.js';
 

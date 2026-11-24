@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · me-response.dto.ts
 /** Describe el perfil, los roles y los permisos que consume la sesión del portal. */
 import type {
   SyncStatusType,

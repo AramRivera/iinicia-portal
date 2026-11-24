@@ -1,3 +1,4 @@
+// IINICIA Portal · panel docente · page.tsx
 /** Muestra las asignaciones docentes y abre el curso o el calificador en Moodle. */
 'use client';
 
@@ -40,6 +41,7 @@ interface TeacherOverview {
   students: { id: number; fullname: string; email?: string }[];
 }
 
+/** Conecta las asignaturas del docente con sus vistas de seguimiento y con la apertura del campus en una ventana separada. */
 export default function DocenteDashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();

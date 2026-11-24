@@ -1,3 +1,4 @@
+-- IINICIA Portal · esquemas y datos de apoyo · seed.sql
 -- =====================================================================
 -- HISTÓRICO: semilla SOLO DEV, no ejecutar como configuración del proyecto.
 -- El requisito actual es un curso de prueba; los dos programas siguientes

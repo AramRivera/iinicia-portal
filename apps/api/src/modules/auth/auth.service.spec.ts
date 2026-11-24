@@ -1,3 +1,4 @@
+// IINICIA Portal · identidad y autenticación · auth.service.spec.ts
 /** Aísla las dependencias del servicio para comprobar cómo debe coordinar el registro y construir el perfil de sesión con roles y permisos. */
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
